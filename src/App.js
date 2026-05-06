@@ -9,6 +9,7 @@ import OutfitPage from './pages/Outfit';
 import SavedOutfitsPage from './pages/SavedOutfits';
 import OnboardingPage from './pages/Onboarding';
 import SplashScreen from './components/SplashScreen';
+import PermissionsScreen from './components/PermissionsScreen';
 import './App.css';
 
 class ErrorBoundary extends React.Component {
@@ -58,6 +59,12 @@ function Main() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
 
+  // 권한 안내 화면 (최초 1회, 네이티브 앱에서만)
+  const [showPermissions, setShowPermissions] = useState(() => {
+    const { Capacitor } = require('@capacitor/core');
+    return Capacitor.isNativePlatform() && !localStorage.getItem('permissions_requested');
+  });
+
   // 인증 로딩 타임아웃 (15초 초과 시 로그인 화면으로 강제 이동)
   const [authTimedOut, setAuthTimedOut] = useState(false);
 
@@ -82,6 +89,10 @@ function Main() {
 
   if (showSplash) {
     return <SplashScreen fadingOut={splashFading} />;
+  }
+
+  if (showPermissions) {
+    return <PermissionsScreen onDone={() => setShowPermissions(false)} />;
   }
 
   // Loading state while auth resolves
