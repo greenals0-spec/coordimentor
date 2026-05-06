@@ -179,6 +179,32 @@ const smartAutoNukki = (file) => {
   });
 };
 
+// 전용 배경 제거 서버 (Render.com 배포용)
+const REMBG_SERVER_URL = process.env.REACT_APP_REMBG_SERVER_URL || '';
+
+// ─── 전용 서버 API 호출 헬퍼 ──────────────────────────────────────────────────
+const callCustomRembgApi = async (imageFile, timeoutMs = 45000) => {
+  if (!REMBG_SERVER_URL) throw new Error('전용 서버 URL이 설정되지 않았습니다.');
+  
+  const formData = new FormData();
+  formData.append('file', imageFile);
+
+  const response = await Promise.race([
+    fetch(`${REMBG_SERVER_URL}/remove-bg`, {
+      method: 'POST',
+      body: formData,
+    }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('전용 서버 응답 시간 초과')), timeoutMs)),
+  ]);
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || `서버 오류 (${response.status})`);
+  }
+
+  return await response.blob();
+};
+
 // ─── HF API 단일 호출 헬퍼 ───────────────────────────────────────────────────
 const callHfRemoveBg = async (apiUrl, imageFile, timeoutMs = 35000) => {
   const headers = { 'Content-Type': 'application/octet-stream' };
@@ -197,27 +223,42 @@ const callHfRemoveBg = async (apiUrl, imageFile, timeoutMs = 35000) => {
   return await response.blob();
 };
 
-// ─── 배경 제거 (HF RMBG-2.0 → RMBG-1.4 폴백 → 색상 감지 폴백) ───────────────
+// ─── 배경 제거 (전용 서버 → HF RMBG-2.0 → RMBG-1.4 폴백 → 색상 감지 폴백) ───────────
 export const removeBackground = async (imageFile, onProgress) => {
   const optimizedFile = await resizeImageForAI(imageFile);
 
   if (onProgress) onProgress(10, 'upload');
 
-  // 1차 시도: RMBG-2.0
   let blob = null;
+
+  // 1차 시도: 전용 서버 (Render.com)
   try {
-    if (onProgress) onProgress(25, 'api');
-    blob = await callHfRemoveBg(RMBG_API_URL, optimizedFile);
-    console.log('[누끼] RMBG-2.0 성공');
-  } catch (err2) {
-    console.warn('[누끼] RMBG-2.0 실패, RMBG-1.4 시도:', err2.message);
-    // 2차 시도: RMBG-1.4
+    if (REMBG_SERVER_URL) {
+      if (onProgress) onProgress(20, 'custom_api');
+      console.log('[누끼] 전용 서버 시도 중...');
+      blob = await callCustomRembgApi(optimizedFile);
+      console.log('[누끼] 전용 서버 성공');
+    }
+  } catch (err) {
+    console.warn('[누끼] 전용 서버 실패, HF API 시도:', err.message);
+  }
+
+  // 2차 시도: RMBG-2.0 (Hugging Face)
+  if (!blob) {
     try {
-      if (onProgress) onProgress(50, 'api');
-      blob = await callHfRemoveBg(RMBG_FALLBACK_URL, optimizedFile);
-      console.log('[누끼] RMBG-1.4 성공');
-    } catch (err1) {
-      console.warn('[누끼] RMBG-1.4 실패, 색상 감지 폴백:', err1.message);
+      if (onProgress) onProgress(40, 'api');
+      blob = await callHfRemoveBg(RMBG_API_URL, optimizedFile);
+      console.log('[누끼] RMBG-2.0 성공');
+    } catch (err2) {
+      console.warn('[누끼] RMBG-2.0 실패, RMBG-1.4 시도:', err2.message);
+      // 3차 시도: RMBG-1.4
+      try {
+        if (onProgress) onProgress(60, 'api');
+        blob = await callHfRemoveBg(RMBG_FALLBACK_URL, optimizedFile);
+        console.log('[누끼] RMBG-1.4 성공');
+      } catch (err1) {
+        console.warn('[누끼] RMBG-1.4 실패, 색상 감지 폴백:', err1.message);
+      }
     }
   }
 
@@ -234,9 +275,9 @@ export const removeBackground = async (imageFile, onProgress) => {
     }
   }
 
-  // 3차 폴백: 색상 감지 (오프라인 / 모든 API 실패 시)
+  // 4차 폴백: 색상 감지 (오프라인 / 모든 API 실패 시)
   try {
-    if (onProgress) onProgress(60, 'fallback');
+    if (onProgress) onProgress(70, 'fallback');
     const result = await smartAutoNukki(optimizedFile);
     if (onProgress) onProgress(100, 'done');
     return result;
