@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: coordimentor-rembg
+    env: python
+    region: singapore # 또는 oregon, frankfurt 중 가장 빠른 곳
+    plan: free
+    rootDir: rembg_server
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
