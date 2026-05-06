@@ -240,6 +240,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       if (!navigator.clipboard || !navigator.clipboard.read) {
         throw new Error("이 브라우저에서는 클립보드 이미지 읽기를 지원하지 않습니다.");
       }
+      
+      setError('');
       const items = await navigator.clipboard.read();
       let imageBlob = null;
       for (const item of items) {
@@ -253,16 +255,27 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       }
 
       if (!imageBlob) {
-        alert('클립보드에 복사된 이미지가 없습니다. 구글에서 이미지를 길게 눌러 복사해주세요.');
+        alert('클립보드에 복사된 이미지가 없습니다.\n\n방법: 갤러리 앱에서 옷을 길게 눌러 "복사"한 뒤 다시 시도해주세요.');
         return;
       }
 
-      const watermarkedBlob = await addWatermarkToBlob(imageBlob);
-      const url = URL.createObjectURL(watermarkedBlob);
+      // 갤러리에서 따온 누끼는 보통 고화질이므로 워터마크만 추가 (선택 사항)
+      // 여기서는 바로 분석 단계로 진행하여 사용자 경험을 최적화함
+      const url = URL.createObjectURL(imageBlob);
       setRemovedUrl(url);
-      setRemovedBlob(watermarkedBlob);
+      setRemovedBlob(imageBlob);
+      setPreview(url);
+      
+      // 이미 누끼가 따진 이미지이므로 배경 제거 단계를 건너뛰고 바로 분석 시작
+      setStep('analyzing');
+      const dataUrl = await blobToDataUrl(imageBlob);
+      const result = await analyzeClothing(dataUrl);
+      setAnalysis(result);
+      setStep('preview');
+
     } catch (e) {
-      alert('이미지를 붙여넣지 못했습니다. 권한을 허용했는지 확인해주세요: ' + e.message);
+      console.error('붙여넣기 오류:', e);
+      setError('이미지를 붙여넣지 못했습니다: ' + e.message);
     }
   };
 
@@ -351,6 +364,17 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
             새로운 옷을 추가할 방법을 선택해주세요.
           </p>
           
+          <div className="method-card highlight" onClick={handlePasteImage}>
+            <div className="icon-circle" style={{ background: 'var(--primary)', color: 'white' }}>
+              <Check size={24} />
+            </div>
+            <div className="method-card-text">
+              <div className="badge">추천: 가장 깔끔함</div>
+              <h3>시스템 누끼 붙여넣기</h3>
+              <p>갤러리에서 옷을 <strong>길게 눌러 복사</strong>한 후 바로 붙여넣으세요. (품질 최고)</p>
+            </div>
+          </div>
+
           <div className="method-card" onClick={() => { onCameraOpen?.(); setShowTutorial(true); }}>
             <div className="icon-circle">
               <Camera size={24} />
