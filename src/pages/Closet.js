@@ -3,12 +3,12 @@ import { Trash2, LogOut, X } from 'lucide-react';
 import { subscribeToItems, deleteItem, updateItem } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 
-const CATEGORIES = ['전체', '아우터', '상의', '하의', '신발', '액세서리'];
+const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
 
 export default function ClosetPage() {
   const { user, userProfile, signOut } = useAuth();
-  const [active, setActive] = useState('전체');
+  const [active, setActive] = useState('아우터');
   const [items, setItems] = useState([]);
   const [confirmId, setConfirmId] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
