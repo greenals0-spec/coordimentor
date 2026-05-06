@@ -36,7 +36,35 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
     }
   };
 
-  useEffect(() => () => stopCamera(), []);
+  useEffect(() => {
+    const handleSharedImage = async (event) => {
+      const dataUrl = event.detail;
+      if (dataUrl) {
+        setStep('analyzing');
+        try {
+          const result = await analyzeClothing(dataUrl);
+          setAnalysis(result);
+          
+          // Data URL을 Blob으로 변환하여 저장 준비
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          setRemovedBlob(blob);
+          setRemovedUrl(dataUrl);
+          setPreview(dataUrl);
+          setStep('preview');
+        } catch (e) {
+          setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);
+          setStep('error');
+        }
+      }
+    };
+
+    window.addEventListener('sharedImage', handleSharedImage);
+    return () => {
+      stopCamera();
+      window.removeEventListener('sharedImage', handleSharedImage);
+    };
+  }, []);
 
   const openCamera = async (method) => {
     setUploadMethod(method);

@@ -1,12 +1,17 @@
 package com.coordimentor.app;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
 import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,5 +37,48 @@ public class MainActivity extends BridgeActivity {
         return response;
       }
     });
+
+    handleIntent(getIntent());
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    handleIntent(intent);
+  }
+
+  private void handleIntent(Intent intent) {
+    String action = intent.getAction();
+    String type = intent.getType();
+
+    if (Intent.ACTION_SEND.equals(action) && type != null) {
+      if (type.startsWith("image/")) {
+        Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if (imageUri != null) {
+          processSharedImage(imageUri);
+        }
+      }
+    }
+  }
+
+  private void processSharedImage(Uri uri) {
+    try {
+      InputStream inputStream = getContentResolver().openInputStream(uri);
+      ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+      int bufferSize = 1024;
+      byte[] buffer = new byte[bufferSize];
+
+      int len = 0;
+      while ((len = inputStream.read(buffer)) != -1) {
+        byteBuffer.write(buffer, 0, len);
+      }
+      String base64Image = Base64.encodeToString(byteBuffer.toByteArray(), Base64.DEFAULT);
+      
+      // 웹뷰로 데이터 전달
+      String js = "window.dispatchEvent(new CustomEvent('sharedImage', { detail: 'data:image/jpeg;base64," + base64Image.replace("\n", "").replace("\r", "") + "' }));";
+      getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }
