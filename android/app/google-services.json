@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "591487860438",
+    "project_id": "coordimentor",
+    "storage_bucket": "coordimentor.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:591487860438:android:722c8fbe02c6012eba5377",
+        "android_client_info": {
+          "package_name": "com.coordimentor.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "591487860438-sgf7goqlbvd48bmt8vv9u1al1st5g33k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2jPR7zo3_mkTxO-qFdoaRXllI4xFQ1sg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "591487860438-sgf7goqlbvd48bmt8vv9u1al1st5g33k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
