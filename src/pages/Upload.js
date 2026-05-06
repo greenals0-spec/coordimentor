@@ -22,6 +22,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [bgProgress, setBgProgress] = useState(0);
+  const [bulkItems, setBulkItems] = useState([]); // Array of { id, originalFile, removedBlob, removedUrl, analysis }
+  const [currentIdx, setCurrentIdx] = useState(0);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -86,6 +88,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
     setRemovedUrl(null);
     setRemovedBlob(null);
     setAnalysis(null);
+    setBulkItems([]);
+    setCurrentIdx(0);
   };
 
   const blobToDataUrl = (blob) =>
@@ -98,16 +102,72 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   const processFile = async (file) => {
     if (!file) return;
     setError('');
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    
+    // 시스템 누끼(Subject Lift) 인식을 돕기 위해 Data URL로 변환
+    const dataUrl = await blobToDataUrl(file);
+    setPreview(dataUrl);
+    setRemovedBlob(file); // 원본 보관
+    
+    // 촬영 후 바로 배경 제거를 시도하지 않고, 사용자가 직접 시스템 누끼를 딸 수 있는 프리뷰 단계로 이동
+    setStep('capture_preview');
+  };
+
+  const processBulk = async (files) => {
+    setStep('bulk_processing');
+    const items = [];
+    for (let i = 0; i < files.length; i++) {
+      setCurrentIdx(i);
+      const file = files[i];
+      try {
+        setBgProgress(0);
+        // 1. 배경 제거
+        const bgRemovedUrl = await removeBackground(file, (pct) => setBgProgress(pct));
+        let blob;
+        if (bgRemovedUrl.startsWith('data:')) {
+          const arr = bgRemovedUrl.split(',');
+          const mime = arr[0].match(/:(.*?);/)[1];
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          blob = new Blob([u8arr], { type: mime });
+        } else {
+          const resp = await fetch(bgRemovedUrl);
+          blob = await resp.blob();
+        }
+
+        // 2. 옷 분석
+        const dataUrl = await blobToDataUrl(blob);
+        const analysisResult = await analyzeClothing(dataUrl);
+
+        items.push({
+          id: Date.now() + i,
+          removedBlob: blob,
+          removedUrl: bgRemovedUrl,
+          analysis: analysisResult
+        });
+      } catch (e) {
+        console.error(`이미지 ${i + 1} 처리 실패:`, e);
+      }
+    }
+    setBulkItems(items);
+    setStep('bulk_review');
+  };
+
+  // 기존 자동 배경 제거 기능 (사용자가 프리뷰에서 선택할 경우 호출)
+  const startAutoRemoving = async () => {
+    if (!removedBlob) return;
     setStep('removing');
     setBgProgress(0);
     try {
-      const bgRemovedUrl = await removeBackground(file, (pct, key) => {
+      const bgRemovedUrl = await removeBackground(removedBlob, (pct, key) => {
         if (key && key.includes('fetch')) setBgProgress(Math.min(pct, 80));
         else setBgProgress(pct);
       });
       setRemovedUrl(bgRemovedUrl);
+      
       let blob;
       if (bgRemovedUrl.startsWith('data:')) {
         const arr = bgRemovedUrl.split(',');
@@ -126,10 +186,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       setRemovedBlob(blob);
       setStep('editing');
     } catch (e) {
-      // 배경 제거 실패 시 원본으로 편집 단계 진행
       console.warn('배경 제거 실패, 원본 사용:', e.message);
-      setRemovedUrl(objectUrl);
-      setRemovedBlob(file);
+      setRemovedUrl(preview);
       setStep('editing');
     }
   };
@@ -186,11 +244,15 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     if (uploadMethod === 'tag') {
-      processTagFile(file);
+      processTagFile(files[0]);
+    } else if (files.length > 1) {
+      processBulk(files);
     } else {
-      processFile(file);
+      processFile(files[0]);
     }
     e.target.value = '';
   };
@@ -317,6 +379,41 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
     }
   };
 
+  const handleSaveToGallery = () => {
+    if (!preview) return;
+    const link = document.createElement('a');
+    link.href = preview;
+    link.download = `coordimentor_photo_${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert('사진이 저장되었습니다.\n\n갤러리 앱에서 이 사진을 열어 옷을 길게 눌러 누끼를 딴 뒤, 다시 돌아와 "붙여넣기" 해주세요!');
+  };
+
+  const handleBulkSave = async () => {
+    setStep('saving');
+    try {
+      for (const item of bulkItems) {
+        const result = await uploadImage(user.uid, item.removedBlob);
+        await saveItem(user.uid, {
+          imageUrl: result.url,
+          imagePath: result.path,
+          category: item.analysis?.category || '상의',
+          color: item.analysis?.color || '',
+          tags: item.analysis?.tags || [],
+          name: item.analysis?.name || '',
+          brand: item.analysis?.brand || '',
+        });
+      }
+      setStep('done');
+      setTimeout(() => { reset(); onSaved?.(); }, 1200);
+    } catch (e) {
+      console.error('벌크 저장 오류:', e);
+      setError('일부 항목 저장 중 오류가 발생했습니다.');
+      setStep('error');
+    }
+  };
+
   if (showTutorial) {
     return (
       <CameraTutorial
@@ -364,17 +461,6 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
             새로운 옷을 추가할 방법을 선택해주세요.
           </p>
           
-          <div className="method-card highlight" onClick={handlePasteImage}>
-            <div className="icon-circle" style={{ background: 'var(--primary)', color: 'white' }}>
-              <Check size={24} />
-            </div>
-            <div className="method-card-text">
-              <div className="badge">추천: 가장 깔끔함</div>
-              <h3>시스템 누끼 붙여넣기</h3>
-              <p>갤러리에서 옷을 <strong>길게 눌러 복사</strong>한 후 바로 붙여넣으세요. (품질 최고)</p>
-            </div>
-          </div>
-
           <div className="method-card" onClick={() => { onCameraOpen?.(); setShowTutorial(true); }}>
             <div className="icon-circle">
               <Camera size={24} />
@@ -391,15 +477,111 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
             </div>
             <div className="method-card-text">
               <h3>앨범에서 가져오기</h3>
-              <p>미리 찍어둔 옷 사진을 선택하여 분석을 시작합니다.</p>
+              <p>미리 찍어둔 옷 사진을 여러 장 선택하여 일괄 등록합니다.</p>
             </div>
           </label>
-          <input id="file-input" type="file" accept="image/*" onChange={(e) => {
+          <input id="file-input" type="file" accept="image/*" multiple onChange={(e) => {
             setUploadMethod('clothes');
             handleFileChange(e);
           }} style={{ display: 'none' }} />
 
           {error && <p className="error-msg" style={{ marginTop: 12 }}>{error}</p>}
+        </div>
+      )}
+
+      {step === 'capture_preview' && preview && (
+        <div className="capture-preview-step">
+          <p className="preview-instruction">
+            사진 속 <strong>옷을 길게 꾹 눌러서</strong><br/> 
+            '복사'한 뒤 아래 버튼을 눌러주세요.
+          </p>
+          
+          <div className="preview-container">
+            <img 
+              src={preview} 
+              alt="captured" 
+              className="nukki-ready-img" 
+              style={{ 
+                WebkitTouchCallout: 'default', 
+                userSelect: 'auto',
+                touchAction: 'manipulation',
+                WebkitUserSelect: 'auto'
+              }} 
+            />
+          </div>
+
+          <div className="preview-actions-vertical">
+            <button className="btn primary big-btn" onClick={handlePasteImage}>
+              복사한 누끼 붙여넣기
+            </button>
+            <button className="btn outline" onClick={handleSaveToGallery} style={{ marginTop: '12px' }}>
+              잘 안된다면? 갤러리에 저장 후 따기
+            </button>
+            <button className="btn secondary" onClick={startAutoRemoving} style={{ marginTop: '12px' }}>
+              자동 배경 제거 (서버)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'bulk_processing' && (
+        <div className="processing">
+          <div className="bulk-progress-header">
+            <h3>일괄 처리 중...</h3>
+            <p>{currentIdx + 1} / {bulkItems.length + 1} 번째 이미지</p>
+          </div>
+          <div className="processing-status">
+            <Loader size={24} className="spin" />
+            <span>자동 누끼 및 정보 분석 중...</span>
+          </div>
+          <div className="progress-container">
+            <div className="progress-bar" style={{ width: `${bgProgress}%` }} />
+          </div>
+        </div>
+      )}
+
+      {step === 'bulk_review' && (
+        <div className="bulk-review-step">
+          <div className="review-header">
+            <h3>처리 완료! ({bulkItems.length}벌)</h3>
+            <p>정보가 맞는지 확인하고 한꺼번에 저장하세요.</p>
+          </div>
+          
+          <div className="bulk-items-grid">
+            {bulkItems.map((item, idx) => (
+              <div key={item.id} className="bulk-item-card">
+                <div className="item-img-box">
+                  <img src={item.removedUrl} alt="item" />
+                </div>
+                <div className="item-info-mini">
+                  <select 
+                    value={item.analysis.category}
+                    onChange={(e) => {
+                      const newItems = [...bulkItems];
+                      newItems[idx].analysis.category = e.target.value;
+                      setBulkItems(newItems);
+                    }}
+                  >
+                    {CATEGORY_LABELS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <input 
+                    value={item.analysis.name}
+                    placeholder="상품명"
+                    onChange={(e) => {
+                      const newItems = [...bulkItems];
+                      newItems[idx].analysis.name = e.target.value;
+                      setBulkItems(newItems);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bulk-actions">
+            <button className="btn secondary" onClick={reset}>취소</button>
+            <button className="btn primary" onClick={handleBulkSave}>모두 저장하기</button>
+          </div>
         </div>
       )}
 
