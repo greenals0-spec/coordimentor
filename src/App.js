@@ -101,7 +101,7 @@ function Main() {
       <div className="app-shell">
         <div className="splash">
           <div className="splash-img-container" style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 20 }}>
-            <img src="/assets/splash_image.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src="/assets/splash_image.webp" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <p className="splash-text">Coordimentor</p>
         </div>

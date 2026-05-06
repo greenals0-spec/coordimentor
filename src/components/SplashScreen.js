@@ -56,7 +56,7 @@ export default function SplashScreen({ fadingOut }) {
       {/* ── Premium Image ── */}
       <div className="splash-img-container">
         <img 
-          src="/assets/splash_image.png" 
+          src="/assets/splash_image.webp" 
           alt="Coordimentor" 
           className="splash-img"
         />
