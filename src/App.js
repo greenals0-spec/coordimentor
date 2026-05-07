@@ -52,7 +52,10 @@ const KeepAliveTab = ({ active, children }) => {
 
 function Main() {
   const { user, userProfile } = useAuth();
-  const [tab, setTab] = useState('home');
+  // 앱 시작 시 공유받은 데이터가 있다면 바로 업로드 탭으로 시작
+  const [tab, setTab] = useState(() => {
+    return (window._sharedImage || window._sharedImagePath) ? 'upload' : 'home';
+  });
   const [hideNav, setHideNav] = useState(false);
 
   // ── Splash screen: show for 3s on first load ──
