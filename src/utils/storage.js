@@ -76,11 +76,28 @@ export const updateItem = async (uid, itemId, newData) => {
   await updateDoc(doc(db, 'users', uid, 'items', itemId), newData);
 };
 
+// ─── 이미지 프리로드 캐시 (앱 실행 중 메모리 유지) ───────────────────────────
+const _imgCache = new Set();
+
+export const isImageCached = (url) => _imgCache.has(url);
+export const markImageCached = (url) => url && _imgCache.add(url);
+
+const preloadImages = (items) => {
+  items.forEach(item => {
+    if (!item.imageUrl || _imgCache.has(item.imageUrl)) return;
+    _imgCache.add(item.imageUrl);
+    const img = new Image();
+    img.src = item.imageUrl;
+  });
+};
+
 // callback(items) — returns unsubscribe fn
 export const subscribeToItems = (uid, callback) => {
   const q = query(itemsCol(uid), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    preloadImages(items); // Firestore 데이터 도착 즉시 이미지 프리로드
+    callback(items);
   });
 };
 

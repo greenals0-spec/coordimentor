@@ -391,7 +391,7 @@ export default function OutfitPage() {
 
       {/* ── 아이템 목록 모달 ── */}
       {detailIndex !== -1 && results[detailIndex] && (() => {
-        const isSaved = !!savedMap[detailIndex];
+        // const isSaved = !!savedMap[detailIndex];
         const LABEL = {
           '아우터': '아우터',
           '상의': '상의',

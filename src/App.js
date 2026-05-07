@@ -99,6 +99,18 @@ function Main() {
     return () => clearTimeout(t);
   }, [user]);
 
+  // auth 완료 직후 공유 이미지 최종 점검 (스플래시/로딩 중에 타이밍이 엇갈린 경우 복구)
+  useEffect(() => {
+    if (!user || !userProfile) return;
+    // window 전역 또는 네이티브 브릿지 확인
+    const path = window._sharedImage || window._sharedImagePath ||
+      (window.AndroidShare ? window.AndroidShare.getSharedImagePath() : null);
+    if (path) {
+      if (window.AndroidShare && !window._sharedImagePath) window._sharedImagePath = path;
+      setTab('upload');
+    }
+  }, [user, userProfile]);
+
   // 공유 이미지 수신 시 업로드 탭으로 자동 이동 (폴링 방식 추가)
   useEffect(() => {
     const checkSharedData = () => {

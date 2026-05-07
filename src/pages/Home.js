@@ -7,6 +7,7 @@ const CATEGORY_ORDER = ['상의', '하의', '아우터', '신발', '액세서리
 
 // 저장된 코디 items 객체에서 대표 이미지 추출 (상의 → 아우터 → 하의 순 우선)
 const HERO_PRIORITY = ['상의', '아우터', '하의', '신발', '액세서리_얼굴머리', '액세서리_손목팔'];
+// eslint-disable-next-line no-unused-vars
 function getHeroImage(outfitItems) {
   if (!outfitItems) return null;
   for (const key of HERO_PRIORITY) {

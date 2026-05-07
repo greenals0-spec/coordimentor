@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, LogOut, X } from 'lucide-react';
-import { subscribeToItems, deleteItem, updateItem } from '../utils/storage';
+import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCached } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
@@ -75,36 +75,40 @@ export default function ClosetPage() {
         </div>
       ) : (
         <div className="clothes-grid">
-          {filtered.map(item => (
+          {filtered.map(item => {
+            const cached = isImageCached(item.imageUrl);
+            return (
             <div key={item.id} className="cloth-card" onClick={() => handleEditClick(item)}>
               <div className="cloth-img-wrapper" style={{ background: '#F8F6F3' }}>
-                <div className="img-loading-spinner"></div>
+                {!cached && <div className="img-loading-spinner"></div>}
                 <img
                   src={item.imageUrl}
                   alt={item.name}
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                   onLoad={(e) => {
+                    markImageCached(item.imageUrl);
                     e.target.style.opacity = '1';
-                    e.target.previousSibling.style.display = 'none'; // 스피너 숨김
+                    const spinner = e.target.previousSibling;
+                    if (spinner?.classList?.contains('img-loading-spinner')) {
+                      spinner.style.display = 'none';
+                    }
                   }}
                   onError={(e) => {
-                    // 최대 3번 재시도 로직
                     const count = parseInt(e.target.dataset.retry || '0');
                     if (count < 3) {
                       e.target.dataset.retry = (count + 1).toString();
                       setTimeout(() => {
-                        const originalSrc = e.target.src;
-                        e.target.src = ''; 
-                        e.target.src = originalSrc; // 다시 시도
+                        const src = e.target.src;
+                        e.target.src = '';
+                        e.target.src = src;
                       }, 1500);
                     } else {
                       e.target.style.display = 'none';
                       e.target.parentElement.querySelector('.img-error-placeholder').style.display = 'flex';
-                      e.target.previousSibling.style.display = 'none';
                     }
                   }}
-                  style={{ opacity: 0, transition: 'opacity 0.5s' }}
+                  style={{ opacity: cached ? 1 : 0, transition: cached ? 'none' : 'opacity 0.2s' }}
                 />
                 <div className="img-error-placeholder" style={{ display: 'none' }}>
                   <span>재연결 중...</span>
@@ -127,7 +131,7 @@ export default function ClosetPage() {
                 </div>
               )}
             </div>
-          ))}
+          );})}
         </div>
       )}
 

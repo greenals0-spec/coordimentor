@@ -6,7 +6,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import FlatLay from './FlatLay';
-import { Share2, Download, X, Loader } from 'lucide-react';
+import { Share2, Download, Loader } from 'lucide-react';
 import { toBlob } from 'html-to-image';
 import { CapacitorHttp, Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
