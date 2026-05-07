@@ -309,16 +309,16 @@ export default function HomePage({ onNavigate }) {
       </div>
 
       {/* ── 로그아웃 섹션 ── */}
-      <div style={{ padding: '0 20px 40px', textAlign: 'center' }}>
-        <div style={{ width: '40px', height: '1px', background: '#E2DDD6', margin: '0 auto 24px' }} />
+      <div style={{ padding: '0 20px 12px', textAlign: 'center' }}>
+        <div style={{ width: '32px', height: '1px', background: '#E2DDD6', margin: '0 auto 8px' }} />
         <button
           onClick={signOut}
           style={{
             background: 'none', border: 'none', color: '#B8AFA4',
-            fontSize: 12, letterSpacing: '0.05em', cursor: 'pointer',
+            fontSize: 11, letterSpacing: '0.05em', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', gap: 6,
             fontFamily: "'DM Sans', sans-serif",
-            padding: '8px 16px'
+            padding: '4px 12px'
           }}
         >
           로그아웃
