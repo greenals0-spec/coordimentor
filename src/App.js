@@ -54,6 +54,15 @@ function Main() {
   const { user, userProfile } = useAuth();
   // 앱 시작 시 공유받은 데이터가 있다면 바로 업로드 탭으로 시작
   const [tab, setTab] = useState(() => {
+    // 1. 네이티브 인터페이스 직접 확인 (가장 빠르고 정확함)
+    if (window.AndroidShare) {
+      const path = window.AndroidShare.getSharedImagePath();
+      if (path) {
+        window._sharedImagePath = path;
+        return 'upload';
+      }
+    }
+    // 2. 기존 전역 변수 확인
     return (window._sharedImage || window._sharedImagePath) ? 'upload' : 'home';
   });
   const [hideNav, setHideNav] = useState(false);

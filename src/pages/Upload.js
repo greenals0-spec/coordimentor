@@ -65,6 +65,9 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
         // 처리 완료 후 전역 변수 초기화 (중복 처리 방지)
         window._sharedImage = null;
         window._sharedImagePath = null;
+        if (window.AndroidShare) {
+          window.AndroidShare.clearSharedImagePath();
+        }
       } catch (e) {
         console.error('공유 이미지 처리 오류:', e);
         setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);

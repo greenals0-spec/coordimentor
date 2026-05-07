@@ -1,19 +1,4 @@
-package com.coordimentor.app;
-
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.util.Base64;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import com.getcapacitor.BridgeActivity;
-import com.getcapacitor.BridgeWebViewClient;
-import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import android.webkit.JavascriptInterface;
 
 public class MainActivity extends BridgeActivity {
   private String lastSharedImagePath = null;
@@ -23,7 +8,20 @@ public class MainActivity extends BridgeActivity {
     registerPlugin(FirebaseAuthenticationPlugin.class);
     super.onCreate(savedInstanceState);
 
-    // SharedArrayBuffer 활성화 및 페이지 로딩 완료 시 이미지 주입
+    // 자바스크립트 인터페이스 등록 (리액트에서 즉시 호출 가능)
+    getBridge().getWebView().addJavascriptInterface(new Object() {
+      @JavascriptInterface
+      public String getSharedImagePath() {
+        return lastSharedImagePath;
+      }
+      
+      @JavascriptInterface
+      public void clearSharedImagePath() {
+        lastSharedImagePath = null;
+      }
+    }, "AndroidShare");
+
+    // SharedArrayBuffer 활성화 및 페이지 로딩 완료 시 이미지 주입 (백업용)
     getBridge().getWebView().setWebViewClient(new BridgeWebViewClient(getBridge()) {
       @Override
       public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -96,7 +94,7 @@ public class MainActivity extends BridgeActivity {
   private void injectSharedImage(String filePath) {
     String js = "window._sharedImagePath = '" + filePath + "'; " +
                 "window.dispatchEvent(new CustomEvent('sharedImage', { detail: '" + filePath + "' })); " +
-                "console.log('Shared image path injected via onPageFinished: ' + '" + filePath + "');";
+                "console.log('Shared image path injected: ' + '" + filePath + "');";
     
     getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
   }
