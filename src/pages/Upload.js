@@ -105,7 +105,7 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
       </div>
 
       {/* 단계 목록 */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 0' }}>
         {steps.map((s, i) => (
           <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
             {/* 왼쪽: 숫자 + 연결선 */}
