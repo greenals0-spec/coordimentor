@@ -82,22 +82,24 @@ const IllustSave = () => (
 
 // ── 가이드 단계 데이터 ──────────────────────────────────────────────────────────
 const CAMERA_STEPS = [
-  { illust: <IllustCamera />, title: '카메라로 원하는 옷을 찍으세요', desc: '평평한 곳에 펼쳐두고 위에서 찍으면 더 깔끔해요' },
-  { illust: <IllustLongPress />, title: '앨범에서 찍은 옷을 꾹 눌러 누끼를 따주세요', desc: '갤러리 앱에서 사진을 길게 누르면 피사체만 선택돼요' },
-  { illust: <IllustShare />, title: '공유에서 "코디멘토"를 선택해주세요', desc: '공유 버튼 → 앱 목록에서 코디멘토를 찾아 탭하세요' },
-  { illust: <IllustAI />, title: 'AI로 옷 분석 후 카테고리 구분됩니다', desc: '카테고리, 색상, 태그를 자동으로 인식해드려요' },
-  { illust: <IllustSave />, title: '내 옷장에 저장 완료!', desc: '저장된 옷으로 AI 코디 추천을 받을 수 있어요' },
+  { id: 'photo', illust: <IllustCamera />, title: '카메라로 원하는 옷을 찍으세요', desc: '평평한 곳에 펼쳐두고 위에서 찍으면 더 깔끔해요' },
+  { id: 'nukki', illust: <IllustLongPress />, title: '앨범에서 찍은 옷을 꾹 눌러 누끼를 따주세요', desc: '갤러리 앱에서 사진을 길게 누르면 피사체만 선택돼요' },
+  { id: 'share', illust: <IllustShare />, title: '공유에서 "코디멘토"를 선택해주세요', desc: '공유 버튼 → 앱 목록에서 코디멘토를 찾아 탭하세요' },
+  { id: 'ai', illust: <IllustAI />, title: 'AI로 옷 분석 후 카테고리 구분됩니다', desc: '카테고리, 색상, 태그를 자동으로 인식해드려요' },
+  { id: 'save', illust: <IllustSave />, title: '내 옷장에 저장 완료!', desc: '저장된 옷으로 AI 코디 추천을 받을 수 있어요' },
 ];
 
 const ALBUM_STEPS = [
-  { illust: <IllustLongPress />, title: '앨범에서 찍은 옷을 꾹 눌러 누끼를 따주세요', desc: '갤러리 앱에서 사진을 길게 누르면 피사체만 선택돼요' },
-  { illust: <IllustShare />, title: '공유에서 "코디멘토"를 선택해주세요', desc: '공유 버튼 → 앱 목록에서 코디멘토를 찾아 탭하세요' },
-  { illust: <IllustAI />, title: 'AI로 옷 분석 후 카테고리 구분됩니다', desc: '카테고리, 색상, 태그를 자동으로 인식해드려요' },
-  { illust: <IllustSave />, title: '내 옷장에 저장 완료!', desc: '저장된 옷으로 AI 코디 추천을 받을 수 있어요' },
+  { id: 'nukki', illust: <IllustLongPress />, title: '앨범에서 찍은 옷을 꾹 눌러 누끼를 따주세요', desc: '갤러리 앱에서 사진을 길게 누르면 피사체만 선택돼요' },
+  { id: 'share', illust: <IllustShare />, title: '공유에서 "코디멘토"를 선택해주세요', desc: '공유 버튼 → 앱 목록에서 코디멘토를 찾아 탭하세요' },
+  { id: 'ai', illust: <IllustAI />, title: 'AI로 옷 분석 후 카테고리 구분됩니다', desc: '카테고리, 색상, 태그를 자동으로 인식해드려요' },
+  { id: 'save', illust: <IllustSave />, title: '내 옷장에 저장 완료!', desc: '저장된 옷으로 AI 코디 추천을 받을 수 있어요' },
 ];
 
 // ── 가이드 화면 컴포넌트 ────────────────────────────────────────────────────────
-function GuideScreen({ steps, actionLabel, onAction, onBack, cameraActionDone, onAlbumAction }) {
+function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumAction }) {
+  const currentIdx = cameraActionDone ? 1 : 0;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       {/* 헤더 */}
@@ -114,14 +116,27 @@ function GuideScreen({ steps, actionLabel, onAction, onBack, cameraActionDone, o
           <div key={i} style={{ display: 'flex', gap: 16, marginBottom: i < steps.length - 1 ? 0 : 24 }}>
             {/* 왼쪽: 숫자 + 연결선 */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: 'var(--primary)', color: 'white',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, fontWeight: 700, flexShrink: 0,
-              }}>{i + 1}</div>
+              <div 
+                className={i === currentIdx ? 'blink' : ''}
+                style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: i === currentIdx ? 'var(--primary)' : (i < currentIdx ? '#86efac' : '#e5e7eb'), 
+                  color: i <= currentIdx ? 'white' : 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, fontWeight: 700, flexShrink: 0,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative', zIndex: 2
+                }}
+              >
+                {i < currentIdx ? <Check size={16} strokeWidth={3} /> : i + 1}
+              </div>
               {i < steps.length - 1 && (
-                <div style={{ width: 2, flex: 1, minHeight: 32, background: 'var(--border)', margin: '4px 0' }} />
+                <div style={{ 
+                  width: 2, flex: 1, minHeight: 32, 
+                  background: i < currentIdx ? '#86efac' : 'var(--border)', 
+                  margin: '4px 0',
+                  transition: 'background 0.5s'
+                }} />
               )}
             </div>
 
@@ -129,60 +144,77 @@ function GuideScreen({ steps, actionLabel, onAction, onBack, cameraActionDone, o
             <div style={{ flex: 1, paddingBottom: 28 }}>
               <div style={{
                 background: 'var(--surface)', borderRadius: 16,
-                border: '1px solid var(--border)',
+                border: i === currentIdx ? '2px solid var(--primary)' : '1px solid var(--border)',
                 padding: '20px 16px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                opacity: i > currentIdx ? 0.6 : 1,
+                transform: i === currentIdx ? 'scale(1.02)' : 'scale(1)',
+                transition: 'all 0.3s'
               }}>
                 {s.illust}
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px', lineHeight: 1.4 }}>{s.title}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>{s.desc}</p>
                 </div>
+
+                {/* 단계별 버튼 주입 */}
+                {i === 0 && !cameraActionDone && steps.length > 4 && (
+                  <button 
+                    onClick={onCameraAction}
+                    style={{
+                      marginTop: 8, padding: '10px 20px', borderRadius: 10, border: 'none',
+                      background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                    }}
+                  >
+                    <CameraIcon size={16} /> 사진 촬영하기
+                  </button>
+                )}
+                
+                {i === 1 && cameraActionDone && steps.length > 4 && (
+                  <button 
+                    onClick={onAlbumAction}
+                    style={{
+                      marginTop: 8, padding: '10px 20px', borderRadius: 10, border: 'none',
+                      background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                    }}
+                  >
+                    <ImageIcon size={16} /> 앨범으로 가기
+                  </button>
+                )}
+
+                {/* 앨범 전용 가이드의 경우 1단계 버튼 */}
+                {i === 0 && steps.length === 4 && (
+                  <button 
+                    onClick={onAlbumAction}
+                    style={{
+                      marginTop: 8, padding: '10px 20px', borderRadius: 10, border: 'none',
+                      background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                    }}
+                  >
+                    <ImageIcon size={16} /> 앨범으로 가기
+                  </button>
+                )}
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* 하단 액션 버튼 */}
-      <div style={{ padding: '12px 20px 24px', borderTop: '1px solid var(--border)', background: 'var(--background)' }}>
-        {cameraActionDone ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* 안내 메시지 */}
-            <div style={{
-              background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12,
-              padding: '14px 16px', textAlign: 'center', color: '#166534', fontSize: 13, lineHeight: 1.5,
-            }}>
-              📸 사진이 갤러리에 저장됐어요!<br/>
-              누끼를 따고 공유하거나, 아래 버튼으로 바로 사진을 선택하세요.
-            </div>
-            {/* 앨범으로 가기 버튼 */}
-            <button
-              onClick={onAlbumAction}
-              style={{
-                width: '100%', padding: '16px', borderRadius: 14, border: 'none',
-                background: 'var(--primary)', color: 'white',
-                fontSize: 16, fontWeight: 600, cursor: 'pointer',
-                letterSpacing: '0.02em',
-              }}
-            >
-              🖼️ 앨범으로 가기
-            </button>
+      {/* 하단 안내 배너 (카메라 촬영 후만 표시) */}
+      {cameraActionDone && (
+        <div style={{ padding: '12px 20px 24px', background: 'var(--background)' }}>
+          <div style={{
+            background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12,
+            padding: '14px 16px', textAlign: 'center', color: '#166534', fontSize: 13, lineHeight: 1.5,
+          }}>
+            📸 사진이 저장되었습니다!<br/>
+            이제 앨범에서 <strong>옷을 꾹 눌러</strong> 코디멘토로 공유해주세요.
           </div>
-        ) : (
-          <button
-            onClick={onAction}
-            style={{
-              width: '100%', padding: '16px', borderRadius: 14, border: 'none',
-              background: 'var(--primary)', color: 'white',
-              fontSize: 16, fontWeight: 600, cursor: 'pointer',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {actionLabel}
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -547,8 +579,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       {step === 'guide_camera' && (
         <GuideScreen
           steps={CAMERA_STEPS}
-          actionLabel="📷 카메라 켜기"
-          onAction={handleOpenCamera}
+          onCameraAction={handleOpenCamera}
           onBack={() => { setStep('main'); setCameraActionDone(false); }}
           cameraActionDone={cameraActionDone}
           onAlbumAction={handleOpenAlbum}
@@ -559,10 +590,9 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       {step === 'guide_album' && (
         <GuideScreen
           steps={ALBUM_STEPS}
-          actionLabel="🖼️ 앨범으로 가기"
-          onAction={handleOpenAlbum}
           onBack={() => setStep('main')}
           cameraActionDone={false}
+          onAlbumAction={handleOpenAlbum}
         />
       )}
 
