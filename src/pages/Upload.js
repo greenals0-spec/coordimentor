@@ -37,8 +37,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   };
 
   useEffect(() => {
-    const handleSharedImage = async (event) => {
-      const dataUrl = event.detail;
+    const handleSharedImage = async (imgData) => {
+      const dataUrl = typeof imgData === 'string' ? imgData : imgData.detail;
       if (dataUrl) {
         setStep('analyzing');
         try {
@@ -52,6 +52,9 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
           setRemovedUrl(dataUrl);
           setPreview(dataUrl);
           setStep('preview');
+          
+          // 처리 완료 후 전역 변수 초기화 (중복 처리 방지)
+          window._sharedImage = null;
         } catch (e) {
           setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);
           setStep('error');
@@ -59,6 +62,12 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       }
     };
 
+    // 1. 앱 시작 시 이미 공유된 데이터가 있는지 확인
+    if (window._sharedImage) {
+      handleSharedImage(window._sharedImage);
+    }
+
+    // 2. 앱 실행 중 실시간 공유 수신 리스너
     window.addEventListener('sharedImage', handleSharedImage);
     return () => {
       stopCamera();

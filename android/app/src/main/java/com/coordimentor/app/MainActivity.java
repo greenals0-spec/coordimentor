@@ -73,9 +73,15 @@ public class MainActivity extends BridgeActivity {
         byteBuffer.write(buffer, 0, len);
       }
       String base64Image = Base64.encodeToString(byteBuffer.toByteArray(), Base64.DEFAULT);
+      String fullDataUrl = "data:image/jpeg;base64," + base64Image.replace("\n", "").replace("\r", "");
       
-      // 웹뷰로 데이터 전달
-      String js = "window.dispatchEvent(new CustomEvent('sharedImage', { detail: 'data:image/jpeg;base64," + base64Image.replace("\n", "").replace("\r", "") + "' }));";
+      // 웹뷰로 데이터 전달 및 업로드 탭으로 이동 트리거
+      // 1. 전역 변수에 저장 (데이터 유실 방지)
+      // 2. 이벤트를 발생시켜 현재 켜져있는 리액트 앱이 반응하게 함
+      String js = "window._sharedImage = '" + fullDataUrl + "'; " +
+                  "window.dispatchEvent(new CustomEvent('sharedImage', { detail: '" + fullDataUrl + "' })); " +
+                  "console.log('Shared image injected to window');";
+      
       getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
     } catch (Exception e) {
       e.printStackTrace();

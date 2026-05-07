@@ -87,6 +87,21 @@ function Main() {
     return () => clearTimeout(t);
   }, [user]);
 
+  // 공유 이미지 수신 시 업로드 탭으로 자동 이동
+  useEffect(() => {
+    const handleSharedImage = () => {
+      setTab('upload');
+    };
+
+    // 앱 시작 시 이미 공유된 데이터가 있는지 체크
+    if (window._sharedImage) {
+      handleSharedImage();
+    }
+
+    window.addEventListener('sharedImage', handleSharedImage);
+    return () => window.removeEventListener('sharedImage', handleSharedImage);
+  }, []);
+
   if (showSplash) {
     return <SplashScreen fadingOut={splashFading} />;
   }
