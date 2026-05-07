@@ -8,86 +8,31 @@ import ImageEditor from '../components/ImageEditor';
 
 const CATEGORY_LABELS = ['아우터', '상의', '하의', '신발', '액세서리'];
 
-// ── 단계별 SVG 일러스트 ────────────────────────────────────────────────────────
-const IllustCamera = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-    <rect x="10" y="18" width="52" height="38" rx="7" fill="var(--surface)" stroke="var(--primary)" strokeWidth="2.2"/>
-    <circle cx="36" cy="37" r="11" fill="none" stroke="var(--primary)" strokeWidth="2.2"/>
-    <circle cx="36" cy="37" r="5.5" fill="var(--primary)" opacity="0.25"/>
-    <circle cx="36" cy="37" r="2.5" fill="var(--primary)" opacity="0.6"/>
-    <rect x="27" y="13" width="18" height="8" rx="4" fill="var(--primary)" opacity="0.3"/>
-    <circle cx="56" cy="26" r="3" fill="var(--primary)" opacity="0.5"/>
-  </svg>
-);
 
-const IllustLongPress = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-    <rect x="12" y="8" width="34" height="50" rx="6" fill="var(--surface)" stroke="var(--border)" strokeWidth="1.5"/>
-    <rect x="16" y="14" width="26" height="26" rx="3" fill="var(--primary)" opacity="0.15"/>
-    <rect x="18" y="16" width="22" height="22" rx="2" fill="var(--primary)" opacity="0.2"/>
-    {/* 손가락 */}
-    <ellipse cx="53" cy="44" rx="7" ry="11" rx2="7" fill="#f0e9ff" stroke="var(--primary)" strokeWidth="1.8"/>
-    <line x1="53" y1="33" x2="53" y2="40" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round"/>
-    {/* 누름 파동 */}
-    <circle cx="29" cy="27" r="8" stroke="var(--primary)" strokeWidth="1.5" opacity="0.4" strokeDasharray="3 2"/>
-    <circle cx="29" cy="27" r="13" stroke="var(--primary)" strokeWidth="1" opacity="0.2" strokeDasharray="3 3"/>
-    <circle cx="29" cy="27" r="4" fill="var(--primary)" opacity="0.35"/>
-  </svg>
-);
-
-const IllustShare = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-    {/* 폰 */}
-    <rect x="10" y="8" width="30" height="50" rx="5" fill="var(--surface)" stroke="var(--border)" strokeWidth="1.5"/>
-    {/* 공유 아이콘 */}
-    <circle cx="25" cy="28" r="4" fill="var(--primary)" opacity="0.7"/>
-    <circle cx="17" cy="37" r="3.5" fill="var(--primary)" opacity="0.5"/>
-    <circle cx="33" cy="37" r="3.5" fill="var(--primary)" opacity="0.5"/>
-    <line x1="21" y1="30" x2="18" y2="36" stroke="var(--primary)" strokeWidth="1.8" strokeLinecap="round"/>
-    <line x1="29" y1="30" x2="32" y2="36" stroke="var(--primary)" strokeWidth="1.8" strokeLinecap="round"/>
-    {/* 화살표 */}
-    <line x1="42" y1="36" x2="58" y2="36" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round"/>
-    <polyline points="52,29 60,36 52,43" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    {/* 앱 아이콘 힌트 */}
-    <rect x="58" y="27" width="0" height="0" rx="0"/>
-  </svg>
-);
-
-const IllustAI = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-    <rect x="14" y="12" width="34" height="48" rx="6" fill="var(--surface)" stroke="var(--border)" strokeWidth="1.5"/>
-    <rect x="19" y="28" width="24" height="20" rx="3" fill="var(--primary)" opacity="0.12"/>
-    {/* 스파클 */}
-    <path d="M52 14 L54 20 L60 22 L54 24 L52 30 L50 24 L44 22 L50 20 Z" fill="var(--primary)" opacity="0.8"/>
-    <path d="M58 8 L59 11 L62 12 L59 13 L58 16 L57 13 L54 12 L57 11 Z" fill="var(--primary)" opacity="0.5"/>
-    <path d="M45 6 L46 8 L48 9 L46 10 L45 12 L44 10 L42 9 L44 8 Z" fill="var(--primary)" opacity="0.4"/>
-    {/* 분석 바 */}
-    <rect x="19" y="30" width="14" height="3" rx="1.5" fill="var(--primary)" opacity="0.5"/>
-    <rect x="19" y="36" width="20" height="3" rx="1.5" fill="var(--primary)" opacity="0.35"/>
-    <rect x="19" y="42" width="10" height="3" rx="1.5" fill="var(--primary)" opacity="0.25"/>
-  </svg>
-);
-
-const IllustSave = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-    <circle cx="36" cy="36" r="24" fill="var(--primary)" opacity="0.12"/>
-    <circle cx="36" cy="36" r="18" fill="var(--primary)" opacity="0.2"/>
-    <polyline points="24,36 32,44 48,28" fill="none" stroke="var(--primary)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-    {/* 작은 별 */}
-    <circle cx="58" cy="18" r="3" fill="var(--primary)" opacity="0.6"/>
-    <circle cx="14" cy="22" r="2" fill="var(--primary)" opacity="0.4"/>
-    <circle cx="60" cy="52" r="2" fill="var(--primary)" opacity="0.4"/>
-  </svg>
-);
 
 // ── 가이드 단계 데이터 ──────────────────────────────────────────────────────────
 const CAMERA_STEPS = [
-  { id: 'photo', illust: <IllustCamera />, title: '카메라로 옷을 찍으세요', desc: '평평한 곳에 펼쳐두고 위에서 찍으면 더 깔끔해요' },
-  { id: 'nukki_share', illust: <IllustLongPress />, title: '누끼 따고 코디멘토로 공유하기', desc: '1. 앨범에서 찍은 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' },
+  { 
+    id: 'photo', 
+    illust: <img src="/assets/guide_step1.jpg" alt="촬영 가이드" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '12px' }} loading="lazy" />, 
+    title: '카메라로 옷을 찍으세요', 
+    desc: '' 
+  },
+  { 
+    id: 'nukki_share', 
+    illust: <img src="/assets/guide_step2.jpg" alt="공유 가이드" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '12px' }} loading="lazy" />, 
+    title: '누끼 따고 코디멘토로 공유하기', 
+    desc: '1. 앨범에서 찍은 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' 
+  },
 ];
 
 const ALBUM_STEPS = [
-  { id: 'nukki_share', illust: <IllustLongPress />, title: '누끼 따고 코디멘토로 공유하기', desc: '1. 앨범에서 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' },
+  { 
+    id: 'nukki_share', 
+    illust: <img src="/assets/guide_step2.jpg" alt="공유 가이드" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '12px' }} loading="lazy" />, 
+    title: '누끼 따고 코디멘토로 공유하기', 
+    desc: '1. 앨범에서 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' 
+  },
 ];
 
 // ── 가이드 화면 컴포넌트 ────────────────────────────────────────────────────────
