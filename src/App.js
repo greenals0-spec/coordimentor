@@ -87,19 +87,38 @@ function Main() {
     return () => clearTimeout(t);
   }, [user]);
 
-  // 공유 이미지 수신 시 업로드 탭으로 자동 이동
+  // 공유 이미지 수신 시 업로드 탭으로 자동 이동 (폴링 방식 추가)
   useEffect(() => {
+    const checkSharedData = () => {
+      if (window._sharedImage || window._sharedImagePath) {
+        setTab('upload');
+        return true;
+      }
+      return false;
+    };
+
+    // 1. 즉시 체크
+    checkSharedData();
+
+    // 2. 5초 동안 0.5초마다 끈질기게 체크 (앱 로딩 타이밍 대응)
+    let count = 0;
+    const interval = setInterval(() => {
+      if (checkSharedData() || count > 10) {
+        clearInterval(interval);
+      }
+      count++;
+    }, 500);
+
+    // 3. 실시간 이벤트 리스너 (이미 앱이 켜져 있을 때 대응)
     const handleSharedImage = () => {
       setTab('upload');
     };
-
-    // 앱 시작 시 이미 공유된 데이터가 있는지 체크 (Base64 또는 파일 경로)
-    if (window._sharedImage || window._sharedImagePath) {
-      handleSharedImage();
-    }
-
     window.addEventListener('sharedImage', handleSharedImage);
-    return () => window.removeEventListener('sharedImage', handleSharedImage);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('sharedImage', handleSharedImage);
+    };
   }, []);
 
   if (showSplash) {

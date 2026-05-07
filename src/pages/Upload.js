@@ -39,6 +39,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   useEffect(() => {
     const handleSharedImage = async (imgData) => {
       let dataUrl = typeof imgData === 'string' ? imgData : imgData.detail;
+      if (!dataUrl) return;
       
       // 만약 데이터가 파일 경로라면 Capacitor URL로 변환
       if (dataUrl && !dataUrl.startsWith('data:') && !dataUrl.startsWith('blob:')) {
@@ -46,46 +47,49 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
         dataUrl = Capacitor.convertFileSrc(dataUrl);
       }
 
-      if (dataUrl) {
-        setStep('analyzing');
-        try {
-          // 캐시 방지를 위해 timestamp 추가 (파일 경로인 경우)
-          const finalUrl = dataUrl.includes('?') ? dataUrl : `${dataUrl}?t=${Date.now()}`;
-          
-          const res = await fetch(finalUrl);
-          const blob = await res.blob();
-          const base64ForAi = await blobToDataUrl(blob);
-          
-          const result = await analyzeClothing(base64ForAi);
-          setAnalysis(result);
-          
-          setRemovedBlob(blob);
-          setRemovedUrl(finalUrl);
-          setPreview(finalUrl);
-          setStep('preview');
-          
-          // 처리 완료 후 전역 변수 초기화 (중복 처리 방지)
-          window._sharedImage = null;
-          window._sharedImagePath = null;
-        } catch (e) {
-          console.error('공유 이미지 처리 오류:', e);
-          setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);
-          setStep('error');
-        }
+      setStep('analyzing');
+      try {
+        const finalUrl = dataUrl.includes('?') ? dataUrl : `${dataUrl}?t=${Date.now()}`;
+        const res = await fetch(finalUrl);
+        const blob = await res.blob();
+        const base64ForAi = await blobToDataUrl(blob);
+        
+        const result = await analyzeClothing(base64ForAi);
+        setAnalysis(result);
+        
+        setRemovedBlob(blob);
+        setRemovedUrl(finalUrl);
+        setPreview(finalUrl);
+        setStep('preview');
+        
+        // 처리 완료 후 전역 변수 초기화 (중복 처리 방지)
+        window._sharedImage = null;
+        window._sharedImagePath = null;
+      } catch (e) {
+        console.error('공유 이미지 처리 오류:', e);
+        setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);
+        setStep('error');
       }
     };
 
-    // 1. 앱 시작 시 이미 공유된 데이터가 있는지 확인
-    if (window._sharedImage) {
-      handleSharedImage(window._sharedImage);
-    } else if (window._sharedImagePath) {
-      handleSharedImage(window._sharedImagePath);
-    }
+    // 1. 초기 체크 및 3초간 폴링 (탭 전환 직후 데이터 로딩 대기)
+    let checkCount = 0;
+    const checkInterval = setInterval(() => {
+      const data = window._sharedImage || window._sharedImagePath;
+      if (data) {
+        handleSharedImage(data);
+        clearInterval(checkInterval);
+      } else if (checkCount > 6) {
+        clearInterval(checkInterval);
+      }
+      checkCount++;
+    }, 500);
 
-    // 2. 앱 실행 중 실시간 공유 수신 리스너
+    // 2. 실시간 이벤트 리스너
     window.addEventListener('sharedImage', handleSharedImage);
     return () => {
       stopCamera();
+      clearInterval(checkInterval);
       window.removeEventListener('sharedImage', handleSharedImage);
     };
   }, []);
