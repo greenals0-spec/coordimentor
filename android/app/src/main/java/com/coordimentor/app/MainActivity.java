@@ -64,23 +64,25 @@ public class MainActivity extends BridgeActivity {
   private void processSharedImage(Uri uri) {
     try {
       InputStream inputStream = getContentResolver().openInputStream(uri);
-      ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-      int bufferSize = 1024;
-      byte[] buffer = new byte[bufferSize];
-
-      int len = 0;
-      while ((len = inputStream.read(buffer)) != -1) {
-        byteBuffer.write(buffer, 0, len);
-      }
-      String base64Image = Base64.encodeToString(byteBuffer.toByteArray(), Base64.DEFAULT);
-      String fullDataUrl = "data:image/jpeg;base64," + base64Image.replace("\n", "").replace("\r", "");
+      // 임시 파일 생성
+      java.io.File cacheDir = getCacheDir();
+      java.io.File tempFile = new java.io.File(cacheDir, "shared_image.jpg");
+      java.io.FileOutputStream outputStream = new java.io.FileOutputStream(tempFile);
       
-      // 웹뷰로 데이터 전달 및 업로드 탭으로 이동 트리거
-      // 1. 전역 변수에 저장 (데이터 유실 방지)
-      // 2. 이벤트를 발생시켜 현재 켜져있는 리액트 앱이 반응하게 함
-      String js = "window._sharedImage = '" + fullDataUrl + "'; " +
-                  "window.dispatchEvent(new CustomEvent('sharedImage', { detail: '" + fullDataUrl + "' })); " +
-                  "console.log('Shared image injected to window');";
+      byte[] buffer = new byte[1024];
+      int len;
+      while ((len = inputStream.read(buffer)) != -1) {
+        outputStream.write(buffer, 0, len);
+      }
+      outputStream.close();
+      inputStream.close();
+
+      // 파일 경로 전달 (Capacitor에서 읽을 수 있는 경로)
+      String filePath = tempFile.getAbsolutePath();
+      
+      String js = "window._sharedImagePath = '" + filePath + "'; " +
+                  "window.dispatchEvent(new CustomEvent('sharedImage', { detail: '" + filePath + "' })); " +
+                  "console.log('Shared image path injected: ' + '" + filePath + "');";
       
       getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
     } catch (Exception e) {

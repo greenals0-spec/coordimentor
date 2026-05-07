@@ -93,8 +93,8 @@ function Main() {
       setTab('upload');
     };
 
-    // 앱 시작 시 이미 공유된 데이터가 있는지 체크
-    if (window._sharedImage) {
+    // 앱 시작 시 이미 공유된 데이터가 있는지 체크 (Base64 또는 파일 경로)
+    if (window._sharedImage || window._sharedImagePath) {
       handleSharedImage();
     }
 

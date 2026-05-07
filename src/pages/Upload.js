@@ -38,24 +38,37 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
 
   useEffect(() => {
     const handleSharedImage = async (imgData) => {
-      const dataUrl = typeof imgData === 'string' ? imgData : imgData.detail;
+      let dataUrl = typeof imgData === 'string' ? imgData : imgData.detail;
+      
+      // 만약 데이터가 파일 경로라면 Capacitor URL로 변환
+      if (dataUrl && !dataUrl.startsWith('data:') && !dataUrl.startsWith('blob:')) {
+        const { Capacitor } = require('@capacitor/core');
+        dataUrl = Capacitor.convertFileSrc(dataUrl);
+      }
+
       if (dataUrl) {
         setStep('analyzing');
         try {
-          const result = await analyzeClothing(dataUrl);
+          // 캐시 방지를 위해 timestamp 추가 (파일 경로인 경우)
+          const finalUrl = dataUrl.includes('?') ? dataUrl : `${dataUrl}?t=${Date.now()}`;
+          
+          const res = await fetch(finalUrl);
+          const blob = await res.blob();
+          const base64ForAi = await blobToDataUrl(blob);
+          
+          const result = await analyzeClothing(base64ForAi);
           setAnalysis(result);
           
-          // Data URL을 Blob으로 변환하여 저장 준비
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
           setRemovedBlob(blob);
-          setRemovedUrl(dataUrl);
-          setPreview(dataUrl);
+          setRemovedUrl(finalUrl);
+          setPreview(finalUrl);
           setStep('preview');
           
           // 처리 완료 후 전역 변수 초기화 (중복 처리 방지)
           window._sharedImage = null;
+          window._sharedImagePath = null;
         } catch (e) {
+          console.error('공유 이미지 처리 오류:', e);
           setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);
           setStep('error');
         }
@@ -65,6 +78,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
     // 1. 앱 시작 시 이미 공유된 데이터가 있는지 확인
     if (window._sharedImage) {
       handleSharedImage(window._sharedImage);
+    } else if (window._sharedImagePath) {
+      handleSharedImage(window._sharedImagePath);
     }
 
     // 2. 앱 실행 중 실시간 공유 수신 리스너
