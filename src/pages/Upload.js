@@ -211,6 +211,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       const rawPath = typeof imgData === 'string' ? imgData : (imgData?.detail || '');
       if (!rawPath) return;
 
+      console.log('Shared image detected, starting processing...', rawPath);
       processing = true;
       setStep('analyzing');
 
@@ -246,30 +247,47 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
         window._sharedImage = null;
         window._sharedImagePath = null;
         if (window.AndroidShare) window.AndroidShare.clearSharedImagePath();
+        processing = false;
       } catch (e) {
+        console.error('Processing error:', e);
         processing = false;
         setError('공유받은 이미지 분석에 실패했습니다: ' + e.message);
         setStep('error');
       }
     };
 
-    let checkCount = 0;
-    const checkInterval = setInterval(() => {
-      if (processing) { clearInterval(checkInterval); return; }
+    const checkAndHandle = () => {
+      if (processing) return;
       let data = window._sharedImage || window._sharedImagePath;
       if (!data && window.AndroidShare) {
         const nativePath = window.AndroidShare.getSharedImagePath();
-        if (nativePath) { data = nativePath; window._sharedImagePath = nativePath; }
+        if (nativePath) {
+          data = nativePath;
+          window._sharedImagePath = nativePath;
+        }
       }
-      if (data) { clearInterval(checkInterval); handleSharedImage(data); }
-      else if (checkCount >= 20) clearInterval(checkInterval);
-      checkCount++;
-    }, 500);
+      if (data) handleSharedImage(data);
+    };
 
+    // 1. 주기적으로 체크 (제한 없음)
+    const checkInterval = setInterval(checkAndHandle, 1000);
+
+    // 2. 실시간 이벤트 리스너
     window.addEventListener('sharedImage', handleSharedImage);
+
+    // 3. 앱이 다시 활성화될 때 즉시 체크 (가장 중요)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('App visible, checking for shared image...');
+        checkAndHandle();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       clearInterval(checkInterval);
       window.removeEventListener('sharedImage', handleSharedImage);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
