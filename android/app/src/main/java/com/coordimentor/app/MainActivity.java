@@ -16,12 +16,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends BridgeActivity {
+  private String lastSharedImagePath = null;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     registerPlugin(FirebaseAuthenticationPlugin.class);
     super.onCreate(savedInstanceState);
 
-    // SharedArrayBuffer 활성화 (AI 배경 제거에 필요)
+    // SharedArrayBuffer 활성화 및 페이지 로딩 완료 시 이미지 주입
     getBridge().getWebView().setWebViewClient(new BridgeWebViewClient(getBridge()) {
       @Override
       public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -35,6 +37,14 @@ public class MainActivity extends BridgeActivity {
           response.setResponseHeaders(headers);
         }
         return response;
+      }
+
+      @Override
+      public void onPageFinished(WebView view, String url) {
+        super.onPageFinished(view, url);
+        if (lastSharedImagePath != null) {
+          injectSharedImage(lastSharedImagePath);
+        }
       }
     });
 
@@ -64,7 +74,6 @@ public class MainActivity extends BridgeActivity {
   private void processSharedImage(Uri uri) {
     try {
       InputStream inputStream = getContentResolver().openInputStream(uri);
-      // 임시 파일 생성
       java.io.File cacheDir = getCacheDir();
       java.io.File tempFile = new java.io.File(cacheDir, "shared_image.jpg");
       java.io.FileOutputStream outputStream = new java.io.FileOutputStream(tempFile);
@@ -77,16 +86,18 @@ public class MainActivity extends BridgeActivity {
       outputStream.close();
       inputStream.close();
 
-      // 파일 경로 전달 (Capacitor에서 읽을 수 있는 경로)
-      String filePath = tempFile.getAbsolutePath();
-      
-      String js = "window._sharedImagePath = '" + filePath + "'; " +
-                  "window.dispatchEvent(new CustomEvent('sharedImage', { detail: '" + filePath + "' })); " +
-                  "console.log('Shared image path injected: ' + '" + filePath + "');";
-      
-      getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
+      lastSharedImagePath = tempFile.getAbsolutePath();
+      injectSharedImage(lastSharedImagePath);
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  private void injectSharedImage(String filePath) {
+    String js = "window._sharedImagePath = '" + filePath + "'; " +
+                "window.dispatchEvent(new CustomEvent('sharedImage', { detail: '" + filePath + "' })); " +
+                "console.log('Shared image path injected via onPageFinished: ' + '" + filePath + "');";
+    
+    getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
   }
 }
