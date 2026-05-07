@@ -26,7 +26,7 @@ function getOutfitThumbs(outfitItems) {
 }
 
 export default function HomePage({ onNavigate }) {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, signOut } = useAuth();
   const [items, setItems] = useState([]);
   const [savedOutfits, setSavedOutfits] = useState([]);
   const [weather, setWeather] = useState(null);
@@ -305,6 +305,23 @@ export default function HomePage({ onNavigate }) {
           <div style={{ width: 36, height: 36, background: '#18160F', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#FAF9F7', fontSize: 20, fontWeight: 300, lineHeight: 1 }}>+</span>
           </div>
+        </button>
+      </div>
+
+      {/* ── 로그아웃 섹션 ── */}
+      <div style={{ padding: '0 20px 40px', textAlign: 'center' }}>
+        <div style={{ width: '40px', height: '1px', background: '#E2DDD6', margin: '0 auto 24px' }} />
+        <button
+          onClick={signOut}
+          style={{
+            background: 'none', border: 'none', color: '#B8AFA4',
+            fontSize: 12, letterSpacing: '0.05em', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontFamily: "'DM Sans', sans-serif",
+            padding: '8px 16px'
+          }}
+        >
+          로그아웃
         </button>
       </div>
 

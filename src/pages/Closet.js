@@ -7,7 +7,7 @@ const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
 
 export default function ClosetPage() {
-  const { user, userProfile, signOut } = useAuth();
+  const { user, userProfile } = useAuth();
   const [active, setActive] = useState('아우터');
   const [items, setItems] = useState([]);
   const [confirmId, setConfirmId] = useState(null);
@@ -52,9 +52,6 @@ export default function ClosetPage() {
           <h2 className="page-title" style={{ marginBottom: 4 }}>내 옷장</h2>
           <p className="user-name">{userProfile?.name || user?.displayName || '사용자'}님의 컬렉션</p>
         </div>
-        <button className="signout-btn" onClick={signOut} title="로그아웃">
-          <LogOut size={20} />
-        </button>
       </div>
 
       <div className="category-tabs">
