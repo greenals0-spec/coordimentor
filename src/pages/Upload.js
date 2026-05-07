@@ -82,18 +82,12 @@ const IllustSave = () => (
 
 // ── 가이드 단계 데이터 ──────────────────────────────────────────────────────────
 const CAMERA_STEPS = [
-  { id: 'photo', illust: <IllustCamera />, title: '카메라로 원하는 옷을 찍으세요', desc: '평평한 곳에 펼쳐두고 위에서 찍으면 더 깔끔해요' },
-  { id: 'nukki', illust: <IllustLongPress />, title: '앨범에서 찍은 옷을 꾹 눌러 누끼를 따주세요', desc: '갤러리 앱에서 사진을 길게 누르면 피사체만 선택돼요' },
-  { id: 'share', illust: <IllustShare />, title: '공유에서 "코디멘토"를 선택해주세요', desc: '공유 버튼 → 앱 목록에서 코디멘토를 찾아 탭하세요' },
-  { id: 'ai', illust: <IllustAI />, title: 'AI로 옷 분석 후 카테고리 구분됩니다', desc: '카테고리, 색상, 태그를 자동으로 인식해드려요' },
-  { id: 'save', illust: <IllustSave />, title: '내 옷장에 저장 완료!', desc: '저장된 옷으로 AI 코디 추천을 받을 수 있어요' },
+  { id: 'photo', illust: <IllustCamera />, title: '카메라로 옷을 찍으세요', desc: '평평한 곳에 펼쳐두고 위에서 찍으면 더 깔끔해요' },
+  { id: 'nukki_share', illust: <IllustLongPress />, title: '누끼 따고 코디멘토로 공유하기', desc: '1. 앨범에서 찍은 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' },
 ];
 
 const ALBUM_STEPS = [
-  { id: 'nukki', illust: <IllustLongPress />, title: '앨범에서 찍은 옷을 꾹 눌러 누끼를 따주세요', desc: '갤러리 앱에서 사진을 길게 누르면 피사체만 선택돼요' },
-  { id: 'share', illust: <IllustShare />, title: '공유에서 "코디멘토"를 선택해주세요', desc: '공유 버튼 → 앱 목록에서 코디멘토를 찾아 탭하세요' },
-  { id: 'ai', illust: <IllustAI />, title: 'AI로 옷 분석 후 카테고리 구분됩니다', desc: '카테고리, 색상, 태그를 자동으로 인식해드려요' },
-  { id: 'save', illust: <IllustSave />, title: '내 옷장에 저장 완료!', desc: '저장된 옷으로 AI 코디 추천을 받을 수 있어요' },
+  { id: 'nukki_share', illust: <IllustLongPress />, title: '누끼 따고 코디멘토로 공유하기', desc: '1. 앨범에서 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' },
 ];
 
 // ── 가이드 화면 컴포넌트 ────────────────────────────────────────────────────────
@@ -113,7 +107,7 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
       {/* 단계 목록 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
         {steps.map((s, i) => (
-          <div key={i} style={{ display: 'flex', gap: 16, marginBottom: i < steps.length - 1 ? 0 : 24 }}>
+          <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
             {/* 왼쪽: 숫자 + 연결선 */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
               <div 
@@ -154,11 +148,11 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
                 {s.illust}
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px', lineHeight: 1.4 }}>{s.title}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>{s.desc}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{s.desc}</p>
                 </div>
 
                 {/* 단계별 버튼 주입 */}
-                {i === 0 && !cameraActionDone && steps.length > 4 && (
+                {i === 0 && !cameraActionDone && steps.length > 1 && s.id === 'photo' && (
                   <button 
                     onClick={onCameraAction}
                     style={{
@@ -171,21 +165,7 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
                   </button>
                 )}
                 
-                {i === 1 && cameraActionDone && steps.length > 4 && (
-                  <button 
-                    onClick={onAlbumAction}
-                    style={{
-                      marginTop: 8, padding: '10px 20px', borderRadius: 10, border: 'none',
-                      background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 600,
-                      display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
-                    }}
-                  >
-                    <ImageIcon size={16} /> 앨범으로 가기
-                  </button>
-                )}
-
-                {/* 앨범 전용 가이드의 경우 1단계 버튼 */}
-                {i === 0 && steps.length === 4 && (
+                {((i === 1 && cameraActionDone) || (i === 0 && steps.length === 1)) && (
                   <button 
                     onClick={onAlbumAction}
                     style={{
@@ -202,19 +182,6 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
           </div>
         ))}
       </div>
-
-      {/* 하단 안내 배너 (카메라 촬영 후만 표시) */}
-      {cameraActionDone && (
-        <div style={{ padding: '12px 20px 24px', background: 'var(--background)' }}>
-          <div style={{
-            background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12,
-            padding: '14px 16px', textAlign: 'center', color: '#166534', fontSize: 13, lineHeight: 1.5,
-          }}>
-            📸 사진이 저장되었습니다!<br/>
-            이제 앨범에서 <strong>옷을 꾹 눌러</strong> 코디멘토로 공유해주세요.
-          </div>
-        </div>
-      )}
     </div>
   );
 }
