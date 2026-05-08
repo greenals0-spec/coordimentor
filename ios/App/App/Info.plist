@@ -53,5 +53,16 @@
 	<string>앨범에서 옷 사진을 선택하기 위해 권한이 필요합니다.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>촬영한 사진을 앨범에 저장하기 위해 권한이 필요합니다.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.591487860438-ahstqd8g52khemuu8s32rs7f68at7von</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
