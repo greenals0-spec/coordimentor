@@ -1,0 +1,792 @@
+diff --git a/node_modules/@capacitor-firebase/authentication/Package.swift b/node_modules/@capacitor-firebase/authentication/Package.swift
+index 909c7f0..df52fa7 100644
+--- a/node_modules/@capacitor-firebase/authentication/Package.swift
++++ b/node_modules/@capacitor-firebase/authentication/Package.swift
+@@ -11,7 +11,7 @@ let package = Package(
+     ],
+     dependencies: [
+         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0"),
+-        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.7.0")),
++        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "11.0.0")),
+         .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "9.0.0"),
+         .package(url: "https://github.com/facebook/facebook-ios-sdk.git", from: "18.0.0")
+     ],
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/9462bfa62e50f116cc4f173040c84792/results.bin b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/9462bfa62e50f116cc4f173040c84792/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/9462bfa62e50f116cc4f173040c84792/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/9462bfa62e50f116cc4f173040c84792/transformed/classes/classes_dex/classes.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/9462bfa62e50f116cc4f173040c84792/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..405c871
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/9462bfa62e50f116cc4f173040c84792/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/results.bin b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/results.bin
+new file mode 100644
+index 0000000..7ed749e
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/results.bin
+@@ -0,0 +1 @@
++o/bundleLibRuntimeToDirDebug
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.dex
+new file mode 100644
+index 0000000..5e45d0f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.dex
+new file mode 100644
+index 0000000..4e55bb4
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.dex
+new file mode 100644
+index 0000000..e2aa504
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.dex
+new file mode 100644
+index 0000000..ee08a79
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.dex
+new file mode 100644
+index 0000000..a600f9c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.dex
+new file mode 100644
+index 0000000..6483717
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.dex
+new file mode 100644
+index 0000000..279064d
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.dex
+new file mode 100644
+index 0000000..225c1f6
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.dex
+new file mode 100644
+index 0000000..f3a6bdb
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.dex
+new file mode 100644
+index 0000000..636357a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.dex
+new file mode 100644
+index 0000000..87f165b
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.dex
+new file mode 100644
+index 0000000..5c15bb5
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.dex
+new file mode 100644
+index 0000000..a393e14
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.dex
+new file mode 100644
+index 0000000..c89d20a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.dex
+new file mode 100644
+index 0000000..f2d4e56
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.dex
+new file mode 100644
+index 0000000..de06c02
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.dex
+new file mode 100644
+index 0000000..4526ce8
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.dex
+new file mode 100644
+index 0000000..2cf9211
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.dex
+new file mode 100644
+index 0000000..cc0974a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.dex
+new file mode 100644
+index 0000000..f4cf375
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.dex
+new file mode 100644
+index 0000000..55b72a0
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.dex
+new file mode 100644
+index 0000000..63a81a9
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.dex
+new file mode 100644
+index 0000000..ff87d1e
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.dex
+new file mode 100644
+index 0000000..d0e1df9
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.dex
+new file mode 100644
+index 0000000..067d412
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.dex
+new file mode 100644
+index 0000000..f9b0272
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.dex
+new file mode 100644
+index 0000000..bd459bd
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.dex
+new file mode 100644
+index 0000000..fd20059
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.dex
+new file mode 100644
+index 0000000..6e99bf7
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.dex
+new file mode 100644
+index 0000000..de2a995
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.dex
+new file mode 100644
+index 0000000..ab10368
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.dex
+new file mode 100644
+index 0000000..4a6666b
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.dex
+new file mode 100644
+index 0000000..754bef2
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.dex
+new file mode 100644
+index 0000000..cf14e9b
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.dex
+new file mode 100644
+index 0000000..c0793ba
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.dex
+new file mode 100644
+index 0000000..c2c601d
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.dex
+new file mode 100644
+index 0000000..2c8ff42
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.dex
+new file mode 100644
+index 0000000..7d5f83a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.dex
+new file mode 100644
+index 0000000..63e499e
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.dex
+new file mode 100644
+index 0000000..f08ef5c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.dex
+new file mode 100644
+index 0000000..050052b
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.dex
+new file mode 100644
+index 0000000..b9c63b3
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.dex
+new file mode 100644
+index 0000000..5fa9f84
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.dex b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.dex
+new file mode 100644
+index 0000000..6cbe087
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.dex differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+new file mode 100644
+index 0000000..52c8f8c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/.transforms/be8eb0aa7e1cf1d95c742adc4db83eaa/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..59ccef6
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="io.capawesome.capacitorjs.plugins.firebase.authentication" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..ae26648
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "io.capawesome.capacitorjs.plugins.firebase.authentication",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..cb54023
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..1db68de
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..3b251db
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+@@ -0,0 +1 @@
++int string default_web_client_id 0x0
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..2121118
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Tue May 05 22:09:26 KST 2026
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml
+new file mode 100644
+index 0000000..7a745ff
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <string name="default_web_client_id">WILL_BE_OVERRIDDEN</string>
++</resources>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..54cd2a8
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/res"><file path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/res/values/strings.xml" qualifiers=""><string name="default_web_client_id">WILL_BE_OVERRIDDEN</string></file></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/build/generated/res/resValues/debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugAssets/merger.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+new file mode 100644
+index 0000000..7441dd9
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/debug/assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/build/intermediates/shader_assets/debug/compileDebugShaders/out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..b8360f6
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/debug/jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..a63a949
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/debug/shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.class
+new file mode 100644
+index 0000000..88df313
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.class
+new file mode 100644
+index 0000000..0247ac0
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.class
+new file mode 100644
+index 0000000..b9df920
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.class
+new file mode 100644
+index 0000000..5be5a31
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.class
+new file mode 100644
+index 0000000..3346915
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.class
+new file mode 100644
+index 0000000..e78cf65
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.class
+new file mode 100644
+index 0000000..a82245f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.class
+new file mode 100644
+index 0000000..4e05272
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.class
+new file mode 100644
+index 0000000..b54d840
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.class
+new file mode 100644
+index 0000000..62203bc
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.class
+new file mode 100644
+index 0000000..6a94e44
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.class
+new file mode 100644
+index 0000000..0616591
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.class
+new file mode 100644
+index 0000000..7755c5a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.class
+new file mode 100644
+index 0000000..9aed787
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.class
+new file mode 100644
+index 0000000..add42cf
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.class
+new file mode 100644
+index 0000000..4ede473
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.class
+new file mode 100644
+index 0000000..17a5677
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.class
+new file mode 100644
+index 0000000..e226037
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.class
+new file mode 100644
+index 0000000..dce5bf9
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.class
+new file mode 100644
+index 0000000..dac0832
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.class
+new file mode 100644
+index 0000000..0e32e77
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.class
+new file mode 100644
+index 0000000..a462811
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.class
+new file mode 100644
+index 0000000..8cea737
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.class
+new file mode 100644
+index 0000000..e5c213a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.class
+new file mode 100644
+index 0000000..809772c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.class
+new file mode 100644
+index 0000000..be541c8
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.class
+new file mode 100644
+index 0000000..2ea040f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.class
+new file mode 100644
+index 0000000..900db9c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.class
+new file mode 100644
+index 0000000..e23956f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.class
+new file mode 100644
+index 0000000..5ae8939
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.class
+new file mode 100644
+index 0000000..42253c0
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.class
+new file mode 100644
+index 0000000..0e600bc
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.class
+new file mode 100644
+index 0000000..8ae9fe5
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.class
+new file mode 100644
+index 0000000..a178a82
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.class
+new file mode 100644
+index 0000000..f482e28
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.class
+new file mode 100644
+index 0000000..b8c679a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.class
+new file mode 100644
+index 0000000..85098c8
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.class
+new file mode 100644
+index 0000000..3381b9d
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.class
+new file mode 100644
+index 0000000..0331e7e
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.class
+new file mode 100644
+index 0000000..6dc9fcb
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.class
+new file mode 100644
+index 0000000..7bbe19d
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.class
+new file mode 100644
+index 0000000..2ba6a7a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.class
+new file mode 100644
+index 0000000..ad9e66b
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.class
+new file mode 100644
+index 0000000..65d42f3
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..8718bd0
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,3 @@
++R_DEF: Internal format may change without notice
++local
++string default_web_client_id
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..9bdeeff
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="io.capawesome.capacitorjs.plugins.firebase.authentication" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..59ccef6
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="io.capawesome.capacitorjs.plugins.firebase.authentication" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/packaged_res/debug/packageDebugResources/values/values.xml b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/packaged_res/debug/packageDebugResources/values/values.xml
+new file mode 100644
+index 0000000..7a745ff
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/packaged_res/debug/packageDebugResources/values/values.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <string name="default_web_client_id">WILL_BE_OVERRIDDEN</string>
++</resources>
+\ No newline at end of file
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.class
+new file mode 100644
+index 0000000..88df313
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthentication.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.class
+new file mode 100644
+index 0000000..0247ac0
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationConfig.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.class
+new file mode 100644
+index 0000000..b9df920
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper$ProviderId.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.class
+new file mode 100644
+index 0000000..5be5a31
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationHelper.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.class
+new file mode 100644
+index 0000000..3346915
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.class
+new file mode 100644
+index 0000000..e78cf65
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$2.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.class
+new file mode 100644
+index 0000000..a82245f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$3.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.class
+new file mode 100644
+index 0000000..4e05272
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$4.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.class
+new file mode 100644
+index 0000000..b54d840
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$5.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.class
+new file mode 100644
+index 0000000..62203bc
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$6.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.class
+new file mode 100644
+index 0000000..6a94e44
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$7.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.class
+new file mode 100644
+index 0000000..0616591
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$8.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.class
+new file mode 100644
+index 0000000..7755c5a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin$9.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.class
+new file mode 100644
+index 0000000..9aed787
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/FirebaseAuthenticationPlugin.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.class
+new file mode 100644
+index 0000000..add42cf
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/ConfirmVerificationCodeOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.class
+new file mode 100644
+index 0000000..4ede473
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.class
+new file mode 100644
+index 0000000..17a5677
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/GetIdTokenResultResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.class
+new file mode 100644
+index 0000000..e226037
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/LinkWithPhoneNumberOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.class
+new file mode 100644
+index 0000000..dce5bf9
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/PhoneVerificationCompletedEvent.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.class
+new file mode 100644
+index 0000000..dac0832
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.class
+new file mode 100644
+index 0000000..0e32e77
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.class
+new file mode 100644
+index 0000000..a462811
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/SignInWithPhoneNumberOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.class
+new file mode 100644
+index 0000000..8cea737
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/FetchSignInMethodsForEmailOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.class
+new file mode 100644
+index 0000000..e5c213a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/RevokeAccessTokenOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.class
+new file mode 100644
+index 0000000..809772c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendEmailVerificationOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.class
+new file mode 100644
+index 0000000..be541c8
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/options/SendPasswordResetEmailOptions.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.class
+new file mode 100644
+index 0000000..2ea040f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/classes/results/FetchSignInMethodsForEmailResult.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.class
+new file mode 100644
+index 0000000..900db9c
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/AppleAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.class
+new file mode 100644
+index 0000000..e23956f
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.class
+new file mode 100644
+index 0000000..5ae8939
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/FacebookAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.class
+new file mode 100644
+index 0000000..42253c0
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.class
+new file mode 100644
+index 0000000..0e600bc
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$2.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.class
+new file mode 100644
+index 0000000..8ae9fe5
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler$3.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.class
+new file mode 100644
+index 0000000..a178a82
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/GoogleAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.class
+new file mode 100644
+index 0000000..f482e28
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/OAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.class
+new file mode 100644
+index 0000000..b8c679a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.class
+new file mode 100644
+index 0000000..85098c8
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler$1.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.class
+new file mode 100644
+index 0000000..3381b9d
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PhoneAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.class
+new file mode 100644
+index 0000000..0331e7e
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/handlers/PlayGamesAuthProviderHandler.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.class
+new file mode 100644
+index 0000000..6dc9fcb
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/EmptyResultCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.class
+new file mode 100644
+index 0000000..7bbe19d
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/ErrorCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.class
+new file mode 100644
+index 0000000..2ba6a7a
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.class
+new file mode 100644
+index 0000000..ad9e66b
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/NonEmptyResultCallback.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.class b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.class
+new file mode 100644
+index 0000000..65d42f3
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/io/capawesome/capacitorjs/plugins/firebase/authentication/interfaces/Result.class differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..ed351d2
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..611c820
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1,2 @@
++io.capawesome.capacitorjs.plugins.firebase.authentication
++string default_web_client_id
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/@capacitor-firebase/authentication/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..76a1728
+--- /dev/null
++++ b/node_modules/@capacitor-firebase/authentication/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,16 @@
++-- Merging decision tree log ---
++manifest
++ADDED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml:1:1-2:12
++INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml:1:1-2:12
++	package
++		INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml
++	xmlns:android
++		ADDED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml:1:11-69
++uses-sdk
++INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml
++INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from /Users/minbyeonghun/.gemini/antigravity/scratch/coordimentor/node_modules/@capacitor-firebase/authentication/android/src/main/AndroidManifest.xml
+diff --git a/node_modules/@capacitor-firebase/authentication/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/@capacitor-firebase/authentication/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..b833164
+Binary files /dev/null and b/node_modules/@capacitor-firebase/authentication/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
