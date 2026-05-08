@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader, Sparkles, MapPin, RefreshCw, Send, Heart, List, X } from 'lucide-react';
-import { getItemsOnce, saveOutfit, deleteSavedOutfit } from '../utils/storage';
+import { getItemsOnce, saveOutfit, deleteSavedOutfit, getSavedOutfitsOnce } from '../utils/storage';
 import { getOutfitRecommendation, adjustOutfit } from '../utils/api';
 import { getWeatherByLocation, getWeatherByLocationName, extractLocationFromText } from '../utils/weather';
 import { useAuth } from '../contexts/AuthContext';
@@ -122,7 +122,11 @@ export default function OutfitPage() {
         event: eventType,
         location: locationLabel !== '현재 위치' ? locationLabel : null,
       };
-      const rec = await getOutfitRecommendation(weather, items, tpoInfo);
+
+      // 다양성 향상을 위해 저장된 코디 목록도 함께 전달
+      const savedOutfits = await getSavedOutfitsOnce(user.uid);
+
+      const rec = await getOutfitRecommendation(weather, items, tpoInfo, savedOutfits);
 
       const keys = ['아우터', '상의', '하의', '신발', '액세서리_얼굴머리', '액세서리_손목팔', '액세서리_기타'];
       const newResults = rec.outfits.map(o => {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Loader, Check, AlertCircle, Camera as CameraIcon, ChevronLeft, Image as ImageIcon } from 'lucide-react';
+import { Loader, Check, AlertCircle, Camera as CameraIcon, ChevronLeft, Image as ImageIcon, ClipboardPaste } from 'lucide-react';
 import { removeBackground, analyzeClothing } from '../utils/api';
 import { uploadImage, saveItem } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -360,23 +360,59 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
 
   const handlePasteImage = async () => {
     try {
-      if (!navigator.clipboard?.read) throw new Error('이 브라우저에서는 지원하지 않습니다.');
+      if (!navigator.clipboard?.read) {
+        throw new Error('이 환경에서는 직접 붙여넣기를 지원하지 않습니다. 사진을 저장한 뒤 앨범에서 불러와주세요.');
+      }
+      
       setError('');
+      // 권한 상태 확인 시도 (지원하지 않는 브라우저가 있을 수 있음)
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' });
+        if (permissionStatus.state === 'denied') {
+          throw new Error('클립보드 접근 권한이 거부되었습니다. 설정에서 허용해 주세요.');
+        }
+      } catch (pErr) {
+        console.warn('Permission query not supported or failed:', pErr);
+      }
+
       const clipItems = await navigator.clipboard.read();
       let imageBlob = null;
       for (const item of clipItems) {
-        if (item.types.includes('image/png')) { imageBlob = await item.getType('image/png'); break; }
-        else if (item.types.includes('image/jpeg')) { imageBlob = await item.getType('image/jpeg'); break; }
+        // 우선순위: PNG -> JPEG
+        if (item.types.includes('image/png')) {
+          imageBlob = await item.getType('image/png');
+          break;
+        } else if (item.types.includes('image/jpeg')) {
+          imageBlob = await item.getType('image/jpeg');
+          break;
+        }
       }
-      if (!imageBlob) { alert('클립보드에 복사된 이미지가 없습니다.'); return; }
+
+      if (!imageBlob) {
+        alert('클립보드에 이미지가 없습니다. 갤러리에서 누끼를 딴 후 [복사]를 먼저 해주세요!');
+        return;
+      }
+
       const url = URL.createObjectURL(imageBlob);
-      setRemovedUrl(url); setRemovedBlob(imageBlob); setPreview(url);
+      setRemovedUrl(url);
+      setRemovedBlob(imageBlob);
+      setPreview(url);
       setStep('analyzing');
+
       const dataUrl = await blobToDataUrl(imageBlob);
       const result = await analyzeClothing(dataUrl);
       setAnalysis(result);
       setStep('preview');
-    } catch (e) { setError('붙여넣기 실패: ' + e.message); }
+
+    } catch (e) {
+      console.error('Paste error:', e);
+      if (e.message.includes('permission denied') || e.message.includes('denied')) {
+        setError('클립보드 권한이 필요합니다. [복사]를 먼저 하셨는지 확인하시고, 브라우저/앱 설정에서 클립보드 접근을 허용해 주세요.');
+        alert('이미지를 가져올 수 없습니다.\n\n1. 갤러리에서 "복사"를 하셨는지 확인해주세요.\n2. 앱 설정에서 클립보드 접근 권한을 확인해주세요.');
+      } else {
+        setError('붙여넣기 실패: ' + e.message);
+      }
+    }
   };
 
   const handleEditConfirm = async (editedBlob) => {
@@ -499,6 +535,33 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
               </div>
               <span style={{ color: 'var(--text-muted)', fontSize: 20 }}>›</span>
             </button>
+
+            {/* 클립보드 붙여넣기 (iOS 누끼 최적화 - iOS에서만 표시) */}
+            {Capacitor.getPlatform() === 'ios' && (
+              <button
+                onClick={handlePasteImage}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 18,
+                  background: 'var(--surface)', border: '1.5px solid var(--primary-light, #E8F0FE)',
+                  borderRadius: 18, padding: '20px 20px', cursor: 'pointer', textAlign: 'left',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                }}
+              >
+                <div style={{
+                  width: 52, height: 52, borderRadius: 14, background: 'var(--primary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <ClipboardPaste size={26} color="white" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>복사한 누끼 붙여넣기</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--primary)', fontWeight: 500, lineHeight: 1.5 }}>
+                    아이폰 갤러리에서 누끼 따고<br/>여기에 바로 붙여넣으세요
+                  </p>
+                </div>
+                <span style={{ color: 'var(--primary)', fontSize: 20 }}>›</span>
+              </button>
+            )}
           </div>
 
           {error && <p style={{ color: 'var(--error)', fontSize: 13, padding: '12px 20px' }}>{error}</p>}
@@ -538,9 +601,10 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
               style={{ WebkitTouchCallout: 'default', userSelect: 'auto', touchAction: 'manipulation', WebkitUserSelect: 'auto' }} />
           </div>
           <div className="preview-actions-vertical">
-            <button className="btn primary big-btn" onClick={handlePasteImage}>복사한 누끼 붙여넣기</button>
-            {/* 서버 배경 제거 버튼 — 기능 유지, UI에서 숨김 */}
-            {/* <button className="btn secondary" onClick={startAutoRemoving} style={{ marginTop: 12 }}>자동 배경 제거 (서버)</button> */}
+            {Capacitor.getPlatform() === 'ios' && (
+              <button className="btn primary big-btn" onClick={handlePasteImage}>복사한 누끼 붙여넣기</button>
+            )}
+            <button className="btn secondary" onClick={startAutoRemoving} style={{ marginTop: 12 }}>자동 배경 제거 (서버)</button>
           </div>
         </div>
       )}

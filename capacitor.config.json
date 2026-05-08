@@ -1,0 +1,15 @@
+{
+  "appId": "com.coordimentor.app",
+  "appName": "Coordimentor",
+  "webDir": "build",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
+    }
+  },
+  "server": {
+    "allowNavigation": ["unpkg.com", "cdn.jsdelivr.net"]
+  }
+}

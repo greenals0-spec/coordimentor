@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { subscribeToItems, subscribeToSavedOutfits } from '../utils/storage';
+import { subscribeToItems, subscribeToSavedOutfits, subscribeToOotdLogs } from '../utils/storage';
 import { getWeatherByLocation } from '../utils/weather';
 
 const CATEGORY_ORDER = ['상의', '하의', '아우터', '신발', '액세서리'];
@@ -29,13 +29,15 @@ export default function HomePage({ onNavigate }) {
   const { user, userProfile, signOut } = useAuth();
   const [items, setItems] = useState([]);
   const [savedOutfits, setSavedOutfits] = useState([]);
+  const [ootdLogs, setOotdLogs] = useState([]);
   const [weather, setWeather] = useState(null);
 
   useEffect(() => {
     if (!user) return;
     const unsub1 = subscribeToItems(user.uid, setItems);
     const unsub2 = subscribeToSavedOutfits(user.uid, setSavedOutfits);
-    return () => { unsub1(); unsub2(); };
+    const unsub3 = subscribeToOotdLogs(user.uid, setOotdLogs);
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 
   useEffect(() => {
@@ -55,17 +57,53 @@ export default function HomePage({ onNavigate }) {
     return acc;
   }, {});
 
-  // 히어로 이미지용 랜덤 아이템 상태
-  const [heroItem, setHeroItem] = useState(null);
+  // 히어로 이미지용 랜덤 상태
+  const [heroImageUrl, setHeroImageUrl] = useState(null);
+  const [heroSource, setHeroSource] = useState(null); // 'user', 'outfit', 'closet'
 
   useEffect(() => {
-    if (items.length > 0 && !heroItem) {
-      const randomIndex = Math.floor(Math.random() * items.length);
-      setHeroItem(items[randomIndex]);
+    // 1순위: OOTD 로그 (내 사진)
+    const userPhotos = ootdLogs.filter(log => log.photoUrl).map(log => log.photoUrl);
+    if (userPhotos.length > 0) {
+      // 이미 내 사진이 설정되어 있다면 무시 (무한 루프 방지)
+      if (heroSource === 'user') return;
+      
+      const randomIndex = Math.floor(Math.random() * userPhotos.length);
+      setHeroImageUrl(userPhotos[randomIndex]);
+      setHeroSource('user');
+      return;
     }
-  }, [items, heroItem]);
 
-  const heroImageUrl = heroItem?.imageUrl;
+    // 2순위: 저장된 코디 아이템 사진 (내 사진이 없을 때만)
+    if (heroSource !== 'user' && savedOutfits.length > 0) {
+      const allOutfitImages = [];
+      savedOutfits.forEach(outfit => {
+        if (outfit.items) {
+          Object.values(outfit.items).forEach(item => {
+            if (item && item.imageUrl) allOutfitImages.push(item.imageUrl);
+          });
+        }
+      });
+
+      if (allOutfitImages.length > 0) {
+        if (heroSource === 'outfit') return;
+        const randomIndex = Math.floor(Math.random() * allOutfitImages.length);
+        setHeroImageUrl(allOutfitImages[randomIndex]);
+        setHeroSource('outfit');
+        return;
+      }
+    }
+
+    // 3순위: 일반 옷장 아이템 사진 (위 조건들이 모두 없을 때)
+    if (!heroSource && items.length > 0) {
+      const allItemImages = items.filter(i => i.imageUrl).map(i => i.imageUrl);
+      if (allItemImages.length > 0) {
+        const randomIndex = Math.floor(Math.random() * allItemImages.length);
+        setHeroImageUrl(allItemImages[randomIndex]);
+        setHeroSource('closet');
+      }
+    }
+  }, [items, savedOutfits, ootdLogs, heroSource]);
 
   // 옷장 카드 썸네일 (imageUrl 있는 옷 최대 4개)
   const closetThumbs = items.filter(i => i.imageUrl).slice(0, 4);

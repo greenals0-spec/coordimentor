@@ -4,7 +4,7 @@ const RMBG_API_URL = 'https://api-inference.huggingface.co/models/briaai/RMBG-2.
 const RMBG_FALLBACK_URL = 'https://api-inference.huggingface.co/models/briaai/RMBG-1.4';
 
 // ─── Gemini 2.0 Flash API 공통 호출 함수 ──────────────────────────────────────
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3-flash-preview';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 async function callGemini(parts, maxOutputTokens = 2048) {
@@ -17,7 +17,9 @@ async function callGemini(parts, maxOutputTokens = 2048) {
     body: JSON.stringify({
       contents: [{ parts }],
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.9,
+        topP: 0.95,
+        topK: 40,
         maxOutputTokens,
         thinkingConfig: { thinkingBudget: 0 },
       },
@@ -316,11 +318,20 @@ export const analyzeClothing = async (imageDataUrl) => {
 };
 
 // ─── 코디 추천 ─────────────────────────────────────────────────────────────────
-export const getOutfitRecommendation = async (weather, items, tpoInfo) => {
-  const closetSummary = items.map(i => ({
+export const getOutfitRecommendation = async (weather, items, tpoInfo, savedOutfits = []) => {
+  // 옷장 목록을 랜덤하게 섞어서 AI가 다양한 아이템에 먼저 주목하도록 유도
+  const shuffledItems = [...items].sort(() => Math.random() - 0.5);
+  
+  const closetSummary = shuffledItems.map(i => ({
     id: i.id, name: i.name, category: i.category,
     subcategory: i.subcategory || null, color: i.color, tags: i.tags,
   }));
+
+  // 최근 저장된 코디 요약 (학습 및 중복 방지용)
+  const savedExamples = savedOutfits.slice(0, 10).map(o => {
+    const itemNames = Object.values(o.items || {}).filter(Boolean).map(i => `${i.name}(${i.color})`).join(' + ');
+    return { combo: itemNames, reason: o.reason };
+  });
 
   const tpoText = tpoInfo
     ? `목표 일시: ${tpoInfo.date} ${tpoInfo.time}시\n상황(TPO): ${tpoInfo.event || '특별한 일정 없음 (일상적인 외출)'}`
@@ -328,16 +339,31 @@ export const getOutfitRecommendation = async (weather, items, tpoInfo) => {
 
   const prompt = `내 옷장 목록: ${JSON.stringify(closetSummary)}
 
+${savedExamples.length > 0 ? `[사용자의 선호 스타일 (이전에 저장한 코디들)]
+${savedExamples.map(ex => `- 조합: ${ex.combo}\n- 특징: ${ex.reason}`).join('\n')}
+위 코디들은 사용자가 선호하는 스타일이야. 이 취향을 참고해서 새로운 코디를 제안해줘.` : ''}
+
 ${tpoText}
 날씨: ${weather.condition}, 기온 ${weather.temp}°C, 체감 ${weather.apparentTemp ?? weather.temp}°C${weather.precipProb != null ? `, 강수확률 ${weather.precipProb}%` : ''}${weather.windSpeed ? `, 풍속 ${weather.windSpeed}km/h` : ''}
 
 위 옷장 목록에서 [목표 일시], [날씨], [상황(TPO)]를 완벽하게 고려하여 가장 적절한 서로 다른 코디 3가지를 추천해줘.
 
 [지침]
-1. 상황(TPO)에 딱 맞는 드레스코드를 준수해 (예: 결혼식은 격식 있게, 등산은 기능성 위주로).
-2. 날씨(기온, 날씨 상태)를 최우선으로 고려해 (추우면 아우터 필수, 비 오면 기능성 신발 등).
-3. 3가지 코디는 각각 스타일(캐주얼, 포멀, 힙스터 등)이나 분위기가 서로 겹치지 않게 다양하게 제안해줘.
-4. 각 코디의 "reason"에는 왜 이 상황(TPO)과 날씨에 이 조합이 베스트인지 구체적으로 설명해줘.
+1. 사용자의 선호 스타일(이전에 저장한 코디들)의 무드를 학습해서 일관성 있는 취향을 반영해줘.
+2. 3가지 추천 중 하나는 사용자의 기존 취향과 아주 유사하게, 나머지 둘은 기존 취향을 바탕으로 하되 약간의 새로운 시도(New Look)를 섞어서 제안해줘.
+3. [TPO 전문 가이드 준수]: 아래 2026년 패션 에티켓을 바탕으로 상황에 완벽히 녹아드는 코디를 제안해.
+   - 비즈니스 포멀: 중요한 계약/발표 시 무채색(네이비, 그레이) 수트, 깨끗한 셔츠, 구두 필수.
+   - 비즈니스 캐주얼: 슬랙스/치노 팬츠에 셔츠/니트 매치. 단정한 스니커즈 허용.
+   - 결혼식 하객: 화이트 계열 절대 금지. 파스텔 톤이나 차분한 네이비/베이지 세미 정장 권장.
+   - 장례식: 엄격한 블랙/어두운 무채색 통일. 양말/넥타이까지 어두운색 필수.
+   - 일상/소셜: 장소(식당/카페) 분위기에 맞추되, 고급 장소는 반바지/슬리퍼 지양.
+   - 핵심 철학: "내가 돋보이는 것보다 그 자리에 모인 사람들과 조화를 이루는 것"
+4. 날씨(기온, 날씨 상태)를 최우선으로 고려해 (추우면 아우터 필수, 비 오면 기능성 신발 등).
+5. 3가지 코디는 각각 확연히 다른 '패션 테마'를 가져야 해. (예: 1. 미니멀&클린, 2. 트렌디&스트릿, 3. 과감한 컬러 믹스매치 등). 비슷한 옷들로 구성하지 말고, 옷장에서 최대한 다양한 아이템을 활용해줘.
+6. [중요 의상 규칙] 벨트(액세서리)는 오직 상의가 '와이셔츠/셔츠' 계열이고 하의가 '정장바지/슬랙스' 계열일 때만 추천에 포함시켜줘. 그 외의 캐주얼한 복장에는 벨트를 제외해줘.
+7. '뻔한' 조합보다는 색감의 조화나 레이어링(상의 위에 베스트, 가방과 신발의 톤온톤 등)을 통해 센스 있는 조합을 제안해줘.
+8. 각 코디의 "reason"에는 왜 이 상황(TPO)과 날씨에 이 '테마'가 어울리는지, 어떤 포인트에 신경 썼는지 구체적으로 설명해줘.
+9. [중요] 요청 고유 번호: ${Date.now()} (매번 새로운 영감을 바탕으로 추천해줘).
 
 [중요] JSON의 "reason" 필드 안에 쌍따옴표(")를 써야 할 경우 반드시 역슬래시(\\")로 이스케이프해줘. 설명 없이 JSON만 응답해.
 

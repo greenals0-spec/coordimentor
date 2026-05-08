@@ -129,3 +129,18 @@ export const subscribeToSavedOutfits = (uid, callback) => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   });
 };
+
+export const getSavedOutfitsOnce = (uid) =>
+  new Promise((resolve) => {
+    const unsub = subscribeToSavedOutfits(uid, (outfits) => {
+      unsub();
+      resolve(outfits);
+    });
+  });
+
+export const subscribeToOotdLogs = (uid, callback) => {
+  const q = query(collection(db, 'users', uid, 'ootd_logs'), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+};
