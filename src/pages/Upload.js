@@ -15,14 +15,14 @@ const CAMERA_STEPS = [
   { 
     id: 'photo', 
     illust: <img src="/assets/guide_step1.jpg" alt="촬영 가이드" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '12px' }} loading="lazy" />, 
-    title: '카메라로 옷을 찍으세요', 
-    desc: '' 
+    title: '1. 옷을 밝은 곳에서 찍어주세요', 
+    desc: '배경과 옷 색깔이 차이 날수록\n나중에 옷만 쏙 뽑아내기 훨씬 쉬워요!' 
   },
   { 
     id: 'nukki_share', 
     illust: <img src="/assets/guide_step2.jpg" alt="공유 가이드" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '12px' }} loading="lazy" />, 
-    title: '누끼 따고 코디멘토로 공유하기', 
-    desc: '1. 앨범에서 찍은 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' 
+    title: '2. 옷을 약 3초간 꾹 누르세요', 
+    desc: '갤러리에서 사진 속 옷을 3초간 누르면\n옷만 반짝이며 분리됩니다. 그 상태에서\n[공유]를 눌러 \'코디멘토\'를 선택하세요.' 
   },
 ];
 
@@ -30,8 +30,8 @@ const ALBUM_STEPS = [
   { 
     id: 'nukki_share', 
     illust: <img src="/assets/guide_step2.jpg" alt="공유 가이드" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '12px' }} loading="lazy" />, 
-    title: '누끼 따고 코디멘토로 공유하기', 
-    desc: '1. 앨범에서 옷을 꾹 눌러 누끼 따기\n2. 공유에서 "코디멘토" 선택하기' 
+    title: '옷만 쏙! 뽑아서 가져오기', 
+    desc: '앨범 사진 속 옷을 약 3초간 꾹 누르면\n옷 모양대로 반짝이며 선택됩니다.\n그대로 [공유] → \'코디멘토\'를 선택하세요.' 
   },
 ];
 
@@ -509,7 +509,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>촬영 후 가져오기</p>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>옷을 직접 촬영한 뒤<br/>갤러리 누끼로 깔끔하게 등록</p>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>새로 찍은 옷 사진의<br/>배경을 제거해서 등록</p>
               </div>
               <span style={{ color: 'var(--text-muted)', fontSize: 20 }}>›</span>
             </button>
@@ -593,18 +593,20 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
       {step === 'capture_preview' && preview && (
         <div className="capture-preview-step">
           <p className="preview-instruction">
-            사진 속 <strong>옷을 길게 꾹 눌러서</strong><br/>
-            '복사'한 뒤 아래 버튼을 눌러주세요.
+            사진 촬영 완료! 이제 갤러리 앱에서<br/>
+            <strong>옷을 약 3초간 눌러</strong> [공유] 해주세요!
           </p>
           <div className="preview-container">
             <img src={preview} alt="captured" className="nukki-ready-img"
               style={{ WebkitTouchCallout: 'default', userSelect: 'auto', touchAction: 'manipulation', WebkitUserSelect: 'auto' }} />
           </div>
           <div className="preview-actions-vertical">
-            {Capacitor.getPlatform() === 'ios' && (
-              <button className="btn primary big-btn" onClick={handlePasteImage}>복사한 누끼 붙여넣기</button>
-            )}
-            <button className="btn secondary" onClick={startAutoRemoving} style={{ marginTop: 12 }}>자동 배경 제거 (서버)</button>
+            <button className="btn primary big-btn" onClick={handleOpenAlbum}>
+              갤러리로 이동해 옷 추출하기
+            </button>
+            <button className="btn text-link" onClick={reset} style={{ marginTop: 16, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              다시 촬영하기
+            </button>
           </div>
         </div>
       )}

@@ -69,7 +69,7 @@ body {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 40px); /* 넉넉한 하단 여백 추가 */
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); /* 여백 최적화 */
 }
 
 /* ─── Bottom Nav ─── */
@@ -1969,4 +1969,37 @@ body {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ── Premium Animations ─────────────────────────────────────────────────── */
+@keyframes heroZoom {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.hero-image-animate {
+  animation: heroZoom 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ── Native-like Interaction ────────────────────────────────────────────── */
+button:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-nav .nav-item:active {
+  transform: scale(0.9);
+}
+
+/* ── Home Page Improvements ──────────────────────────────────────────────── */
+.home-page {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -10,6 +10,9 @@ import SavedOutfitsPage from './pages/SavedOutfits';
 import OnboardingPage from './pages/Onboarding';
 import SplashScreen from './components/SplashScreen';
 import PermissionsScreen from './components/PermissionsScreen';
+import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import './App.css';
 
 class ErrorBoundary extends React.Component {
@@ -84,11 +87,37 @@ function Main() {
     // Start fade-out at 2.5s, fully dismiss at 3s
     const fadeTimer = setTimeout(() => setSplashFading(true), 2500);
     const hideTimer = setTimeout(() => setShowSplash(false), 3000);
+
+    // 안드로이드 상태바 설정
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+    }
+
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
   }, []);
+
+  // 안드로이드 하드웨어 뒤로가기 버튼 처리
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const backListener = CapApp.addListener('backButton', ({ canGoBack }) => {
+      if (tab !== 'home') {
+        // 홈 탭이 아니면 홈으로 이동
+        setTab('home');
+      } else {
+        // 홈 탭에서 뒤로가기 시 앱 종료 (또는 안내문구)
+        CapApp.exitApp();
+      }
+    });
+
+    return () => {
+      backListener.then(l => l.remove());
+    };
+  }, [tab]);
 
   useEffect(() => {
     if (user !== undefined) {

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { subscribeToItems, subscribeToSavedOutfits, subscribeToOotdLogs } from '../utils/storage';
 import { getWeatherByLocation } from '../utils/weather';
+import { Bell } from 'lucide-react';
+import SettingsModal from '../components/SettingsModal';
+import MorningRecommendation from '../components/MorningRecommendation';
+import { recommendOutfit } from '../utils/recommendation';
 
 const CATEGORY_ORDER = ['상의', '하의', '아우터', '신발', '액세서리'];
 
@@ -31,6 +36,9 @@ export default function HomePage({ onNavigate }) {
   const [savedOutfits, setSavedOutfits] = useState([]);
   const [ootdLogs, setOotdLogs] = useState([]);
   const [weather, setWeather] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showRecommendation, setShowRecommendation] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -44,12 +52,76 @@ export default function HomePage({ onNavigate }) {
     getWeatherByLocation().then(setWeather).catch(() => {});
   }, []);
 
+  // ── 알람 체크 및 알림 리스너 ──
+  useEffect(() => {
+    // 앱 실행 중 알림 클릭 시 처리
+    const setupListener = async () => {
+      const listener = await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
+        if (notification.notification.extra?.type === 'morning_recommendation') {
+          // 알림 클릭 시 즉시 추천 생성
+          const rec = recommendOutfit(weather, items);
+          if (rec) {
+            setRecommendation(rec);
+            setShowRecommendation(true);
+          }
+        }
+      });
+      return listener;
+    };
+
+    let notificationListener;
+    setupListener().then(l => notificationListener = l);
+
+    if (!weather || !items.length || !userProfile?.alarmEnabled) return;
+
+    const checkAlarm = () => {
+      const now = new Date();
+      const [alarmH, alarmM] = (userProfile.alarmTime || '07:30').split(':').map(Number);
+      
+      const alarmDate = new Date();
+      alarmDate.setHours(alarmH, alarmM, 0, 0);
+
+      const todayStr = now.toISOString().split('T')[0];
+      const lastShown = localStorage.getItem('last_alarm_shown');
+
+      // 알람 시간 이후이고, 오늘 아직 보여주지 않았을 때 (알람 시간으로부터 4시간 이내인 경우만)
+      const diffMs = now - alarmDate;
+      if (lastShown !== todayStr && diffMs >= 0 && diffMs < 4 * 60 * 60 * 1000) {
+        const rec = recommendOutfit(weather, items);
+        if (rec) {
+          setRecommendation(rec);
+          setShowRecommendation(true);
+          localStorage.setItem('last_alarm_shown', todayStr);
+        }
+      }
+    };
+
+    checkAlarm();
+    const interval = setInterval(checkAlarm, 60000);
+
+    return () => {
+      clearInterval(interval);
+      if (notificationListener) notificationListener.remove();
+    };
+  }, [weather, items, userProfile]);
+
   const name = userProfile?.name || user?.displayName || '';
   const hour = new Date().getHours();
   const greeting =
     hour < 6  ? '좋은 새벽이에요' :
     hour < 12 ? '좋은 아침이에요' :
     hour < 18 ? '안녕하세요' : '좋은 저녁이에요';
+
+  // 날씨에 따른 맞춤 메시지 생성
+  const getWeatherMessage = () => {
+    if (!weather) return '오늘의 코디를 준비해드릴까요?';
+    const cond = weather.condition.toLowerCase();
+    if (cond.includes('비')) return '비가 오네요, 레인부츠나 방수 자켓 어때요?';
+    if (cond.includes('눈')) return '눈이 내려요! 따뜻한 코트와 목도리를 챙기세요.';
+    if (weather.temp >= 28) return '무더운 날씨예요. 시원한 리넨 소재를 추천해요.';
+    if (weather.temp <= 5) return '꽤 쌀쌀하네요. 든든한 레이어링이 필요해요.';
+    return '외출하기 좋은 날씨네요. 멋진 코디를 제안할게요!';
+  };
 
   // 카테고리별 집계
   const categoryCounts = items.reduce((acc, item) => {
@@ -116,16 +188,31 @@ export default function HomePage({ onNavigate }) {
   const placeholderColors = ['#DDD8CE', '#D0CBC4', '#C4BFB8', '#E8E3DC'];
 
   return (
-    <div style={{ minHeight: '100%', background: '#FAFAF8' }}>
+    <div className="home-page" style={{ minHeight: '100%', background: '#FAFAF8' }}>
 
       {/* ── 히어로 섹션 ── */}
       <div style={{ position: 'relative', width: '100%', height: 280, overflow: 'hidden' }}>
+        
+        {/* 알람 설정 버튼 */}
+        <button 
+          onClick={() => setShowSettings(true)}
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            zIndex: 10, background: '#fff',
+            border: 'none', width: 36, height: 36, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+          }}
+        >
+          <Bell size={18} color="#18160F" fill="#18160F" />
+        </button>
 
         {/* 배경 이미지 또는 플레이스홀더 */}
         {heroImageUrl ? (
           <img
             src={heroImageUrl}
             alt="최근 코디"
+            className="hero-image-animate"
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
           />
         ) : (
@@ -161,9 +248,9 @@ export default function HomePage({ onNavigate }) {
             fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontStyle: 'italic', fontWeight: 400,
             fontSize: 28, color: '#fff',
-            margin: '0 0 14px', lineHeight: 1.2,
+            margin: '0 0 10px', lineHeight: 1.2,
           }}>
-            {name ? `${name}님,` : ''}<br />오늘은 뭘 입을까요?
+            {name ? `${name}님,` : ''}<br />{getWeatherMessage()}
           </h1>
           <button
             onClick={() => onNavigate('outfit')}
@@ -346,21 +433,44 @@ export default function HomePage({ onNavigate }) {
         </button>
       </div>
 
-      {/* ── 로그아웃 섹션 ── */}
-      <div style={{ padding: '4px 20px 8px', textAlign: 'center' }}>
+      {/* ── 하단 푸터 ── */}
+      <div style={{ padding: '20px 20px 60px', textAlign: 'center' }}>
         <button
           onClick={signOut}
           style={{
-            background: 'none', border: 'none', color: '#B8AFA4',
-            fontSize: 11, letterSpacing: '0.05em', cursor: 'pointer',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontFamily: "'DM Sans', sans-serif",
-            padding: '2px 8px'
+            background: 'none', border: 'none', color: '#ABA298',
+            fontSize: 10, letterSpacing: '0.05em', cursor: 'pointer',
+            textDecoration: 'underline', marginBottom: 24,
+            fontFamily: "'DM Sans', sans-serif"
           }}
         >
           로그아웃
         </button>
+        <div style={{ opacity: 0.3 }}>
+          <p style={{ 
+            fontFamily: "'Cormorant Garamond', serif", 
+            fontSize: 14, 
+            letterSpacing: '0.2em', 
+            color: '#18160F',
+            margin: '0 0 4px'
+          }}>
+            COORDIMENTOR
+          </p>
+          <p style={{ fontSize: 8, letterSpacing: '0.1em', color: '#ABA298', margin: 0 }}>
+            VERSION 1.0.4 • © 2026
+          </p>
+        </div>
       </div>
+
+      {/* ── 모달/오버레이 ── */}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showRecommendation && recommendation && (
+        <MorningRecommendation 
+          weather={weather} 
+          recommendation={recommendation} 
+          onClose={() => setShowRecommendation(false)} 
+        />
+      )}
 
     </div>
   );
