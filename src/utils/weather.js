@@ -394,6 +394,11 @@ export function extractLocationFromText(text) {
   return null;
 }
 
+// ─── 좌표로 직접 날씨 조회 (Home.js에서 geolocation 콜백 내 호출용) ──────────
+export async function fetchWeatherFromCoords(lat, lon, targetDate = null, targetHour = null) {
+  return await fetchWeatherData(lat, lon, targetDate, targetHour);
+}
+
 // ─── 현재 위치 기반 날씨 ──────────────────────────────────────────────────────
 export const getWeatherByLocation = (targetDate = null, targetHour = null) =>
   new Promise((resolve, reject) => {

@@ -31,3 +31,7 @@ build/
 # Firebase 인증 파일 (민감 정보)
 google-services.json
 GoogleService-Info.plist
+build_backup*/
+build_fresh/
+build_new/
+src/utils/api.js.tmp

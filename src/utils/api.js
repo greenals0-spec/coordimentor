@@ -1,10 +1,10 @@
-// Hugging Face RMBG-2.0 API (서버 사이드 배경 제거 — WASM/SharedArrayBuffer 불필요)
+// Hugging Face RMBG-2.0 API (서버 사이드 배경 제거)
 const HF_TOKEN = process.env.REACT_APP_HF_API_KEY || '';
 const RMBG_API_URL = 'https://api-inference.huggingface.co/models/briaai/RMBG-2.0';
 const RMBG_FALLBACK_URL = 'https://api-inference.huggingface.co/models/briaai/RMBG-1.4';
 
-// ─── Gemini 2.0 Flash API 공통 호출 함수 ──────────────────────────────────────
-const GEMINI_MODEL = 'gemini-3-flash-preview';
+// ─── Gemini API 공통 설정 ──────────────────────────────────────
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 async function callGemini(parts, maxOutputTokens = 2048) {
@@ -21,7 +21,6 @@ async function callGemini(parts, maxOutputTokens = 2048) {
         topP: 0.95,
         topK: 40,
         maxOutputTokens,
-        thinkingConfig: { thinkingBudget: 0 },
       },
     }),
   });
@@ -37,25 +36,53 @@ async function callGemini(parts, maxOutputTokens = 2048) {
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  console.log('[Gemini RAW Response]', JSON.stringify(data).slice(0, 500));
-  console.log('[Gemini TEXT]', text);
   if (!text) throw new Error('Gemini 응답이 비어 있습니다.');
   return text.trim();
 }
 
 function parseJsonFromText(text) {
-  let cleaned = text.replace(/```(?:json)?\s*([\s\S]*?)```/g, '$1').trim();
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('응답에서 JSON을 찾을 수 없습니다.');
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch (e) {
-    const fixed = jsonMatch[0].replace(/"reason"\s*:\s*"([\s\S]*?)"\s*([,}])/g, (_, body, end) =>
-      `"reason": "${body.replace(/\r?\n/g, ' ').replace(/\t/g, ' ')}"${end}`
-    );
-    return JSON.parse(fixed);
-  }
+  // 1. 마크다운 코드블록 제거
+  let cleaned = text.replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
+
+  // 2. JSON 블록 추출
+  const start = cleaned.indexOf("{");
+  const end   = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("응답에서 JSON을 찾을 수 없습니다.");
+  let jsonStr = cleaned.slice(start, end + 1);
+
+  // 3. 후행 쉼표 제거 (Trailing commas)
+  jsonStr = jsonStr.replace(/,\s*([}\]])/g, "$1");
+
+  // 4. 1차 시도: 그대로 파싱
+  try { return JSON.parse(jsonStr); } catch (_) {}
+
+  // 5. 제어문자 및 이스케이프 수정
+  try { 
+    const simpleFixed = jsonStr.replace(/[\n\r\t]/g, " ");
+    return JSON.parse(simpleFixed); 
+  } catch (_) {}
+
+  // 6. 최후 수단: 따옴표 안의 줄바꿈 강제 처리 정규식 사용
+  const regexFixedStr = jsonStr.replace(
+    /("(?:[^"\\]|\\.)*")\s*:\s*"([\s\S]*?)"\s*(?=[,}\]])/g,
+    (match, key, value) => {
+      const safeValue = value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\r?\n/g, ' ')
+        .replace(/\t/g, ' ');
+      return `${key}: "${safeValue}"`;
+    }
+  );
+
+  try { return JSON.parse(regexFixedStr); } catch (_) {}
+
+  // 7. 완전 제거
+  // eslint-disable-next-line no-control-regex
+  const stripped = regexFixedStr.replace(/[\x00-\x1F\x7F-\x9F]/g, " ");
+  return JSON.parse(stripped);
 }
+
 
 // ─── 투명 여백 크롭 헬퍼 ──────────────────────────────────────────────────────
 const cropTransparentImage = (imageUrl) => {
@@ -317,21 +344,58 @@ export const analyzeClothing = async (imageDataUrl) => {
   return parseJsonFromText(text);
 };
 
+// ─── 최근 추천 기록 관리 (localStorage, 최대 15세트 보관) ─────────────────────
+const RECENT_KEY = 'recent_recommended_combos';
+const MAX_RECENT = 15;
+
+function loadRecentCombos() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
+}
+
+function saveRecentCombos(combos) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(combos.slice(-MAX_RECENT))); } catch {}
+}
+
+export function recordRecommendedOutfits(outfits) {
+  const recent = loadRecentCombos();
+  outfits.forEach(o => {
+    const key = ['아우터','상의','하의','신발'].map(k => o.outfit?.[k] || 'null').join('|');
+    if (!recent.includes(key)) recent.push(key);
+  });
+  saveRecentCombos(recent);
+}
+
 // ─── 코디 추천 ─────────────────────────────────────────────────────────────────
 export const getOutfitRecommendation = async (weather, items, tpoInfo, savedOutfits = []) => {
   // 옷장 목록을 랜덤하게 섞어서 AI가 다양한 아이템에 먼저 주목하도록 유도
   const shuffledItems = [...items].sort(() => Math.random() - 0.5);
-  
+
   const closetSummary = shuffledItems.map(i => ({
     id: i.id, name: i.name, category: i.category,
     subcategory: i.subcategory || null, color: i.color, tags: i.tags,
   }));
 
-  // 최근 저장된 코디 요약 (학습 및 중복 방지용)
+  // 최근 저장된 코디 요약 (취향 학습용)
   const savedExamples = savedOutfits.slice(0, 10).map(o => {
     const itemNames = Object.values(o.items || {}).filter(Boolean).map(i => `${i.name}(${i.color})`).join(' + ');
     return { combo: itemNames, reason: o.reason };
   });
+
+  // 최근 추천했던 아이템 ID 조합 (중복 방지용)
+  const recentCombos = loadRecentCombos();
+  // 최근 조합에서 자주 쓰인 상의/하의 ID 추출 (과사용 방지)
+  const recentTopIds    = new Set();
+  const recentBottomIds = new Set();
+  recentCombos.slice(-6).forEach(combo => {
+    const parts = combo.split('|');
+    if (parts[1] && parts[1] !== 'null') recentTopIds.add(parts[1]);
+    if (parts[2] && parts[2] !== 'null') recentBottomIds.add(parts[2]);
+  });
+  // 3회 이상 등장한 아이템은 "과사용" 표시
+  const overusedItems = shuffledItems.filter(i => {
+    const countInRecent = recentCombos.filter(c => c.includes(i.id)).length;
+    return countInRecent >= 3;
+  }).map(i => i.id);
 
   const tpoText = tpoInfo
     ? `목표 일시: ${tpoInfo.date} ${tpoInfo.time}시\n상황(TPO): ${tpoInfo.event || '특별한 일정 없음 (일상적인 외출)'}`
@@ -340,8 +404,16 @@ export const getOutfitRecommendation = async (weather, items, tpoInfo, savedOutf
   const prompt = `내 옷장 목록: ${JSON.stringify(closetSummary)}
 
 ${savedExamples.length > 0 ? `[사용자의 선호 스타일 (이전에 저장한 코디들)]
-${savedExamples.map(ex => `- 조합: ${ex.combo}\n- 특징: ${ex.reason}`).join('\n')}
-위 코디들은 사용자가 선호하는 스타일이야. 이 취향을 참고해서 새로운 코디를 제안해줘.` : ''}
+${savedExamples.map(ex => `- 조합: ${ex.combo}\n  특징: ${ex.reason}`).join('\n')}
+위 코디들은 사용자가 선호하는 스타일이야. 이 취향의 무드 범위 안에서 새로운 조합을 제안해줘.` : ''}
+
+${recentCombos.length > 0 ? `[최근 추천했던 조합 — 반드시 피해야 함]
+아래 조합(아우터ID|상의ID|하의ID|신발ID)은 최근에 이미 추천한 것들이야. 동일한 조합은 절대 반복하지 마.
+${recentCombos.slice(-10).join('\n')}` : ''}
+
+${overusedItems.length > 0 ? `[과사용 아이템 — 가급적 제외]
+아래 ID의 아이템은 최근 추천에서 3회 이상 사용됐어. 가능하면 다른 아이템으로 대체해줘.
+${overusedItems.join(', ')}` : ''}
 
 ${tpoText}
 날씨: ${weather.condition}, 기온 ${weather.temp}°C, 체감 ${weather.apparentTemp ?? weather.temp}°C${weather.precipProb != null ? `, 강수확률 ${weather.precipProb}%` : ''}${weather.windSpeed ? `, 풍속 ${weather.windSpeed}km/h` : ''}
@@ -349,23 +421,48 @@ ${tpoText}
 위 옷장 목록에서 [목표 일시], [날씨], [상황(TPO)]를 완벽하게 고려하여 가장 적절한 서로 다른 코디 3가지를 추천해줘.
 
 [지침]
-1. 사용자의 선호 스타일(이전에 저장한 코디들)의 무드를 학습해서 일관성 있는 취향을 반영해줘.
-2. 3가지 추천 중 하나는 사용자의 기존 취향과 아주 유사하게, 나머지 둘은 기존 취향을 바탕으로 하되 약간의 새로운 시도(New Look)를 섞어서 제안해줘.
-3. [TPO 전문 가이드 준수]: 아래 2026년 패션 에티켓을 바탕으로 상황에 완벽히 녹아드는 코디를 제안해.
-   - 비즈니스 포멀: 중요한 계약/발표 시 무채색(네이비, 그레이) 수트, 깨끗한 셔츠, 구두 필수.
-   - 비즈니스 캐주얼: 슬랙스/치노 팬츠에 셔츠/니트 매치. 단정한 스니커즈 허용.
-   - 결혼식 하객: 화이트 계열 절대 금지. 파스텔 톤이나 차분한 네이비/베이지 세미 정장 권장.
-   - 장례식: 엄격한 블랙/어두운 무채색 통일. 양말/넥타이까지 어두운색 필수.
-   - 일상/소셜: 장소(식당/카페) 분위기에 맞추되, 고급 장소는 반바지/슬리퍼 지양.
-   - 핵심 철학: "내가 돋보이는 것보다 그 자리에 모인 사람들과 조화를 이루는 것"
-4. 날씨(기온, 날씨 상태)를 최우선으로 고려해 (추우면 아우터 필수, 비 오면 기능성 신발 등).
-5. 3가지 코디는 각각 확연히 다른 '패션 테마'를 가져야 해. (예: 1. 미니멀&클린, 2. 트렌디&스트릿, 3. 과감한 컬러 믹스매치 등). 비슷한 옷들로 구성하지 말고, 옷장에서 최대한 다양한 아이템을 활용해줘.
-6. [중요 의상 규칙] 벨트(액세서리)는 오직 상의가 '와이셔츠/셔츠' 계열이고 하의가 '정장바지/슬랙스' 계열일 때만 추천에 포함시켜줘. 그 외의 캐주얼한 복장에는 벨트를 제외해줘.
-7. '뻔한' 조합보다는 색감의 조화나 레이어링(상의 위에 베스트, 가방과 신발의 톤온톤 등)을 통해 센스 있는 조합을 제안해줘.
-8. 각 코디의 "reason"에는 왜 이 상황(TPO)과 날씨에 이 '테마'가 어울리는지, 어떤 포인트에 신경 썼는지 구체적으로 설명해줘.
-9. [중요] 요청 고유 번호: ${Date.now()} (매번 새로운 영감을 바탕으로 추천해줘).
+1. 사용자의 선호 스타일 무드를 유지하되, 3가지 추천은 각각 다른 아이템 조합으로 구성해. 상의·하의·아우터 중 최소 1개는 코디마다 달라야 해.
+2. 3가지 추천 중 하나는 사용자의 기존 취향과 유사하게, 나머지 둘은 취향 범위 안에서 새로운 조합을 시도해줘.
+3. [TPO 절대 금지 규칙 — 이 규칙은 다른 어떤 지침보다 최우선이며 예외 없이 적용]:
+   상황에 어울리지 않는 아이템이 단 하나라도 포함되면 그 코디 전체가 실패야. 아래 금지 조합은 절대 추천하지 마.
 
-[중요] JSON의 "reason" 필드 안에 쌍따옴표(")를 써야 할 경우 반드시 역슬래시(\\")로 이스케이프해줘. 설명 없이 JSON만 응답해.
+   ▸ 등산 / 트레킹 / 하이킹:
+     - 금지: 구두, 로퍼, 하이힐, 슬리퍼, 정장바지, 슬랙스, 재킷(정장), 드레스, 스커트, 가죽소재
+     - 필수: 등산화 또는 트레킹화, 기능성 아웃도어 의류
+
+   ▸ 장례식 / 조문:
+     - 금지: 원색(빨강·노랑·주황·핑크 등), 화려한 패턴, 흰옷(상복 제외), 반바지, 슬리퍼, 스니커즈
+     - 필수: 블랙 또는 짙은 무채색 계열 전신, 단정한 구두
+
+   ▸ 결혼식 하객:
+     - 금지: 흰색·아이보리 계열(신부와 겹침), 지나치게 노출된 옷, 청바지, 운동화, 슬리퍼
+     - 권장: 파스텔·네이비·베이지 세미정장
+
+   ▸ 운동 / 헬스 / 조깅:
+     - 금지: 구두, 로퍼, 슬랙스, 정장, 드레스, 스커트, 가죽소재
+     - 필수: 운동화, 기능성 스포츠웨어
+
+   ▸ 비즈니스 포멀 (계약·발표·면접):
+     - 금지: 슬리퍼, 운동화, 반바지, 후드티, 트레이닝복, 원색 상의
+     - 필수: 슈트 또는 재킷+슬랙스, 구두
+
+   ▸ 비즈니스 캐주얼:
+     - 금지: 슬리퍼, 트레이닝복, 반바지(격식 없는 자리 제외)
+     - 허용: 슬랙스+셔츠/니트, 단정한 스니커즈
+
+   ▸ 해수욕장 / 수영:
+     - 금지: 정장, 구두, 부츠
+     - 필수: 샌들 또는 슬리퍼, 가벼운 소재
+
+   [핵심 원칙] 옷장에 해당 상황에 맞는 아이템이 없더라도, 절대 맞지 않는 아이템을 억지로 끼워 넣지 마. 그 카테고리를 null로 비워두는 것이 훨씬 낫다.
+4. [스타일 일관성]: 코디 내 모든 아이템은 하나의 무드로 통일. 언밸런스한 조합 금지.
+5. 날씨(기온, 날씨 상태)를 최우선으로 고려해 (추우면 아우터 필수, 비 오면 기능성 신발 등).
+6. [중요] 3가지 코디의 핵심 아이템(상의 또는 하의)이 모두 같으면 안 돼. 각 코디마다 최소 상의나 하의 중 하나는 반드시 달라야 해.
+7. [의상 규칙] 벨트는 셔츠+슬랙스 조합일 때만 포함. 캐주얼 복장에는 제외.
+8. 각 코디의 "reason"은 이 TPO·날씨에 이 테마가 왜 어울리는지 한 문장으로 설명해.
+9. 세션 번호: ${Date.now()}
+
+[매우 중요] 반드시 유효한 JSON만 출력해. 모든 문자열 값 안에 줄바꿈·탭·쌍따옴표를 절대 넣지 마. 한 줄 문장만 사용해. 설명 없이 JSON만 응답해.
 
 액세서리 슬롯 안내:
 - 액세서리_얼굴머리: subcategory가 "얼굴/머리"인 아이템 (모자, 안경 등)
@@ -424,11 +521,19 @@ ${JSON.stringify(currentOutfitSummary, null, 2)}
 
 사용자의 수정 요청: "${userRequest}"
 
+[TPO 절대 금지 규칙 — 수정 요청이라도 예외 없이 적용]:
+- 등산/트레킹: 구두·로퍼·슬랙스·정장 금지. 등산화·기능성 의류 필수.
+- 장례식/조문: 원색·화려한 패턴·흰옷·스니커즈 금지. 블랙 무채색+단정한 구두 필수.
+- 결혼식 하객: 흰색·아이보리·청바지·운동화 금지.
+- 운동/헬스: 구두·슬랙스·정장 금지. 운동화+스포츠웨어 필수.
+- 비즈니스 포멀: 슬리퍼·운동화·후드티·반바지 금지.
+사용자가 TPO에 맞지 않는 아이템을 요청해도 거절하고, 상황에 맞는 대안을 reason에 설명해줘.
+
 [매우 중요] 사용자가 특정 부위(예: 바지)만 변경해달라고 한 경우, 변경하지 않은 나머지 부위의 옷(아우터, 상의 등)은 절대 null로 지우지 말고 위의 '현재 제안된 코디'에 적힌 원래 ID를 그대로 똑같이 유지해서 응답해야 해.
 만약 사용자의 요청에 맞는 옷이 옷장에 아예 없다면, 원래 코디를 그대로 유지하고 reason에 "해당하는 옷이 없어 기존 코디를 유지했습니다"라고 적어줘.
 항상 7개의 모든 카테고리(아우터, 상의, 하의, 신발, 액세서리_얼굴머리, 액세서리_손목팔, 액세서리_기타)를 응답에 포함시켜야 해 (원래부터 null이었던 건 null 유지).
 
-[중요] JSON의 "reason" 필드 안에 쌍따옴표(")를 써야 할 경우 반드시 역슬래시(\\")로 이스케이프해줘. 설명 없이 JSON만 응답해.
+[매우 중요] 반드시 유효한 JSON만 출력해. 모든 문자열 값 안에 줄바꿈·탭·쌍따옴표를 절대 넣지 마. 한 줄 문장만 사용해. 설명 없이 JSON만 응답해.
 
 액세서리 슬롯 안내:
 - 액세서리_얼굴머리: subcategory가 "얼굴/머리"인 아이템

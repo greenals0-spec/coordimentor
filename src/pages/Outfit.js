@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader, Sparkles, MapPin, RefreshCw, Send, Heart, List, X } from 'lucide-react';
+import { Loader, Sparkles, MapPin, RefreshCw, Send, Heart, List, X, Shirt, CheckCircle } from 'lucide-react';
 import { getItemsOnce, saveOutfit, deleteSavedOutfit, getSavedOutfitsOnce } from '../utils/storage';
-import { getOutfitRecommendation, adjustOutfit } from '../utils/api';
+import { getOutfitRecommendation, adjustOutfit, recordRecommendedOutfits } from '../utils/api';
 import { getWeatherByLocation, getWeatherByLocationName, extractLocationFromText } from '../utils/weather';
 import { useAuth } from '../contexts/AuthContext';
+import { runFullOutfitTryOn } from '../utils/tryon';
 import FlatLay from '../components/FlatLay';
 
 
@@ -20,6 +21,12 @@ export default function OutfitPage() {
   const [outfitError, setOutfitError] = useState('');
   const [savedMap, setSavedMap] = useState({}); // { index: outfitId }
   const [detailIndex, setDetailIndex] = useState(-1);
+
+  // 가상 입어보기 상태
+  const [tryOnIndex, setTryOnIndex] = useState(-1);        // 현재 진행 중인 카드 index
+  const [tryOnResults, setTryOnResults] = useState({});    // { index: base64DataUrl }
+  const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
+  const [tryOnModal, setTryOnModal] = useState(null);      // 결과 모달에 표시할 { index, imageUrl }
 
   // TPO States
   const today = new Date().toLocaleDateString('en-CA');
@@ -137,6 +144,9 @@ export default function OutfitPage() {
         }
         return { items: resolved, reason: o.reason, raw: o.outfit };
       });
+
+      // 이번 추천 조합을 기록 (다음 요청 시 중복 방지)
+      recordRecommendedOutfits(rec.outfits);
       setResults(newResults);
     } catch (e) {
       setOutfitError(e.message);
@@ -212,6 +222,48 @@ export default function OutfitPage() {
       } catch (e) {
         alert(`저장 실패: ${e.message}`);
       }
+    }
+  };
+
+  // ─── 가상 입어보기 ────────────────────────────────────────────────────────
+  const handleTryOn = async (index, res) => {
+    if (!userProfile?.modelPhoto) {
+      alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
+      return;
+    }
+    // 이미 결과 있으면 모달만 열기
+    if (tryOnResults[index]) {
+      setTryOnModal({ index, imageUrl: tryOnResults[index] });
+      return;
+    }
+
+    const recommendation = {
+      top:    res.items['상의']   || null,
+      bottom: res.items['하의']   || null,
+      outer:  res.items['아우터'] || null,
+    };
+    const hasItems = recommendation.top || recommendation.bottom || recommendation.outer;
+    if (!hasItems) {
+      alert('입혀볼 상의/하의/아우터가 없어요. 다른 코디를 시도해보세요!');
+      return;
+    }
+
+    setTryOnIndex(index);
+    setTryOnProgress({ step: 0, total: 0, label: '' });
+    try {
+      const result = await runFullOutfitTryOn(
+        userProfile.modelPhoto,
+        recommendation,
+        (step, total, label) => setTryOnProgress({ step, total, label })
+      );
+      setTryOnResults(prev => ({ ...prev, [index]: result }));
+      setTryOnModal({ index, imageUrl: result });
+    } catch (err) {
+      console.error('TryOn error:', err);
+      alert(`가상 입어보기 오류: ${err.message}`);
+    } finally {
+      setTryOnIndex(-1);
+      setTryOnProgress({ step: 0, total: 0, label: '' });
     }
   };
 
@@ -379,10 +431,104 @@ export default function OutfitPage() {
                   </button>
                 </div>
 
+                {/* 가상 입어보기 버튼 */}
+                {(() => {
+                  const isThisTrying = tryOnIndex === index;
+                  const hasResult = !!tryOnResults[index];
+                  const tryOnSteps = [
+                    res.items['상의']   && '상의',
+                    res.items['하의']   && '하의',
+                    res.items['아우터'] && '아우터',
+                  ].filter(Boolean);
+                  return (
+                    <button
+                      onClick={() => handleTryOn(index, res)}
+                      disabled={tryOnIndex !== -1}
+                      style={{
+                        width: '100%',
+                        marginTop: 12,
+                        padding: '14px 16px',
+                        border: 'none',
+                        borderRadius: 'var(--radius)',
+                        background: isThisTrying
+                          ? 'var(--border)'
+                          : hasResult
+                          ? 'var(--accent-light)'
+                          : 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
+                        color: isThisTrying
+                          ? 'var(--text-muted)'
+                          : hasResult
+                          ? 'var(--accent)'
+                          : '#fff',
+                        border: hasResult ? '1.5px solid var(--accent)' : 'none',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        fontFamily: "'Pretendard', sans-serif",
+                        cursor: tryOnIndex !== -1 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        boxShadow: (!isThisTrying && !hasResult) ? '0 6px 20px rgba(193,102,84,0.28)' : 'none',
+                        transition: 'all 0.25s',
+                      }}
+                    >
+                      {isThisTrying ? (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Loader size={16} className="spin" />
+                            <span>{tryOnProgress.label ? `${tryOnProgress.label} 합성 중...` : '준비 중...'}</span>
+                          </div>
+                          {tryOnProgress.total > 0 && (
+                            <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                              {tryOnSteps.map((label, i) => {
+                                const done = i < tryOnProgress.step;
+                                const active = i === tryOnProgress.step - 1;
+                                return (
+                                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <div style={{
+                                      width: 18, height: 18, borderRadius: '50%',
+                                      background: done ? '#5E3D31' : active ? '#C16654' : 'rgba(94,61,49,0.2)',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                      {done
+                                        ? <CheckCircle size={11} color="#fff" />
+                                        : <span style={{ fontSize: 8, color: '#fff', fontWeight: 700 }}>{i + 1}</span>}
+                                    </div>
+                                    <span style={{ fontSize: 10, color: done ? '#5E3D31' : 'var(--text-muted)' }}>{label}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      ) : hasResult ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Shirt size={16} />
+                          <span>입어본 결과 다시 보기</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Shirt size={16} />
+                            <span>나의 모델에 입어보기</span>
+                          </div>
+                          {tryOnSteps.length > 0 && (
+                            <span style={{ fontSize: 10, opacity: 0.85, fontWeight: 400 }}>
+                              {tryOnSteps.join(' → ')} 순서로 합성
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
+
                 <button
                   className={`btn full-width ${isSaved ? 'secondary' : 'primary'}`}
                   onClick={() => handleSaveOutfit(index)}
-                  style={{ marginTop: 12 }}
+                  style={{ marginTop: 8 }}
                 >
                   <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} />
                   <span>{isSaved ? '저장 취소' : '이 코디 저장하기'}</span>
@@ -390,6 +536,49 @@ export default function OutfitPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── 가상 입어보기 결과 모달 ── */}
+      {tryOnModal && (
+        <div
+          onClick={() => setTryOnModal(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(45,28,20,0.90)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, animation: 'fadeUp 0.4s ease' }}
+          >
+            {/* 헤더 */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>가상 입어보기 결과</p>
+                <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Pretendard', sans-serif" }}>코디 제안 {tryOnModal.index + 1}</p>
+              </div>
+              <button
+                onClick={() => setTryOnModal(null)}
+                style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <X size={18} color="#fff" />
+              </button>
+            </div>
+
+            {/* 결과 이미지 */}
+            <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+              <img src={tryOnModal.imageUrl} alt="가상 입어보기 결과" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+
+            {/* 안내 */}
+            <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>✨ AI가 생성한 가상 착장 이미지입니다</p>
+
+            {/* 닫기 버튼 */}
+            <button
+              onClick={() => setTryOnModal(null)}
+              style={{ width: '100%', background: '#5E3D31', color: '#fff', border: 'none', padding: '14px', borderRadius: 14, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+            >
+              확인했어요
+            </button>
+          </div>
         </div>
       )}
 
@@ -464,10 +653,10 @@ export default function OutfitPage() {
               {/* 헤더 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px 12px', flexShrink: 0, borderBottom: '1px solid var(--border)' }}>
                 <div>
-                  <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 2px', fontFamily: "'DM Sans', sans-serif" }}>
+                  <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 2px', fontFamily: "'Pretendard', sans-serif" }}>
                     코디 아이템
                   </p>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontSize: 22, fontWeight: 500, margin: 0, color: 'var(--primary)' }}>
+                  <h3 style={{ fontFamily: "'Pretendard', sans-serif", fontStyle: 'normal', fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--primary)' }}>
                     코디 제안 {detailIndex + 1}
                   </h3>
                 </div>
@@ -484,14 +673,14 @@ export default function OutfitPage() {
                       <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 3px', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 3px', fontFamily: "'Pretendard', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                         {LABEL[key] || key}
                       </p>
-                      <p style={{ fontSize: 14, color: 'var(--text)', margin: 0, fontFamily: "'DM Sans', sans-serif", fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ fontSize: 14, color: 'var(--text)', margin: 0, fontFamily: "'Pretendard', sans-serif", fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.name}
                       </p>
                       {item.color && (
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0', fontFamily: "'DM Sans', sans-serif" }}>{item.color}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0', fontFamily: "'Pretendard', sans-serif" }}>{item.color}</p>
                       )}
                     </div>
                   </div>

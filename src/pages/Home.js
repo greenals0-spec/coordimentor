@@ -3,10 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { subscribeToItems, subscribeToSavedOutfits, subscribeToOotdLogs } from '../utils/storage';
 import { getWeatherByLocation } from '../utils/weather';
-import { Bell } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import SettingsModal from '../components/SettingsModal';
 import MorningRecommendation from '../components/MorningRecommendation';
 import { recommendOutfit } from '../utils/recommendation';
+import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
+import { db } from '../firebase';
+import { setDoc } from 'firebase/firestore';
 
 const CATEGORY_ORDER = ['상의', '하의', '아우터', '신발', '액세서리'];
 
@@ -36,9 +39,9 @@ export default function HomePage({ onNavigate }) {
   const [savedOutfits, setSavedOutfits] = useState([]);
   const [ootdLogs, setOotdLogs] = useState([]);
   const [weather, setWeather] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
+  const [pendingWeather, setPendingWeather] = useState(null); // Cloud Function이 생성한 날씨
 
   useEffect(() => {
     if (!user) return;
@@ -49,17 +52,81 @@ export default function HomePage({ onNavigate }) {
   }, [user]);
 
   useEffect(() => {
-    getWeatherByLocation().then(setWeather).catch(() => {});
-  }, []);
+    // 날씨 조회 + 위경도 Firestore 저장 (Cloud Function에서 날씨 조회에 사용)
+    navigator.geolocation?.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const { fetchWeatherFromCoords } = await import('../utils/weather');
+          const w = await fetchWeatherFromCoords(coords.latitude, coords.longitude);
+          setWeather(w);
+        } catch {
+          getWeatherByLocation().then(setWeather).catch(() => {});
+        }
+        // 위경도 저장 (로그인된 경우)
+        if (user?.uid) {
+          setDoc(doc(db, 'users', user.uid), {
+            lastKnownLat: coords.latitude,
+            lastKnownLon: coords.longitude,
+          }, { merge: true }).catch(() => {});
+        }
+      },
+      () => getWeatherByLocation().then(setWeather).catch(() => {}),
+      { enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 }
+    );
+  }, [user?.uid]);
+
+  // ── Firestore pendingRecommendation 확인 (Cloud Function이 미리 생성한 추천) ──
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const checkPending = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        const pending = snap.data()?.pendingRecommendation;
+        if (!pending) return;
+
+        // 24시간 이내 생성된 추천만 표시
+        const age = Date.now() - (pending.generatedAt ?? 0);
+        if (age > 24 * 60 * 60 * 1000) {
+          await updateDoc(doc(db, 'users', user.uid), { pendingRecommendation: deleteField() });
+          return;
+        }
+
+        // 표시 후 즉시 삭제 (중복 표시 방지)
+        await updateDoc(doc(db, 'users', user.uid), { pendingRecommendation: deleteField() });
+        setRecommendation(pending);
+        setPendingWeather(pending.weather ?? null);
+        setShowRecommendation(true);
+      } catch (e) {
+        console.error('[pendingRecommendation]', e);
+      }
+    };
+
+    checkPending();
+  }, [user?.uid]);
 
   // ── 알람 체크 및 알림 리스너 ──
   useEffect(() => {
-    // 앱 실행 중 알림 클릭 시 처리
+    // FCM 푸시 탭 이벤트 (pushNotifications.js → CustomEvent 'morningRecommendation')
+    const handlePushRecommendation = (e) => {
+      const situation = e.detail?.situation || null;
+      if (!weather || !items.length) return;
+      const rec = recommendOutfit(weather, items, situation);
+      if (rec) {
+        setRecommendation(rec);
+        setShowRecommendation(true);
+      }
+    };
+    window.addEventListener('morningRecommendation', handlePushRecommendation);
+
+    // 로컬 알림 클릭 처리
     const setupListener = async () => {
       const listener = await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
-        if (notification.notification.extra?.type === 'morning_recommendation') {
-          // 알림 클릭 시 즉시 추천 생성
-          const rec = recommendOutfit(weather, items);
+        const type      = notification.notification.extra?.type;
+        const situation = notification.notification.extra?.situation || null;
+        if (type === 'morning_recommendation' || type === 'routine_alarm') {
+          if (!weather || !items.length) return;
+          const rec = recommendOutfit(weather, items, situation);
           if (rec) {
             setRecommendation(rec);
             setShowRecommendation(true);
@@ -72,22 +139,53 @@ export default function HomePage({ onNavigate }) {
     let notificationListener;
     setupListener().then(l => notificationListener = l);
 
+    return () => {
+      window.removeEventListener('morningRecommendation', handlePushRecommendation);
+      if (notificationListener) notificationListener.remove();
+    };
+  }, [weather, items]);
+
+  // ── 콜드스타트: 알림 탭으로 앱이 열린 경우 pending 처리 ──
+  useEffect(() => {
+    if (!weather || !items.length) return;
+
+    const pending = localStorage.getItem('pending_recommendation');
+    if (!pending) return;
+
+    try {
+      const { situation, timestamp } = JSON.parse(pending);
+      // 3분 이내 pending만 유효 (오래된 건 무시)
+      if (Date.now() - timestamp < 3 * 60 * 1000) {
+        const rec = recommendOutfit(weather, items, situation);
+        if (rec) {
+          setRecommendation(rec);
+          setShowRecommendation(true);
+        }
+      }
+    } catch (e) {
+      console.error('pending_recommendation parse error:', e);
+    } finally {
+      localStorage.removeItem('pending_recommendation');
+    }
+  }, [weather, items]);
+
+  // ── 정기 알람 체크 ──
+  useEffect(() => {
     if (!weather || !items.length || !userProfile?.alarmEnabled) return;
 
     const checkAlarm = () => {
       const now = new Date();
       const [alarmH, alarmM] = (userProfile.alarmTime || '07:30').split(':').map(Number);
-      
+
       const alarmDate = new Date();
       alarmDate.setHours(alarmH, alarmM, 0, 0);
 
       const todayStr = now.toISOString().split('T')[0];
       const lastShown = localStorage.getItem('last_alarm_shown');
 
-      // 알람 시간 이후이고, 오늘 아직 보여주지 않았을 때 (알람 시간으로부터 4시간 이내인 경우만)
       const diffMs = now - alarmDate;
       if (lastShown !== todayStr && diffMs >= 0 && diffMs < 4 * 60 * 60 * 1000) {
-        const rec = recommendOutfit(weather, items);
+        const rec = recommendOutfit(weather, items, null);
         if (rec) {
           setRecommendation(rec);
           setShowRecommendation(true);
@@ -98,11 +196,7 @@ export default function HomePage({ onNavigate }) {
 
     checkAlarm();
     const interval = setInterval(checkAlarm, 60000);
-
-    return () => {
-      clearInterval(interval);
-      if (notificationListener) notificationListener.remove();
-    };
+    return () => clearInterval(interval);
   }, [weather, items, userProfile]);
 
   const name = userProfile?.name || user?.displayName || '';
@@ -193,20 +287,6 @@ export default function HomePage({ onNavigate }) {
       {/* ── 히어로 섹션 ── */}
       <div style={{ position: 'relative', width: '100%', height: 280, overflow: 'hidden' }}>
         
-        {/* 알람 설정 버튼 */}
-        <button 
-          onClick={() => setShowSettings(true)}
-          style={{
-            position: 'absolute', top: 16, right: 16,
-            zIndex: 10, background: '#fff',
-            border: 'none', width: 36, height: 36, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
-          }}
-        >
-          <Bell size={18} color="#18160F" fill="#18160F" />
-        </button>
-
         {/* 배경 이미지 또는 플레이스홀더 */}
         {heroImageUrl ? (
           <img
@@ -296,6 +376,44 @@ export default function HomePage({ onNavigate }) {
           </div>
         )}
       </div>
+
+      {/* 가상 피팅 모델 등록 유도 배너 */}
+      {!userProfile?.modelPhoto && (
+        <div style={{ padding: '0 20px 24px' }}>
+          <button
+            onClick={() => {
+              // App.js의 setShowSettings를 호출해야 함. 
+              // 여기서는 onNavigate('settings') 처럼 처리하거나, 전역 이벤트를 사용해야 할 수도 있음.
+              // 하지만 가장 쉬운 방법은 Home.js에서 setShowSettings를 유지하거나, App.js의 함수를 props로 받는 것입니다.
+              window.dispatchEvent(new CustomEvent('openSettings'));
+            }}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #18160F 0%, #3A352F 100%)',
+              borderRadius: 16,
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+            }}
+          >
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Sparkles size={14} color="#FFD700" />
+                <span style={{ fontSize: 10, color: '#ABA298', fontWeight: 600, letterSpacing: '0.05em' }}>NEW FEATURE</span>
+              </div>
+              <p style={{ margin: 0, color: '#fff', fontSize: 15, fontWeight: 500 }}>전신사진 등록하고 가상 피팅하기</p>
+              <p style={{ margin: '4px 0 0', color: '#ABA298', fontSize: 11 }}>AI가 나의 체형에 딱 맞는 코디를 보여줘요.</p>
+            </div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ArrowRight size={18} color="#fff" />
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* ── 2열: 옷장 + 저장됨 ── */}
       <div style={{ padding: '0 20px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -435,17 +553,6 @@ export default function HomePage({ onNavigate }) {
 
       {/* ── 하단 푸터 ── */}
       <div style={{ padding: '20px 20px 60px', textAlign: 'center' }}>
-        <button
-          onClick={signOut}
-          style={{
-            background: 'none', border: 'none', color: '#ABA298',
-            fontSize: 10, letterSpacing: '0.05em', cursor: 'pointer',
-            textDecoration: 'underline', marginBottom: 24,
-            fontFamily: "'DM Sans', sans-serif"
-          }}
-        >
-          로그아웃
-        </button>
         <div style={{ opacity: 0.3 }}>
           <p style={{ 
             fontFamily: "'Cormorant Garamond', serif", 
@@ -462,13 +569,11 @@ export default function HomePage({ onNavigate }) {
         </div>
       </div>
 
-      {/* ── 모달/오버레이 ── */}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showRecommendation && recommendation && (
-        <MorningRecommendation 
-          weather={weather} 
-          recommendation={recommendation} 
-          onClose={() => setShowRecommendation(false)} 
+        <MorningRecommendation
+          weather={pendingWeather ?? weather}
+          recommendation={recommendation}
+          onClose={() => { setShowRecommendation(false); setPendingWeather(null); }}
         />
       )}
 

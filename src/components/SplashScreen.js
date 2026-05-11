@@ -9,7 +9,7 @@ export default function SplashScreen({ fadingOut }) {
       overflow: 'hidden',
       transition: 'opacity 0.6s ease',
       opacity: fadingOut ? 0 : 1,
-      background: '#FAFAF8',
+      background: '#FDF4EB',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -29,7 +29,7 @@ export default function SplashScreen({ fadingOut }) {
           height: 280px;
           border-radius: 140px;
           overflow: hidden;
-          box-shadow: 0 15px 45px rgba(0,0,0,0.08);
+          box-shadow: 0 15px 45px rgba(94,61,49,0.12);
           margin-bottom: 40px;
           animation: splashBreathe 6s ease-in-out infinite;
         }
@@ -66,12 +66,12 @@ export default function SplashScreen({ fadingOut }) {
       <h1
         className="brand-fade"
         style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: '34px',
-          fontStyle: 'italic',
-          fontWeight: '400',
-          color: '#18160F',
-          letterSpacing: '2px',
+          fontFamily: "'Pretendard', sans-serif",
+          fontSize: '32px',
+          fontStyle: 'normal',
+          fontWeight: '700',
+          color: '#5E3D31',
+          letterSpacing: '1px',
           margin: 0
         }}
       >
@@ -85,10 +85,10 @@ export default function SplashScreen({ fadingOut }) {
       <p
         className="sub-fade"
         style={{
-          fontFamily: "'DM Sans', 'Inter', sans-serif",
+          fontFamily: "'Pretendard', sans-serif",
           fontSize: '10px',
-          fontWeight: '400',
-          color: '#B0A898',
+          fontWeight: '500',
+          color: '#C16654',
           letterSpacing: '5px',
           margin: 0,
           textTransform: 'uppercase'

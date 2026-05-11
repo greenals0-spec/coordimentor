@@ -6,43 +6,45 @@
 /* ─── Reset ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ─── Design Tokens ─── */
+/* ─── Design Tokens — Modern Warm & Cozy ─── */
 :root {
-  /* Palette — warm monochrome */
-  --bg:             #F3EFE9;       /* warm linen */
-  --surface:        #FFFFFF;
-  --surface-2:      #FAF8F5;       /* slightly warm white */
-  --border:         #E2DDD6;       /* warm hairline */
-  --border-strong:  #C4BDB3;       /* medium warm */
-  --primary:        #0C0B0A;       /* warm near-black */
-  --accent:         #0C0B0A;       /* mono — no colour accent */
-  --accent-light:   rgba(12,11,10,0.05);
+  /* ── Palette ── */
+  --bg:             #FDF4EB;       /* Warm Oatmeal */
+  --surface:        #FFFFFF;       /* Ivory White */
+  --surface-2:      #FEF9F3;       /* Slightly warm white */
+  --border:         #EDE0D0;       /* Warm hairline */
+  --border-strong:  #D4B99A;       /* Medium warm brown */
+  --primary:        #5E3D31;       /* Dark Brown */
+  --primary-rgb:    94,61,49;
+  --accent:         #C16654;       /* Muted Terracotta */
+  --accent-rgb:     193,102,84;
+  --accent-light:   rgba(193,102,84,0.10);
   --danger:         #B02A2A;
   --success:        #2A7A4B;
-  --text:           #1A1816;       /* warm black */
-  --text-muted:     #8C877F;       /* warm mid-gray */
-  --text-faint:     #B5B0A8;
+  --text:           #3D2B22;       /* Warm dark brown */
+  --text-muted:     #9E7B6A;       /* Warm mid-brown */
+  --text-faint:     #C9A98F;       /* Warm light-brown */
 
-  /* Shape */
-  --radius:         4px;
-  --radius-sm:      2px;
-  --radius-md:      6px;
+  /* ── Shape — rounded & friendly ── */
+  --radius:         16px;
+  --radius-sm:      10px;
+  --radius-md:      12px;
   --radius-pill:    100px;
 
-  /* Layout */
+  /* ── Layout ── */
   --nav-h:          68px;
   --page-pad:       24px;
   --safe-top:       env(safe-area-inset-top, 0px);
   --safe-bottom:    env(safe-area-inset-bottom, 0px);
-  --shadow-sm:      0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md:      0 4px 20px rgba(0,0,0,0.07);
-  --shadow-lg:      0 12px 48px rgba(0,0,0,0.10);
+  --shadow-sm:      0 2px 10px rgba(94,61,49,0.07);
+  --shadow-md:      0 6px 24px rgba(94,61,49,0.09);
+  --shadow-lg:      0 16px 48px rgba(94,61,49,0.12);
 }
 
 /* ─── Base ─── */
 body {
   background: var(--bg);
-  font-family: 'DM Sans', 'Inter', -apple-system, sans-serif;
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
   color: var(--text);
   font-size: 14px;
   line-height: 1.5;
@@ -81,7 +83,7 @@ body {
   width: 100%;
   max-width: 430px;
   height: calc(var(--nav-h) + var(--safe-bottom));
-  background: rgba(255,255,255,0.98);
+  background: rgba(253,244,235,0.97);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
@@ -120,13 +122,13 @@ body {
 .nav-item.active::before {
   content: '';
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 20px;
-  height: 1.5px;
-  background: var(--primary);
-  border-radius: 0 0 2px 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
 }
 
 .nav-item svg {
@@ -177,10 +179,10 @@ body {
 }
 
 .page-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 32px;
-  font-weight: 500;
-  font-style: italic;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  font-style: normal;
   margin-bottom: 28px;
   color: var(--primary);
   letter-spacing: -0.01em;
@@ -241,7 +243,7 @@ body {
   padding: 10px 16px;
   border: none;
   background: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -262,8 +264,9 @@ body {
   bottom: -1px;
   left: 0;
   right: 0;
-  height: 1.5px;
-  background: var(--primary);
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
 }
 
 /* ─── Clothes Grid ─── */
@@ -367,7 +370,7 @@ body {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   transition: all 0.15s;
 }
 
@@ -397,7 +400,7 @@ body {
   padding: 14px 20px;
   border-radius: var(--radius);
   border: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -638,7 +641,7 @@ body {
 }
 
 .method-card h3 {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--primary);
@@ -699,7 +702,7 @@ body {
   padding: 16px;
   border-radius: var(--radius);
   border: 1px solid transparent;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -795,7 +798,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   background: var(--surface-2);
   color: var(--text);
   transition: border-color 0.15s;
@@ -827,9 +830,9 @@ body {
 }
 
 .pill.active {
-  background: var(--primary);
+  background: var(--accent);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--accent);
 }
 
 .tags {
@@ -900,7 +903,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   background: var(--surface-2);
   color: var(--text);
   outline: none;
@@ -914,7 +917,7 @@ body {
 
 /* Weather Card */
 .weather-card {
-  background: var(--primary);
+  background: linear-gradient(135deg, #5E3D31 0%, #7A4F3E 60%, #8B5A44 100%);
   border-radius: var(--radius);
   padding: 24px;
   margin-bottom: 20px;
@@ -928,9 +931,9 @@ body {
 .weather-main { display: flex; align-items: center; gap: 16px; }
 .weather-emoji { font-size: 40px; line-height: 1; }
 .weather-temp {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 44px;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1;
   letter-spacing: -0.02em;
   color: #fff;
@@ -993,7 +996,7 @@ body {
   border: 1px solid var(--border);
   background: var(--surface);
   font-size: 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   cursor: pointer;
   transition: all 0.15s;
   color: var(--text-muted);
@@ -1001,8 +1004,8 @@ body {
 }
 
 .option-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
   font-weight: 600;
 }
@@ -1034,10 +1037,10 @@ body {
 }
 
 .outfit-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 18px;
-  font-weight: 500;
-  font-style: italic;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  font-style: normal;
   color: var(--primary);
 }
 
@@ -1066,7 +1069,7 @@ body {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   margin-bottom: 16px;
-  border-left: 2px solid var(--primary);
+  border-left: 3px solid var(--accent);
 }
 
 /* Flat-lay overlay */
@@ -1102,7 +1105,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   outline: none;
   background: var(--surface-2);
   color: var(--text);
@@ -1208,7 +1211,7 @@ body {
   align-items: center;
   justify-content: center;
   height: 100dvh;
-  background: var(--surface);
+  background: var(--bg);
   gap: 8px;
 }
 
@@ -1224,10 +1227,10 @@ body {
 }
 
 .splash-text {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 22px;
-  font-weight: 400;
-  font-style: italic;
+  font-weight: 600;
+  font-style: normal;
   color: var(--primary);
   letter-spacing: 0.04em;
 }
@@ -1270,10 +1273,10 @@ body {
 }
 
 .login-brand-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 44px;
-  font-weight: 400;
-  font-style: italic;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  font-style: normal;
   color: white;
   letter-spacing: 0.02em;
   margin-bottom: 8px;
@@ -1281,7 +1284,7 @@ body {
 }
 
 .login-brand-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 10px;
   font-weight: 500;
   color: rgba(255,255,255,0.9);
@@ -1309,10 +1312,10 @@ body {
 }
 
 .login-welcome {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 28px;
-  font-weight: 500;
-  font-style: italic;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  font-style: normal;
   color: var(--primary);
   margin-bottom: 6px;
 }
@@ -1340,7 +1343,7 @@ body {
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1365,7 +1368,7 @@ body {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-2);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1423,7 +1426,7 @@ body {
   padding: 10px;
   border: none;
   background: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1444,8 +1447,9 @@ body {
   bottom: -1px;
   left: 0;
   right: 0;
-  height: 1.5px;
-  background: var(--primary);
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
 }
 
 .form-input {
@@ -1453,7 +1457,7 @@ body {
   padding: 13px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 14px;
   background: var(--surface-2);
   color: var(--text);
@@ -1471,7 +1475,7 @@ body {
   border: none;
   color: var(--text-muted);
   font-size: 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   letter-spacing: 0.06em;
   cursor: pointer;
   padding: 4px 0;
@@ -1497,7 +1501,7 @@ body {
   background: var(--surface);
   width: 100%;
   max-width: 430px;
-  border-radius: var(--radius) var(--radius) 0 0;
+  border-radius: 24px 24px 0 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1514,15 +1518,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px 16px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--border);
 }
 
 .edit-modal-header h3 {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 20px;
-  font-weight: 500;
-  font-style: italic;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  font-style: normal;
 }
 
 .close-btn {
@@ -1540,7 +1544,7 @@ body {
 .close-btn:hover { color: var(--primary); }
 
 .edit-modal-body {
-  padding: 20px;
+  padding: 0;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -1600,10 +1604,10 @@ body {
 }
 
 .onboarding-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 30px;
-  font-weight: 500;
-  font-style: italic;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  font-style: normal;
   text-align: center;
   color: var(--primary);
   margin-bottom: 8px;
@@ -1704,7 +1708,7 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Pretendard', sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1780,10 +1784,10 @@ body {
   touch-action: none;
   background-color: #fff;
   background-image:
-    linear-gradient(45deg, #f0ede9 25%, transparent 25%),
-    linear-gradient(-45deg, #f0ede9 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #f0ede9 75%),
-    linear-gradient(-45deg, transparent 75%, #f0ede9 75%);
+    linear-gradient(45deg, #f5ece1 25%, transparent 25%),
+    linear-gradient(-45deg, #f5ece1 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f5ece1 75%),
+    linear-gradient(-45deg, transparent 75%, #f5ece1 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
 }
