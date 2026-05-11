@@ -4,7 +4,7 @@ import { getItemsOnce, saveOutfit, deleteSavedOutfit, getSavedOutfitsOnce } from
 import { getOutfitRecommendation, adjustOutfit, recordRecommendedOutfits } from '../utils/api';
 import { getWeatherByLocation, getWeatherByLocationName, extractLocationFromText } from '../utils/weather';
 import { useAuth } from '../contexts/AuthContext';
-import { runFullOutfitTryOn } from '../utils/tryon';
+import { runFlatlayTryOn } from '../utils/tryon';
 import FlatLay from '../components/FlatLay';
 import { saveImageAsJpg } from '../utils/saveImage';
 
@@ -24,10 +24,33 @@ export default function OutfitPage() {
   const [detailIndex, setDetailIndex] = useState(-1);
 
   // 가상 입어보기 상태
-  const [tryOnIndex, setTryOnIndex] = useState(-1);        // 현재 진행 중인 카드 index
-  const [tryOnResults, setTryOnResults] = useState({});    // { index: base64DataUrl }
+  const [tryOnIndex, setTryOnIndex] = useState(-1);
+  const [tryOnResults, setTryOnResults] = useState({});
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
-  const [tryOnModal, setTryOnModal] = useState(null);      // 결과 모달에 표시할 { index, imageUrl }
+  const [tryOnModal, setTryOnModal] = useState(null);
+  const [progressPct, setProgressPct] = useState(0);
+  const progressTimerRef = useRef(null);
+  const progressTargetRef = useRef(0);
+
+  const animatePct = (target) => {
+    progressTargetRef.current = target;
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      setProgressPct(prev => {
+        const diff = progressTargetRef.current - prev;
+        if (Math.abs(diff) < 0.5) { clearInterval(progressTimerRef.current); return progressTargetRef.current; }
+        return prev + diff * 0.08;
+      });
+    }, 30);
+  };
+
+  useEffect(() => {
+    if (tryOnIndex === -1) { if (progressTimerRef.current) clearInterval(progressTimerRef.current); return; }
+    const { step, total } = tryOnProgress;
+    if (total === 0) { animatePct(5); return; }
+    animatePct(Math.max(5, ((step - 1) / total) * 90 + 5));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tryOnProgress, tryOnIndex]);
 
   // TPO States
   const today = new Date().toLocaleDateString('en-CA');
@@ -252,13 +275,16 @@ export default function OutfitPage() {
     }
 
     setTryOnIndex(index);
+    setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
     try {
-      const result = await runFullOutfitTryOn(
+      const result = await runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,
         (step, total, label) => setTryOnProgress({ step, total, label })
       );
+      animatePct(100);
+      await new Promise(r => setTimeout(r, 500));
       setTryOnResults(prev => ({ ...prev, [index]: result }));
       setTryOnModal({ index, imageUrl: result });
     } catch (err) {
@@ -267,6 +293,7 @@ export default function OutfitPage() {
     } finally {
       setTryOnIndex(-1);
       setTryOnProgress({ step: 0, total: 0, label: '' });
+      setProgressPct(0);
     }
   };
 
@@ -434,96 +461,73 @@ export default function OutfitPage() {
                   </button>
                 </div>
 
-                {/* 가상 입어보기 버튼 */}
+                {/* 가상 입어보기 버튼 / 프로그레스 바 */}
                 {(() => {
                   const isThisTrying = tryOnIndex === index;
                   const hasResult = !!tryOnResults[index];
-                  const tryOnSteps = [
-                    res.items['상의']   && '상의',
-                    res.items['하의']   && '하의',
-                    res.items['아우터'] && '아우터',
-                  ].filter(Boolean);
+
+                  if (isThisTrying) {
+                    // ── 로딩 중: 프로그레스 바 ──
+                    return (
+                      <div style={{
+                        width: '100%', marginTop: 12,
+                        borderRadius: 'var(--radius)',
+                        background: 'rgba(193,102,84,0.08)',
+                        border: '1px solid rgba(193,102,84,0.22)',
+                        padding: '14px 16px',
+                        display: 'flex', flexDirection: 'column', gap: 10,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <Loader size={14} className="spin" style={{ color: '#C16654', flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#C16654', fontFamily: "'Pretendard', sans-serif" }}>
+                              {tryOnProgress.label || '준비 중...'}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: '#C16654', fontFamily: "'Pretendard', sans-serif", minWidth: 42, textAlign: 'right' }}>
+                            {Math.round(progressPct)}%
+                          </span>
+                        </div>
+                        <div style={{ width: '100%', height: 10, borderRadius: 100, background: 'rgba(193,102,84,0.15)', overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', width: `${progressPct}%`, borderRadius: 100,
+                            background: 'linear-gradient(90deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
+                            boxShadow: '0 0 8px rgba(193,102,84,0.5)',
+                            transition: 'width 0.08s linear',
+                          }} />
+                        </div>
+                        {tryOnProgress.total > 0 && (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'Pretendard', sans-serif", textAlign: 'center' }}>
+                            {tryOnProgress.step} / {tryOnProgress.total} 단계 진행 중
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // ── 대기 / 결과 있음 ──
                   return (
                     <button
                       onClick={() => handleTryOn(index, res)}
                       disabled={tryOnIndex !== -1}
                       style={{
-                        width: '100%',
-                        marginTop: 12,
-                        padding: '14px 16px',
-                        border: 'none',
+                        width: '100%', marginTop: 12, padding: '14px 16px',
                         borderRadius: 'var(--radius)',
-                        background: isThisTrying
-                          ? 'var(--border)'
-                          : hasResult
+                        border: hasResult ? '1.5px solid var(--accent)' : 'none',
+                        background: hasResult
                           ? 'var(--accent-light)'
                           : 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
-                        color: isThisTrying
-                          ? 'var(--text-muted)'
-                          : hasResult
-                          ? 'var(--accent)'
-                          : '#fff',
-                        border: hasResult ? '1.5px solid var(--accent)' : 'none',
-                        fontSize: 14,
-                        fontWeight: 600,
+                        color: hasResult ? 'var(--accent)' : '#fff',
+                        fontSize: 14, fontWeight: 600,
                         fontFamily: "'Pretendard', sans-serif",
                         cursor: tryOnIndex !== -1 ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        boxShadow: (!isThisTrying && !hasResult) ? '0 6px 20px rgba(193,102,84,0.28)' : 'none',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        boxShadow: !hasResult ? '0 6px 20px rgba(193,102,84,0.28)' : 'none',
                         transition: 'all 0.25s',
                       }}
                     >
-                      {isThisTrying ? (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Loader size={16} className="spin" />
-                            <span>{tryOnProgress.label ? `${tryOnProgress.label} 합성 중...` : '준비 중...'}</span>
-                          </div>
-                          {tryOnProgress.total > 0 && (
-                            <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                              {tryOnSteps.map((label, i) => {
-                                const done = i < tryOnProgress.step;
-                                const active = i === tryOnProgress.step - 1;
-                                return (
-                                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <div style={{
-                                      width: 18, height: 18, borderRadius: '50%',
-                                      background: done ? '#5E3D31' : active ? '#C16654' : 'rgba(94,61,49,0.2)',
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                      {done
-                                        ? <CheckCircle size={11} color="#fff" />
-                                        : <span style={{ fontSize: 8, color: '#fff', fontWeight: 700 }}>{i + 1}</span>}
-                                    </div>
-                                    <span style={{ fontSize: 10, color: done ? '#5E3D31' : 'var(--text-muted)' }}>{label}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </>
-                      ) : hasResult ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <Shirt size={16} />
-                          <span>입어본 결과 다시 보기</span>
-                        </div>
-                      ) : (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Shirt size={16} />
-                            <span>나의 모델에 입어보기</span>
-                          </div>
-                          {tryOnSteps.length > 0 && (
-                            <span style={{ fontSize: 10, opacity: 0.85, fontWeight: 400 }}>
-                              {tryOnSteps.join(' → ')} 순서로 합성
-                            </span>
-                          )}
-                        </>
-                      )}
+                      <Shirt size={16} />
+                      <span>{hasResult ? '입어본 결과 다시 보기' : '나의 모델에 입어보기'}</span>
                     </button>
                   );
                 })()}

@@ -464,22 +464,30 @@ ${tpoText}
 
 [매우 중요] 반드시 유효한 JSON만 출력해. 모든 문자열 값 안에 줄바꿈·탭·쌍따옴표를 절대 넣지 마. 한 줄 문장만 사용해. 설명 없이 JSON만 응답해.
 
-액세서리 슬롯 안내:
-- 액세서리_얼굴머리: subcategory가 "얼굴/머리"인 아이템 (모자, 안경 등)
-- 액세서리_손목팔: subcategory가 "손목/팔"인 아이템 (시계, 팔찌 등)
-- 액세서리_기타: subcategory가 "기타"인 아이템 (가방, 벨트, 목걸이 등)
+━━━ 슬롯-카테고리 절대 규칙 (위반 시 전체 응답 무효) ━━━
+각 슬롯에는 반드시 해당 category를 가진 아이템 ID만 넣을 수 있다. 예외 없음.
+- "아우터"   슬롯 → category가 정확히 "아우터"인 아이템만 허용
+- "상의"     슬롯 → category가 정확히 "상의"인 아이템만 허용
+- "하의"     슬롯 → category가 정확히 "하의"인 아이템만 허용
+- "신발"     슬롯 → category가 정확히 "신발"인 아이템만 허용
+- "액세서리_얼굴머리" 슬롯 → category "액세서리" + subcategory "얼굴/머리"인 아이템만 허용
+- "액세서리_손목팔"   슬롯 → category "액세서리" + subcategory "손목/팔"인 아이템만 허용
+- "액세서리_기타"     슬롯 → category "액세서리" + subcategory "기타"인 아이템만 허용
+★ 상의 아이템을 액세서리 슬롯에 넣거나, 신발 아이템을 상의 슬롯에 넣는 등 category 불일치는 절대 금지.
+★ 해당 category의 아이템이 옷장에 없으면 반드시 null로 비워야 한다. 다른 category로 대체하는 것은 엄격히 금지.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {
   "outfits": [
     {
       "outfit": {
-        "아우터": <id 또는 null>,
-        "상의": <id 또는 null>,
-        "하의": <id 또는 null>,
-        "신발": <id 또는 null>,
-        "액세서리_얼굴머리": <id 또는 null>,
-        "액세서리_손목팔": <id 또는 null>,
-        "액세서리_기타": <id 또는 null>
+        "아우터": <category=="아우터"인 id 또는 null>,
+        "상의": <category=="상의"인 id 또는 null>,
+        "하의": <category=="하의"인 id 또는 null>,
+        "신발": <category=="신발"인 id 또는 null>,
+        "액세서리_얼굴머리": <category=="액세서리" && subcategory=="얼굴/머리"인 id 또는 null>,
+        "액세서리_손목팔": <category=="액세서리" && subcategory=="손목/팔"인 id 또는 null>,
+        "액세서리_기타": <category=="액세서리" && subcategory=="기타"인 id 또는 null>
       },
       "reason": "이 조합을 추천하는 이유 (2~3문장)"
     }
@@ -487,7 +495,32 @@ ${tpoText}
 }`;
 
   const text = await callGemini([{ text: prompt }], 4096);
-  return parseJsonFromText(text);
+  const parsed = parseJsonFromText(text);
+
+  // ── 방어 로직: 카테고리 불일치 슬롯 자동 null 처리 ──
+  const itemMap = Object.fromEntries(items.map(i => [i.id, i]));
+  if (parsed?.outfits) {
+    parsed.outfits = parsed.outfits.map(o => {
+      const outfit = { ...o.outfit };
+      const check = (slot, requiredCat, requiredSub) => {
+        const id = outfit[slot];
+        if (!id) return;
+        const item = itemMap[id];
+        if (!item) { outfit[slot] = null; return; }
+        if (item.category !== requiredCat) { outfit[slot] = null; return; }
+        if (requiredSub && item.subcategory !== requiredSub) { outfit[slot] = null; }
+      };
+      check('아우터', '아우터');
+      check('상의', '상의');
+      check('하의', '하의');
+      check('신발', '신발');
+      check('액세서리_얼굴머리', '액세서리', '얼굴/머리');
+      check('액세서리_손목팔',   '액세서리', '손목/팔');
+      check('액세서리_기타',     '액세서리', '기타');
+      return { ...o, outfit };
+    });
+  }
+  return parsed;
 };
 
 // ─── 코디 수정 ─────────────────────────────────────────────────────────────────
@@ -535,20 +568,28 @@ ${JSON.stringify(currentOutfitSummary, null, 2)}
 
 [매우 중요] 반드시 유효한 JSON만 출력해. 모든 문자열 값 안에 줄바꿈·탭·쌍따옴표를 절대 넣지 마. 한 줄 문장만 사용해. 설명 없이 JSON만 응답해.
 
-액세서리 슬롯 안내:
-- 액세서리_얼굴머리: subcategory가 "얼굴/머리"인 아이템
-- 액세서리_손목팔: subcategory가 "손목/팔"인 아이템
-- 액세서리_기타: subcategory가 "기타"인 아이템 (가방, 벨트 등)
+━━━ 슬롯-카테고리 절대 규칙 (위반 시 전체 응답 무효) ━━━
+각 슬롯에는 반드시 해당 category를 가진 아이템 ID만 넣을 수 있다. 예외 없음.
+- "아우터"   슬롯 → category가 정확히 "아우터"인 아이템만 허용
+- "상의"     슬롯 → category가 정확히 "상의"인 아이템만 허용
+- "하의"     슬롯 → category가 정확히 "하의"인 아이템만 허용
+- "신발"     슬롯 → category가 정확히 "신발"인 아이템만 허용
+- "액세서리_얼굴머리" 슬롯 → category "액세서리" + subcategory "얼굴/머리"인 아이템만 허용
+- "액세서리_손목팔"   슬롯 → category "액세서리" + subcategory "손목/팔"인 아이템만 허용
+- "액세서리_기타"     슬롯 → category "액세서리" + subcategory "기타"인 아이템만 허용
+★ 상의 아이템을 액세서리 슬롯에 넣거나, 신발 아이템을 상의 슬롯에 넣는 등 category 불일치는 절대 금지.
+★ 해당 category의 아이템이 옷장에 없으면 반드시 null로 비워야 한다. 다른 category로 대체하는 것은 엄격히 금지.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {
   "outfit": {
-    "아우터": <id 또는 null>,
-    "상의": <id 또는 null>,
-    "하의": <id 또는 null>,
-    "신발": <id 또는 null>,
-    "액세서리_얼굴머리": <id 또는 null>,
-    "액세서리_손목팔": <id 또는 null>,
-    "액세서리_기타": <id 또는 null>
+    "아우터": <category=="아우터"인 id 또는 null>,
+    "상의": <category=="상의"인 id 또는 null>,
+    "하의": <category=="하의"인 id 또는 null>,
+    "신발": <category=="신발"인 id 또는 null>,
+    "액세서리_얼굴머리": <category=="액세서리" && subcategory=="얼굴/머리"인 id 또는 null>,
+    "액세서리_손목팔": <category=="액세서리" && subcategory=="손목/팔"인 id 또는 null>,
+    "액세서리_기타": <category=="액세서리" && subcategory=="기타"인 id 또는 null>
   },
   "reason": "어떤 부분이 변경되었는지, 혹은 왜 유지되었는지 설명 (1~2문장)"
 }`;
