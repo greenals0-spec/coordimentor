@@ -1,7 +1,8 @@
-import { X, Sparkles, Shirt, CheckCircle } from 'lucide-react';
-import { runFullOutfitTryOn } from '../utils/tryon';
+import { X, Sparkles, Shirt } from 'lucide-react';
+import { runFlatlayTryOn } from '../utils/tryon';
 import { useAuth } from '../contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { saveImageAsJpg } from '../utils/saveImage';
 
 
 // ── Modern Warm & Cozy palette ──────────────────────────
@@ -25,56 +26,77 @@ const SITUATION_EMOJI = {
 
 export default function MorningRecommendation({ weather, recommendation, onClose }) {
   const { userProfile } = useAuth();
-  const [tryingOn, setTryingOn] = useState(false);
+  const [tryingOn, setTryingOn]     = useState(false);
   const [tryOnResult, setTryOnResult] = useState(null);
-  const [progress, setProgress] = useState({ step: 0, total: 0, label: '' });
+  const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
+  const [progressPct, setProgressPct]     = useState(0);
+  const progressTimerRef  = useRef(null);
+  const progressTargetRef = useRef(0);
 
   if (!weather || !recommendation) return null;
 
   const situation = recommendation.situation;
+
+  // 부드러운 % 애니메이션
+  const animateToTarget = (target) => {
+    progressTargetRef.current = target;
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      setProgressPct(prev => {
+        const diff = progressTargetRef.current - prev;
+        if (Math.abs(diff) < 0.5) {
+          clearInterval(progressTimerRef.current);
+          return progressTargetRef.current;
+        }
+        return prev + diff * 0.08;
+      });
+    }, 30);
+  };
 
   const handleTryOn = async () => {
     if (!userProfile?.modelPhoto) {
       alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
       return;
     }
-    const hasItems = recommendation.top || recommendation.bottom || recommendation.outer;
+    const hasItems = recommendation.top || recommendation.bottom || recommendation.outer
+                  || recommendation.shoes || recommendation.accessory;
     if (!hasItems) {
       alert('입혀볼 옷이 없어요. 옷장에 아이템을 추가해주세요!');
       return;
     }
 
     setTryingOn(true);
-    setProgress({ step: 0, total: 0, label: '' });
+    setProgressPct(0);
+    setTryOnProgress({ step: 0, total: 0, label: '' });
+
     try {
-      const result = await runFullOutfitTryOn(
+      const result = await runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,
-        (step, total, label) => setProgress({ step, total, label })
+        (step, total, label) => {
+          setTryOnProgress({ step, total, label });
+          // flatlay: step1=코디묶음생성(50%), step2=AI착장(100%)
+          animateToTarget(step === 1 ? 50 : 100);
+        }
       );
+      animateToTarget(100);
       setTryOnResult(result);
     } catch (err) {
       console.error('TryOn error:', err);
       alert(`가상 입어보기 오류: ${err.message}`);
     } finally {
       setTryingOn(false);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     }
   };
 
   const items = [
-    { label: '상의',   item: recommendation.top },
-    { label: '하의',   item: recommendation.bottom },
-    { label: '아우터', item: recommendation.outer },
-    { label: '신발',   item: recommendation.shoes },
+    { label: '상의',    item: recommendation.top },
+    { label: '하의',    item: recommendation.bottom },
+    { label: '아우터',  item: recommendation.outer },
+    { label: '신발',    item: recommendation.shoes },
     { label: '액세서리', item: recommendation.accessory },
   ].filter(i => i.item);
-
-  // 진행 단계 라벨 (상의/하의/아우터 중 몇 번째)
-  const tryOnSteps = [
-    recommendation.top   && '상의',
-    recommendation.bottom && '하의',
-    recommendation.outer  && '아우터',
-  ].filter(Boolean);
 
   return (
     <div className="modal-overlay" style={{ zIndex: 3000, background: 'rgba(45, 28, 20, 0.88)', alignItems: 'center', padding: '16px 0 90px' }}>
@@ -167,85 +189,81 @@ export default function MorningRecommendation({ weather, recommendation, onClose
 
         {/* Try-On + 확인 버튼 — 항상 하단 고정 */}
         <div style={{ padding: '12px 24px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 10, background: C.oatmeal, flexShrink: 0 }}>
-          {tryOnResult ? (
+
+          {/* 결과 이미지 */}
+          {tryOnResult && (
             <div style={{ animation: 'fadeUp 0.5s ease' }}>
               <p style={{ fontSize: 11, color: C.muted, textAlign: 'center', marginBottom: 10 }}>✨ AI가 생성한 전체 코디 착장 결과입니다</p>
-              <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 20, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', marginBottom: 14 }}>
-                <img src={tryOnResult} alt="Try-On Result" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ width: '100%', borderRadius: 20, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', marginBottom: 10 }}>
+                <img src={tryOnResult} alt="Try-On Result" style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block' }} />
               </div>
+              {/* 저장 버튼 */}
               <button
-                onClick={() => { setTryOnResult(null); setProgress({ step: 0, total: 0, label: '' }); }}
-                style={{ width: '100%', background: C.ivoryDeep, color: C.brown, border: `1px solid ${C.border}`, padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 500 }}
+                onClick={() => saveImageAsJpg(tryOnResult, 'coordimentor_morning')}
+                style={{ width: '100%', background: C.brown, color: '#fff', border: 'none', padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 600 }}
+              >
+                📥 이미지 저장
+              </button>
+              <button
+                onClick={() => { setTryOnResult(null); setProgressPct(0); }}
+                style={{ width: '100%', background: C.ivoryDeep, color: C.brown, border: `1px solid ${C.border}`, padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif", fontWeight: 500 }}
               >
                 다시 코디 보기
               </button>
             </div>
-          ) : (
-            <button
-              onClick={handleTryOn}
-              disabled={tryingOn}
-              style={{
-                width: '100%',
-                background: tryingOn ? C.border : 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
-                color: tryingOn ? C.muted : '#fff',
-                border: 'none',
-                padding: '16px',
-                borderRadius: 16,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: tryingOn ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                gap: 6,
-                boxShadow: tryingOn ? 'none' : '0 8px 24px rgba(193,102,84,0.30)',
-                transition: 'all 0.3s',
-              }}
-            >
-              {tryingOn ? (
-                <>
-                  {/* 진행 단계 표시 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="spin" style={{ fontSize: 16 }}>⌛</div>
-                    <span style={{ fontSize: 13 }}>
-                      {progress.label ? `${progress.label} 입히는 중...` : '준비 중...'}
-                    </span>
-                  </div>
-                  {/* 스텝 인디케이터 */}
-                  {progress.total > 0 && (
-                    <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-                      {tryOnSteps.map((stepLabel, idx) => {
-                        const done = idx < progress.step;
-                        const active = idx === progress.step - 1;
-                        return (
-                          <div key={stepLabel} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <div style={{
-                              width: 20, height: 20, borderRadius: '50%',
-                              background: done ? C.brown : active ? C.terracotta : 'rgba(94,61,49,0.15)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                              {done ? <CheckCircle size={12} color="#fff" /> : <span style={{ fontSize: 9, color: '#fff', fontWeight: 700 }}>{idx + 1}</span>}
-                            </div>
-                            <span style={{ fontSize: 9, color: done ? C.brown : C.muted }}>{stepLabel}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Shirt size={18} />
-                  <span>나의 모델에 전체 코디 입혀보기</span>
-                  {tryOnSteps.length > 0 && (
-                    <span style={{ fontSize: 10, opacity: 0.8, fontWeight: 400 }}>
-                      {tryOnSteps.join(' → ')} 순서로 합성해요
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
+          )}
+
+          {/* 입어보기 버튼 / 프로그레스 바 */}
+          {!tryOnResult && (
+            tryingOn ? (
+              <div style={{ borderRadius: 16, background: 'rgba(193,102,84,0.08)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: C.brown, fontWeight: 600 }}>
+                    {tryOnProgress.label || '준비 중...'}
+                  </span>
+                  <span style={{ fontSize: 13, color: C.terracotta, fontWeight: 700 }}>
+                    {Math.round(progressPct)}%
+                  </span>
+                </div>
+                <div style={{ height: 10, borderRadius: 100, background: 'rgba(193,102,84,0.15)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 100,
+                    width: `${progressPct}%`,
+                    background: 'linear-gradient(90deg, #C16654, #E8A070)',
+                    transition: 'width 0.08s linear',
+                  }} />
+                </div>
+                {tryOnProgress.total > 0 && (
+                  <span style={{ fontSize: 11, color: C.muted, textAlign: 'center' }}>
+                    {tryOnProgress.step} / {tryOnProgress.total} 단계 진행 중
+                  </span>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={handleTryOn}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '16px',
+                  borderRadius: 16,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  boxShadow: '0 8px 24px rgba(193,102,84,0.30)',
+                  transition: 'all 0.3s',
+                }}
+              >
+                <Shirt size={18} />
+                나의 모델에 전체 코디 입혀보기
+              </button>
+            )
           )}
 
           <button
