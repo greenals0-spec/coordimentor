@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Trash2, X, Shirt, CheckCircle, Loader, Plus } from 'lucide-react';
 import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCached } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
-import { runFullOutfitTryOn, runFlatlayTryOn } from '../utils/tryon';
+import { runFlatlayTryOn } from '../utils/tryon';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -111,40 +111,6 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
 
-  // ── 가상 입어보기 실행 ──
-  const handleTryOn = async () => {
-    if (!userProfile?.modelPhoto) {
-      alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
-      return;
-    }
-    if (selectedCount === 0) return;
-
-    setTryOnLoading(true);
-    setTryOnProgress({ step: 0, total: 0, label: '' });
-    setTryOnResult(null);
-    try {
-      const recommendation = {
-        top:       selected['상의']    || null,
-        bottom:    selected['하의']    || null,
-        outer:     selected['아우터']  || null,
-        shoes:     selected['신발']    || null,
-        accessory: selected['액세서리'] || null,
-      };
-      const result = await runFullOutfitTryOn(
-        userProfile.modelPhoto,
-        recommendation,
-        (step, total, label) => setTryOnProgress({ step, total, label })
-      );
-      setTryOnResult(result);
-    } catch (err) {
-      console.error('TryOn error:', err);
-      alert(`가상 입어보기 오류: ${err.message}`);
-    } finally {
-      setTryOnLoading(false);
-      setTryOnProgress({ step: 0, total: 0, label: '' });
-    }
-  };
-
   const handleFlatlayTryOn = async () => {
     if (!userProfile?.modelPhoto) {
       alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
@@ -183,6 +149,7 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const tryOnSteps = TRYON_SLOTS.filter(s => selected[s]);
 
   return (
@@ -365,138 +332,74 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
             })}
           </div>
 
-          {/* 입어보기 버튼들 */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            {/* 기존 순차적 입어보기 */}
+          {/* ── 입어보기 버튼 / 진행률 ── */}
+          {tryOnLoading ? (
+            /* 로딩 중: 프로그레스 바 (전체 너비) */
+            <div style={{
+              borderRadius: 'var(--radius)',
+              background: 'rgba(193,102,84,0.08)',
+              border: '1px solid rgba(193,102,84,0.22)',
+              padding: '16px 18px',
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}>
+              {/* 라벨 + % */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <Loader size={14} className="spin" style={{ color: '#C16654', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#C16654', fontFamily: "'Pretendard', sans-serif" }}>
+                    {tryOnProgress.label || '준비 중...'}
+                  </span>
+                </div>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#C16654', fontFamily: "'Pretendard', sans-serif", minWidth: 42, textAlign: 'right' }}>
+                  {Math.round(progressPct)}%
+                </span>
+              </div>
+
+              {/* 프로그레스 바 */}
+              <div style={{ width: '100%', height: 10, borderRadius: 100, background: 'rgba(193,102,84,0.15)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${progressPct}%`,
+                  borderRadius: 100,
+                  background: 'linear-gradient(90deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
+                  boxShadow: '0 0 8px rgba(193,102,84,0.5)',
+                  transition: 'width 0.08s linear',
+                }} />
+              </div>
+
+              {/* 단계 */}
+              {tryOnProgress.total > 0 && (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'Pretendard', sans-serif", textAlign: 'center' }}>
+                  {tryOnProgress.step} / {tryOnProgress.total} 단계 진행 중
+                </span>
+              )}
+            </div>
+          ) : (
+            /* 대기 중: 입어보기 버튼 */
             <button
-              onClick={handleTryOn}
-              disabled={selectedCount === 0 || tryOnLoading}
+              onClick={handleFlatlayTryOn}
+              disabled={selectedCount === 0}
               style={{
-                flex: 1,
-                padding: '14px 10px',
-                borderRadius: 'var(--radius)',
-                border: 'none',
-                background: selectedCount === 0 || tryOnLoading
+                width: '100%', padding: '15px',
+                borderRadius: 'var(--radius)', border: 'none',
+                background: selectedCount === 0
                   ? 'var(--border)'
                   : 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
-                color: selectedCount === 0 || tryOnLoading ? 'var(--text-muted)' : '#fff',
-                fontSize: 13,
-                fontWeight: 700,
+                color: selectedCount === 0 ? 'var(--text-muted)' : '#fff',
+                fontSize: 15, fontWeight: 700,
                 fontFamily: "'Pretendard', sans-serif",
-                cursor: selectedCount === 0 || tryOnLoading ? 'not-allowed' : 'pointer',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: 5,
-                boxShadow: selectedCount > 0 && !tryOnLoading ? '0 6px 20px rgba(193,102,84,0.30)' : 'none',
+                cursor: selectedCount === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: selectedCount > 0 ? '0 6px 20px rgba(193,102,84,0.30)' : 'none',
                 transition: 'all 0.25s',
               }}
             >
-            {tryOnLoading ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Loader size={16} className="spin" />
-                  <span>{tryOnProgress.label ? `${tryOnProgress.label} 합성 중...` : '준비 중...'}</span>
-                </div>
-                {tryOnProgress.total > 0 && (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {tryOnSteps.map((label, i) => {
-                      const done = i < tryOnProgress.step;
-                      const active2 = i === tryOnProgress.step - 1;
-                      return (
-                        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <div style={{
-                            width: 16, height: 16, borderRadius: '50%',
-                            background: done ? '#5E3D31' : active2 ? '#C16654' : 'rgba(94,61,49,0.2)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            {done
-                              ? <CheckCircle size={10} color="#fff" />
-                              : <span style={{ fontSize: 8, color: '#fff', fontWeight: 700 }}>{i + 1}</span>}
-                          </div>
-                          <span style={{ fontSize: 9, color: done ? '#5E3D31' : 'var(--text-muted)' }}>{label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Shirt size={16} />
-                <span>{selectedCount > 0 ? '순차 입어보기' : '항목 선택'}</span>
-              </div>
-            )}
+              <Shirt size={17} />
+              <span>
+                {selectedCount > 0 ? `선택한 ${selectedCount}개 입어보기` : '아이템을 선택해주세요'}
+              </span>
             </button>
-
-            {/* 새로운 Flatlay (초고속) 입어보기 */}
-            {tryOnLoading ? (
-              /* ── 로딩 중: 프로그레스 바 전체 너비 표시 ── */
-              <div style={{
-                flex: 1, borderRadius: 'var(--radius)',
-                background: 'rgba(193,102,84,0.10)',
-                border: '1px solid rgba(193,102,84,0.25)',
-                padding: '14px 16px',
-                display: 'flex', flexDirection: 'column', gap: 10,
-              }}>
-                {/* 상단: 라벨 + % */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Loader size={13} className="spin" style={{ color: '#C16654' }} />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#C16654', fontFamily: "'Pretendard', sans-serif" }}>
-                      {tryOnProgress.label || '준비 중...'}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#C16654', fontFamily: "'Pretendard', sans-serif" }}>
-                    {Math.round(progressPct)}%
-                  </span>
-                </div>
-                {/* 프로그레스 바 */}
-                <div style={{
-                  width: '100%', height: 8, borderRadius: 100,
-                  background: 'rgba(193,102,84,0.18)',
-                  overflow: 'hidden',
-                }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${progressPct}%`,
-                    borderRadius: 100,
-                    background: 'linear-gradient(90deg, #C16654, #E8A070)',
-                    transition: 'width 0.1s ease-out',
-                  }} />
-                </div>
-                {/* 단계 텍스트 */}
-                {tryOnProgress.total > 0 && (
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: "'Pretendard', sans-serif", textAlign: 'center' }}>
-                    {tryOnProgress.step} / {tryOnProgress.total} 단계
-                  </span>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={handleFlatlayTryOn}
-                disabled={selectedCount === 0}
-                style={{
-                  flex: 1,
-                  padding: '14px 10px',
-                  borderRadius: 'var(--radius)',
-                  border: '1px solid ' + (selectedCount === 0 ? 'transparent' : '#E8A070'),
-                  background: selectedCount === 0 ? 'var(--border)' : 'rgba(232,160,112,0.1)',
-                  color: selectedCount === 0 ? 'var(--text-muted)' : '#E8A070',
-                  fontSize: 13, fontWeight: 700,
-                  fontFamily: "'Pretendard', sans-serif",
-                  cursor: selectedCount === 0 ? 'not-allowed' : 'pointer',
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  gap: 5, transition: 'all 0.25s',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Shirt size={16} />
-                  <span>입어보기 2 (초고속)</span>
-                </div>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       )}
 
