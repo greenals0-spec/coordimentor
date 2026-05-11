@@ -216,17 +216,30 @@ export default function CalendarView() {
     }
   };
 
-  // 기기에 직접 저장 (Filesystem.Documents → 파일 앱에서 확인 가능 / 웹: <a download>)
+  // 기기에 직접 저장 (Android 10+: Cache → Media 갤러리 / 웹: <a download>)
   const saveToDevice = async (blob, filename) => {
     if (Capacitor.isNativePlatform()) {
       const base64 = await blobToBase64(blob);
-      await Filesystem.writeFile({
+      // 1) Cache에 임시 저장 (Documents는 Android 10+ 권한 거부됨)
+      const writeResult = await Filesystem.writeFile({
         path: filename,
         data: base64,
-        directory: Directory.Documents,
-        recursive: true,
+        directory: Directory.Cache,
       });
-      alert('저장 완료! 📁\n파일 앱 > 내 파일에서 확인하세요.');
+      // 2) Coordimentor 앨범 찾기 또는 생성 후 갤러리 저장
+      const { Media } = await import('@capacitor-community/media');
+      let albumIdentifier;
+      try {
+        const { albums } = await Media.getAlbums();
+        const existing = albums.find(a => a.name === 'Coordimentor');
+        albumIdentifier = existing
+          ? existing.identifier
+          : (await Media.createAlbum({ name: 'Coordimentor' })).identifier;
+      } catch {
+        albumIdentifier = undefined;
+      }
+      await Media.savePhoto({ path: writeResult.uri, albumIdentifier });
+      alert('갤러리에 저장되었습니다!');
     } else {
       const objUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
