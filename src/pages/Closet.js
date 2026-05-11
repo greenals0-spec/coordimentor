@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trash2, X, Shirt, CheckCircle, Loader, Plus } from 'lucide-react';
 import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCached } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,6 +23,42 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
   const [tryOnLoading, setTryOnLoading] = useState(false);
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [tryOnResult, setTryOnResult] = useState(null);
+  const [progressPct, setProgressPct] = useState(0);   // 0~100 smooth progress bar
+  const progressTimerRef = useRef(null);
+  const progressTargetRef = useRef(0);
+
+  // ── 부드러운 퍼센트 애니메이션 ──
+  const animateToTarget = (target) => {
+    progressTargetRef.current = target;
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      setProgressPct(prev => {
+        const diff = progressTargetRef.current - prev;
+        if (Math.abs(diff) < 0.5) {
+          clearInterval(progressTimerRef.current);
+          return progressTargetRef.current;
+        }
+        return prev + diff * 0.08; // easing
+      });
+    }, 30);
+  };
+
+  // tryOnProgress가 바뀌면 목표 % 계산
+  useEffect(() => {
+    if (!tryOnLoading) {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      return;
+    }
+    const { step, total } = tryOnProgress;
+    if (total === 0) {
+      animateToTarget(5); // 준비 중
+      return;
+    }
+    // step 1 → 0~45%, step 2 → 50~88%
+    const base = ((step - 1) / total) * 90;
+    animateToTarget(Math.max(5, base + 5));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tryOnProgress, tryOnLoading]);
 
   useEffect(() => {
     if (!user) return;
@@ -117,6 +153,7 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
     if (selectedCount === 0) return;
 
     setTryOnLoading(true);
+    setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
     setTryOnResult(null);
     try {
@@ -132,6 +169,9 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
         recommendation,
         (step, total, label) => setTryOnProgress({ step, total, label })
       );
+      // 완료: 100%까지 채운 뒤 결과 표시
+      animateToTarget(100);
+      await new Promise(r => setTimeout(r, 500));
       setTryOnResult(result);
     } catch (err) {
       console.error('TryOn error:', err);
@@ -139,6 +179,7 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
     } finally {
       setTryOnLoading(false);
       setTryOnProgress({ step: 0, total: 0, label: '' });
+      setProgressPct(0);
     }
   };
 
@@ -388,40 +429,73 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
             </button>
 
             {/* 새로운 Flatlay (초고속) 입어보기 */}
-            <button
-              onClick={handleFlatlayTryOn}
-              disabled={selectedCount === 0 || tryOnLoading}
-              style={{
-                flex: 1,
-                padding: '14px 10px',
-                borderRadius: 'var(--radius)',
-                border: '1px solid ' + (selectedCount === 0 || tryOnLoading ? 'transparent' : '#E8A070'),
-                background: selectedCount === 0 || tryOnLoading
-                  ? 'var(--border)'
-                  : 'rgba(232,160,112,0.1)',
-                color: selectedCount === 0 || tryOnLoading ? 'var(--text-muted)' : '#E8A070',
-                fontSize: 13,
-                fontWeight: 700,
-                fontFamily: "'Pretendard', sans-serif",
-                cursor: selectedCount === 0 || tryOnLoading ? 'not-allowed' : 'pointer',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: 5,
-                transition: 'all 0.25s',
-              }}
-            >
             {tryOnLoading ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Loader size={16} className="spin" />
-                <span>대기 중...</span>
+              /* ── 로딩 중: 프로그레스 바 전체 너비 표시 ── */
+              <div style={{
+                flex: 1, borderRadius: 'var(--radius)',
+                background: 'rgba(193,102,84,0.10)',
+                border: '1px solid rgba(193,102,84,0.25)',
+                padding: '14px 16px',
+                display: 'flex', flexDirection: 'column', gap: 10,
+              }}>
+                {/* 상단: 라벨 + % */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Loader size={13} className="spin" style={{ color: '#C16654' }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#C16654', fontFamily: "'Pretendard', sans-serif" }}>
+                      {tryOnProgress.label || '준비 중...'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#C16654', fontFamily: "'Pretendard', sans-serif" }}>
+                    {Math.round(progressPct)}%
+                  </span>
+                </div>
+                {/* 프로그레스 바 */}
+                <div style={{
+                  width: '100%', height: 8, borderRadius: 100,
+                  background: 'rgba(193,102,84,0.18)',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${progressPct}%`,
+                    borderRadius: 100,
+                    background: 'linear-gradient(90deg, #C16654, #E8A070)',
+                    transition: 'width 0.1s ease-out',
+                  }} />
+                </div>
+                {/* 단계 텍스트 */}
+                {tryOnProgress.total > 0 && (
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: "'Pretendard', sans-serif", textAlign: 'center' }}>
+                    {tryOnProgress.step} / {tryOnProgress.total} 단계
+                  </span>
+                )}
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Shirt size={16} />
-                <span>입어보기 2 (초고속)</span>
-              </div>
+              <button
+                onClick={handleFlatlayTryOn}
+                disabled={selectedCount === 0}
+                style={{
+                  flex: 1,
+                  padding: '14px 10px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid ' + (selectedCount === 0 ? 'transparent' : '#E8A070'),
+                  background: selectedCount === 0 ? 'var(--border)' : 'rgba(232,160,112,0.1)',
+                  color: selectedCount === 0 ? 'var(--text-muted)' : '#E8A070',
+                  fontSize: 13, fontWeight: 700,
+                  fontFamily: "'Pretendard', sans-serif",
+                  cursor: selectedCount === 0 ? 'not-allowed' : 'pointer',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  gap: 5, transition: 'all 0.25s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Shirt size={16} />
+                  <span>입어보기 2 (초고속)</span>
+                </div>
+              </button>
             )}
-            </button>
           </div>
         </div>
       )}
