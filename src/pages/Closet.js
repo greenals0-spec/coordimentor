@@ -475,38 +475,48 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
               <button
                 onClick={async () => {
                   try {
-                    const img = new Image();
-                    img.crossOrigin = 'Anonymous';
-                    img.onload = async () => {
-                      const canvas = document.createElement('canvas');
-                      canvas.width = img.width;
-                      canvas.height = img.height;
-                      const ctx = canvas.getContext('2d');
-                      ctx.fillStyle = '#FFFFFF';
-                      ctx.fillRect(0, 0, canvas.width, canvas.height);
-                      ctx.drawImage(img, 0, 0);
-                      
-                      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-                      const base64Data = dataUrl.split(',')[1];
-                      const fileName = `coordimentor_tryon_${Date.now()}.jpg`;
+                    // Canvas로 JPG 변환
+                    const jpgBase64 = await new Promise((resolve, reject) => {
+                      const img = new Image();
+                      img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        resolve(dataUrl.split(',')[1]);
+                      };
+                      img.onerror = reject;
+                      img.src = tryOnResult;
+                    });
 
-                      canvas.toBlob((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        
-                        if (Capacitor.isNativePlatform()) {
-                          // 웹뷰에서는 다운로드가 조용히 진행될 수 있으므로 안내
-                          alert('사진이 다운로드 폴더에 저장되었습니다.');
-                        }
-                      }, 'image/jpeg', 0.95);
-                    };
-                    img.src = tryOnResult;
+                    const fileName = `coordimentor_tryon_${Date.now()}.jpg`;
+
+                    if (Capacitor.isNativePlatform()) {
+                      // 네이티브: 캐시에 저장 후 공유 시트로 갤러리 저장 유도
+                      const result = await Filesystem.writeFile({
+                        path: fileName,
+                        data: jpgBase64,
+                        directory: Directory.Cache,
+                      });
+                      await Share.share({
+                        title: 'Coordimentor 가상 착장',
+                        text: 'AI가 생성한 가상 착장 이미지',
+                        files: [result.uri],
+                        dialogTitle: '이미지 저장',
+                      });
+                    } else {
+                      // 웹: 앵커 다운로드
+                      const a = document.createElement('a');
+                      a.href = `data:image/jpeg;base64,${jpgBase64}`;
+                      a.download = fileName;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }
                   } catch (e) {
                     console.error('저장 실패:', e);
                     alert('이미지 저장에 실패했습니다.');
