@@ -9,7 +9,7 @@ import FlatLay from '../components/FlatLay';
 
 
 export default function OutfitPage() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState('');
