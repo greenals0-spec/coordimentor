@@ -6,9 +6,7 @@ import { getWeatherByLocation, getWeatherByLocationName, extractLocationFromText
 import { useAuth } from '../contexts/AuthContext';
 import { runFullOutfitTryOn } from '../utils/tryon';
 import FlatLay from '../components/FlatLay';
-import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
+import { saveImageAsJpg } from '../utils/saveImage';
 
 
 export default function OutfitPage() {
@@ -579,51 +577,7 @@ export default function OutfitPage() {
             {/* 버튼 행 */}
             <div style={{ width: '100%', display: 'flex', gap: 10 }}>
               <button
-                onClick={async () => {
-                  try {
-                    const jpgBase64 = await new Promise((resolve, reject) => {
-                      const img = new Image();
-                      img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.naturalWidth;
-                        canvas.height = img.naturalHeight;
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = '#FFFFFF';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg', 0.95).split(',')[1]);
-                      };
-                      img.onerror = reject;
-                      img.src = tryOnModal.imageUrl;
-                    });
-
-                    const fileName = `coordimentor_tryon_${Date.now()}.jpg`;
-
-                    if (Capacitor.isNativePlatform()) {
-                      const result = await Filesystem.writeFile({
-                        path: fileName,
-                        data: jpgBase64,
-                        directory: Directory.Cache,
-                      });
-                      await Share.share({
-                        title: 'Coordimentor 가상 착장',
-                        text: 'AI가 생성한 가상 착장 이미지',
-                        files: [result.uri],
-                        dialogTitle: '이미지 저장',
-                      });
-                    } else {
-                      const a = document.createElement('a');
-                      a.href = `data:image/jpeg;base64,${jpgBase64}`;
-                      a.download = fileName;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }
-                  } catch (e) {
-                    console.error('저장 실패:', e);
-                    alert('이미지 저장에 실패했습니다.');
-                  }
-                }}
+                onClick={() => saveImageAsJpg(tryOnModal.imageUrl)}
                 style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
               >
                 저장
