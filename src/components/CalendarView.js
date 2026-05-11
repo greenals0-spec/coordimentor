@@ -11,6 +11,7 @@ import { toBlob } from 'html-to-image';
 import { CapacitorHttp, Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { saveImageAsJpg } from '../utils/saveImage';
 
 export default function CalendarView() {
   const { user } = useAuth();
@@ -216,37 +217,18 @@ export default function CalendarView() {
     }
   };
 
-  // 기기에 직접 저장 (Android 10+: Cache → Media 갤러리 / 웹: <a download>)
-  const saveToDevice = async (blob, filename) => {
-    if (Capacitor.isNativePlatform()) {
-      const base64 = await blobToBase64(blob);
-      // 1) Cache에 임시 저장 (Documents는 Android 10+ 권한 거부됨)
-      const writeResult = await Filesystem.writeFile({
-        path: filename,
-        data: base64,
-        directory: Directory.Cache,
-      });
-      // 2) Coordimentor 앨범 찾기 또는 생성 후 갤러리 저장
-      const { Media } = await import('@capacitor-community/media');
-      let albumIdentifier;
-      try {
-        const { albums } = await Media.getAlbums();
-        const existing = albums.find(a => a.name === 'Coordimentor');
-        albumIdentifier = existing
-          ? existing.identifier
-          : (await Media.createAlbum({ name: 'Coordimentor' })).identifier;
-      } catch {
-        albumIdentifier = undefined;
-      }
-      await Media.savePhoto({ path: writeResult.uri, albumIdentifier });
-      alert('갤러리에 저장되었습니다!');
-    } else {
-      const objUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objUrl; a.download = filename;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
-    }
+  // Blob → full dataUrl (data: prefix 포함)
+  const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  // 기기에 직접 저장 (JPG 변환 후 갤러리 저장 / 웹: 다운로드)
+  const saveToDevice = async (blob, filenamePrefix = 'coordimentor-ootd') => {
+    const dataUrl = await blobToDataUrl(blob);
+    await saveImageAsJpg(dataUrl, filenamePrefix);
   };
 
   const prepareSaveImage = async (fmt) => {

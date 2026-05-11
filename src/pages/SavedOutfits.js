@@ -9,6 +9,7 @@ import OotdUploadModal from '../components/OotdUploadModal';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { saveImageAsJpg } from '../utils/saveImage';
 
 const getTitleFontSize = (text = '') => {
   const len = text.length;
@@ -176,36 +177,14 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
   const executeDownload = async () => {
     if (!shareModalData) return;
     try {
-      if (Capacitor.isNativePlatform()) {
-        // 네이티브: Cache → Media 갤러리 저장 (Android 10+ Documents 권한 없음)
-        const base64 = await blobToBase64(shareModalData.file);
-        const filename = `coordimentor-outfit-${Date.now()}.png`;
-        const writeResult = await Filesystem.writeFile({
-          path: filename,
-          data: base64,
-          directory: Directory.Cache,
-        });
-        const { Media } = await import('@capacitor-community/media');
-        let albumIdentifier;
-        try {
-          const { albums } = await Media.getAlbums();
-          const existing = albums.find(a => a.name === 'Coordimentor');
-          albumIdentifier = existing
-            ? existing.identifier
-            : (await Media.createAlbum({ name: 'Coordimentor' })).identifier;
-        } catch {
-          albumIdentifier = undefined;
-        }
-        await Media.savePhoto({ path: writeResult.uri, albumIdentifier });
-        alert('갤러리에 저장되었습니다!');
-      } else {
-        const a = document.createElement('a');
-        a.href = shareModalData.objectUrl;
-        a.download = `coordimentor-${new Date().getTime()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      // full dataUrl (data: prefix 포함) 필요
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(shareModalData.file);
+      });
+      await saveImageAsJpg(dataUrl, 'coordimentor-outfit');
     } catch (e) {
       alert('저장 실패: ' + e.message);
     }
