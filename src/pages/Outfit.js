@@ -238,9 +238,11 @@ export default function OutfitPage() {
     }
 
     const recommendation = {
-      top:    res.items['상의']   || null,
-      bottom: res.items['하의']   || null,
-      outer:  res.items['아우터'] || null,
+      top:       res.items['상의']    || null,
+      bottom:    res.items['하의']    || null,
+      outer:     res.items['아우터']  || null,
+      shoes:     res.items['신발']    || null,
+      accessory: res.items['액세서리_얼굴머리'] || res.items['액세서리_손목팔'] || res.items['액세서리_기타'] || null,
     };
     const hasItems = recommendation.top || recommendation.bottom || recommendation.outer;
     if (!hasItems) {

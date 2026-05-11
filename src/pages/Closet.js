@@ -6,7 +6,7 @@ import { runFullOutfitTryOn } from '../utils/tryon';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
-const TRYON_SLOTS = ['상의', '하의', '아우터']; // 가상 입어보기 가능한 카테고리
+const TRYON_SLOTS = ['상의', '하의', '아우터', '신발', '액세서리']; // 가상 입어보기 카테고리
 
 export default function ClosetPage() {
   const { user, userProfile } = useAuth();
@@ -17,7 +17,7 @@ export default function ClosetPage() {
 
   // ── 직접 골라 입어보기 상태 ──
   const [tryOnMode, setTryOnMode] = useState(false);
-  const [selected, setSelected] = useState({ 상의: null, 하의: null, 아우터: null });
+  const [selected, setSelected] = useState({ 상의: null, 하의: null, 아우터: null, 신발: null, 액세서리: null });
   const [tryOnLoading, setTryOnLoading] = useState(false);
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [tryOnResult, setTryOnResult] = useState(null);
@@ -66,7 +66,7 @@ export default function ClosetPage() {
 
   const exitTryOnMode = () => {
     setTryOnMode(false);
-    setSelected({ 상의: null, 하의: null, 아우터: null });
+    setSelected({ 상의: null, 하의: null, 아우터: null, 신발: null, 액세서리: null });
     setTryOnResult(null);
     setTryOnProgress({ step: 0, total: 0, label: '' });
   };
@@ -86,9 +86,11 @@ export default function ClosetPage() {
     setTryOnResult(null);
     try {
       const recommendation = {
-        top:    selected['상의']   || null,
-        bottom: selected['하의']   || null,
-        outer:  selected['아우터'] || null,
+        top:       selected['상의']    || null,
+        bottom:    selected['하의']    || null,
+        outer:     selected['아우터']  || null,
+        shoes:     selected['신발']    || null,
+        accessory: selected['액세서리'] || null,
       };
       const result = await runFullOutfitTryOn(
         userProfile.modelPhoto,
@@ -151,24 +153,6 @@ export default function ClosetPage() {
         )}
       </div>
 
-      {/* ── 선택 모드 안내 배너 ── */}
-      {tryOnMode && (
-        <div style={{
-          background: 'var(--accent-light)',
-          border: '1.5px solid var(--accent)',
-          borderRadius: 'var(--radius-sm)',
-          padding: '10px 14px',
-          marginBottom: 14,
-          fontSize: 12,
-          color: 'var(--accent)',
-          fontWeight: 500,
-          fontFamily: "'Pretendard', sans-serif",
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <Shirt size={14} />
-          상의 · 하의 · 아우터를 각각 하나씩 골라보세요. 신발/액세서리는 선택 불가해요.
-        </div>
-      )}
 
       {/* ── 카테고리 탭 ── */}
       <div className="category-tabs">
@@ -188,10 +172,10 @@ export default function ClosetPage() {
           <p>옷이 없어요.<br />옷 추가 탭에서 추가해보세요!</p>
         </div>
       ) : (
-        <div className="clothes-grid" style={{ paddingBottom: tryOnMode ? 180 : 0 }}>
+        <div className="clothes-grid" style={{ paddingBottom: tryOnMode ? 'calc(var(--nav-h) + 200px)' : 0 }}>
           {filtered.map(item => {
             const cached = isImageCached(item.imageUrl);
-            const canSelect = tryOnMode && TRYON_SLOTS.includes(item.category);
+            const canSelect = tryOnMode; // 모든 카테고리 선택 가능
             const isSelected = tryOnMode && selected[item.category]?.id === item.id;
 
             return (
@@ -201,9 +185,9 @@ export default function ClosetPage() {
                 onClick={() => tryOnMode ? handleSelectItem(item) : handleEditClick(item)}
                 style={{
                   outline: isSelected ? '2.5px solid var(--accent)' : 'none',
-                  opacity: tryOnMode && !canSelect ? 0.45 : 1,
-                  transition: 'outline 0.15s, opacity 0.15s',
-                  cursor: tryOnMode ? (canSelect ? 'pointer' : 'not-allowed') : 'pointer',
+                  opacity: 1,
+                  transition: 'outline 0.15s',
+                  cursor: 'pointer',
                 }}
               >
                 <div className="cloth-img-wrapper" style={{ background: '#F8F6F3' }}>
@@ -290,16 +274,18 @@ export default function ClosetPage() {
       {/* ── 선택 모드 하단 패널 ── */}
       {tryOnMode && (
         <div style={{
-          position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          position: 'fixed',
+          bottom: 'calc(var(--nav-h) + env(safe-area-inset-bottom))',
+          left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: 430,
           background: 'var(--bg)',
           borderTop: '1px solid var(--border)',
-          padding: '14px 20px calc(14px + env(safe-area-inset-bottom))',
-          zIndex: 500,
-          boxShadow: '0 -8px 24px rgba(94,61,49,0.10)',
+          padding: '14px 20px 16px',
+          zIndex: 1100,
+          boxShadow: '0 -8px 24px rgba(94,61,49,0.12)',
         }}>
-          {/* 선택된 슬롯 3개 */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          {/* 선택된 슬롯 5개 */}
+          <div style={{ display: 'flex', gap: 7, marginBottom: 12 }}>
             {TRYON_SLOTS.map(slot => {
               const item = selected[slot];
               return (
@@ -442,7 +428,7 @@ export default function ClosetPage() {
 
             <div style={{ width: '100%', display: 'flex', gap: 10 }}>
               <button
-                onClick={() => { setTryOnResult(null); setSelected({ 상의: null, 하의: null, 아우터: null }); }}
+                onClick={() => { setTryOnResult(null); setSelected({ 상의: null, 하의: null, 아우터: null, 신발: null, 액세서리: null }); }}
                 style={{ flex: 1, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
               >
                 다시 선택

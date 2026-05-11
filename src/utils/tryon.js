@@ -11,7 +11,7 @@ const makeEndpoint = (model) =>
  * 단일 의류 Virtual Try-On (REST API 직접 호출)
  * @param {string} personImageUrl  사람 사진 (URL 또는 base64 data URL)
  * @param {string} garmentImageUrl 의류 이미지 (URL 또는 base64 data URL)
- * @param {string} category        '상의' | '하의' | '아우터'
+ * @param {string} category        '상의' | '하의' | '아우터' | '신발' | '액세서리'
  * @returns {Promise<string>}      base64 data URL 결과 이미지
  */
 export async function runVirtualTryOn(personImageUrl, garmentImageUrl, category) {
@@ -19,24 +19,28 @@ export async function runVirtualTryOn(personImageUrl, garmentImageUrl, category)
   const garmentPart = await toInlinePart(garmentImageUrl);
 
   const categoryDesc =
-    category === '상의'   ? 'top / upper body clothing' :
-    category === '하의'   ? 'bottom / lower body clothing (pants, skirt, etc.)' :
-    category === '아우터'  ? 'outer layer / jacket / coat worn over the existing outfit' :
+    category === '상의'    ? 'top / upper body clothing' :
+    category === '하의'    ? 'bottom / lower body clothing (pants, skirt, etc.)' :
+    category === '아우터'   ? 'outer layer / jacket / coat worn over the existing outfit' :
+    category === '신발'    ? 'shoes / footwear — place naturally on the person\'s feet' :
+    category === '액세서리' ? 'fashion accessory (bag, belt, hat, scarf, jewelry, etc.) — add naturally to the outfit' :
     category;
 
   const prompt = `You are a fashion AI specializing in virtual try-on.
 Two images are provided:
 1. A person's full-body photo (may already have clothes from a previous step).
-2. A single clothing item: ${categoryDesc}.
+2. A single clothing/accessory item: ${categoryDesc}.
 
 Task:
-- Naturally overlay the clothing onto the person.
+- Naturally overlay or place the item onto the person.
 - TOP → replace/overlay upper body clothing.
 - BOTTOM → replace/overlay lower body clothing.
-- OUTER LAYER → drape over the existing outfit.
-- Keep the person's exact pose, face, skin tone, and body proportions.
-- Add realistic shadows and fabric folds.
-- Return ONLY a high-quality, full-body photo-realistic image. No text.`;
+- OUTER LAYER → drape over the existing outfit without hiding it completely.
+- SHOES → replace the existing footwear or place on bare feet naturally.
+- ACCESSORY → add to the appropriate location (feet for bag, head for hat, wrist for watch, etc.) without covering the outfit.
+- Keep the person's exact pose, face, skin tone, and body proportions unchanged.
+- Add realistic shadows and fabric/material texture.
+- Return ONLY a high-quality, full-body photo-realistic image. No text, no background change.`;
 
   const requestBody = {
     contents: [{
@@ -94,13 +98,15 @@ Task:
 }
 
 /**
- * 전체 코디 순차 Virtual Try-On (상의 → 하의 → 아우터)
+ * 전체 코디 순차 Virtual Try-On (상의 → 하의 → 아우터 → 신발 → 액세서리)
  */
 export async function runFullOutfitTryOn(modelPhoto, recommendation, onProgress) {
   const steps = [
-    { item: recommendation.top,    category: '상의',  label: '상의' },
-    { item: recommendation.bottom, category: '하의',  label: '하의' },
-    { item: recommendation.outer,  category: '아우터', label: '아우터' },
+    { item: recommendation.top,       category: '상의',    label: '상의' },
+    { item: recommendation.bottom,    category: '하의',    label: '하의' },
+    { item: recommendation.outer,     category: '아우터',   label: '아우터' },
+    { item: recommendation.shoes,     category: '신발',    label: '신발' },
+    { item: recommendation.accessory, category: '액세서리', label: '액세서리' },
   ].filter(s => s.item?.imageUrl);
 
   if (steps.length === 0) throw new Error('입혀볼 아이템이 없습니다.');
