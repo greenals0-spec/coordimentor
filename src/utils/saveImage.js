@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 
 /**
- * base64 data URL → JPG로 변환 후 갤러리 저장 (네이티브) / 파일 다운로드 (웹)
+ * base64 data URL → JPG 변환 후 갤러리 저장 (네이티브) / 파일 다운로드 (웹)
  */
 export async function saveImageAsJpg(dataUrl, fileNamePrefix = 'coordimentor_tryon') {
   const jpgDataUrl = await convertToJpg(dataUrl);
@@ -9,20 +9,38 @@ export async function saveImageAsJpg(dataUrl, fileNamePrefix = 'coordimentor_try
   const fileName = `${fileNamePrefix}_${Date.now()}.jpg`;
 
   if (Capacitor.isNativePlatform()) {
-    // ── 네이티브: @capacitor-community/media로 갤러리에 직접 저장 ──
     try {
       const { Media } = await import('@capacitor-community/media');
-
-      // 임시 파일로 캐시에 저장
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
+
+      // 1. 임시 캐시 파일 저장
       const writeResult = await Filesystem.writeFile({
         path: fileName,
         data: base64Data,
         directory: Directory.Cache,
       });
 
-      // 갤러리(사진첩)에 저장
-      await Media.savePhoto({ path: writeResult.uri });
+      // 2. 'Coordimentor' 앨범 찾기 또는 생성
+      let albumIdentifier;
+      try {
+        const { albums } = await Media.getAlbums();
+        const existing = albums.find(a => a.name === 'Coordimentor');
+        if (existing) {
+          albumIdentifier = existing.identifier;
+        } else {
+          const created = await Media.createAlbum({ name: 'Coordimentor' });
+          albumIdentifier = created.identifier;
+        }
+      } catch (albumErr) {
+        console.warn('앨범 조회/생성 실패, 기본 갤러리에 저장합니다:', albumErr);
+        albumIdentifier = undefined;
+      }
+
+      // 3. 갤러리에 저장
+      await Media.savePhoto({
+        path: writeResult.uri,
+        albumIdentifier,
+      });
 
       alert('갤러리에 저장되었습니다!');
     } catch (e) {
@@ -30,7 +48,7 @@ export async function saveImageAsJpg(dataUrl, fileNamePrefix = 'coordimentor_try
       alert(`저장 실패: ${e.message || e}`);
     }
   } else {
-    // ── 웹: JPG 파일 직접 다운로드 ──
+    // 웹: JPG 파일 직접 다운로드
     const a = document.createElement('a');
     a.href = jpgDataUrl;
     a.download = fileName;

@@ -470,11 +470,13 @@ ${tpoText}
 - "상의"     슬롯 → category가 정확히 "상의"인 아이템만 허용
 - "하의"     슬롯 → category가 정확히 "하의"인 아이템만 허용
 - "신발"     슬롯 → category가 정확히 "신발"인 아이템만 허용
-- "액세서리_얼굴머리" 슬롯 → category "액세서리" + subcategory "얼굴/머리"인 아이템만 허용
-- "액세서리_손목팔"   슬롯 → category "액세서리" + subcategory "손목/팔"인 아이템만 허용
-- "액세서리_기타"     슬롯 → category "액세서리" + subcategory "기타"인 아이템만 허용
+- "액세서리_얼굴머리" 슬롯 → category "액세서리"이고, subcategory가 "얼굴/머리"이거나 null인 아이템 (모자·안경·귀걸이·헤어핀 등)
+- "액세서리_손목팔"   슬롯 → category "액세서리"이고, subcategory가 "손목/팔"이거나 null인 아이템 (시계·팔찌 등)
+- "액세서리_기타"     슬롯 → category "액세서리"이고, subcategory가 "기타"이거나 null인 아이템 (가방·목걸이·벨트 등)
+★ subcategory가 null인 액세서리는 아이템 이름과 태그를 보고 가장 어울리는 슬롯 하나에만 배치해.
 ★ 상의 아이템을 액세서리 슬롯에 넣거나, 신발 아이템을 상의 슬롯에 넣는 등 category 불일치는 절대 금지.
 ★ 해당 category의 아이템이 옷장에 없으면 반드시 null로 비워야 한다. 다른 category로 대체하는 것은 엄격히 금지.
+★ "reason" 필드에는 스타일 설명만 작성해. 시스템 오류·subcategory 누락 등 기술적 내용은 절대 작성 금지.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {
@@ -508,7 +510,8 @@ ${tpoText}
         const item = itemMap[id];
         if (!item) { outfit[slot] = null; return; }
         if (item.category !== requiredCat) { outfit[slot] = null; return; }
-        if (requiredSub && item.subcategory !== requiredSub) { outfit[slot] = null; }
+        // subcategory가 null이면 AI 판단 신뢰 (구버전 데이터 호환), 명시적으로 다른 값일 때만 차단
+        if (requiredSub && item.subcategory !== null && item.subcategory !== requiredSub) { outfit[slot] = null; }
       };
       check('아우터', '아우터');
       check('상의', '상의');
@@ -574,11 +577,13 @@ ${JSON.stringify(currentOutfitSummary, null, 2)}
 - "상의"     슬롯 → category가 정확히 "상의"인 아이템만 허용
 - "하의"     슬롯 → category가 정확히 "하의"인 아이템만 허용
 - "신발"     슬롯 → category가 정확히 "신발"인 아이템만 허용
-- "액세서리_얼굴머리" 슬롯 → category "액세서리" + subcategory "얼굴/머리"인 아이템만 허용
-- "액세서리_손목팔"   슬롯 → category "액세서리" + subcategory "손목/팔"인 아이템만 허용
-- "액세서리_기타"     슬롯 → category "액세서리" + subcategory "기타"인 아이템만 허용
+- "액세서리_얼굴머리" 슬롯 → category "액세서리"이고, subcategory가 "얼굴/머리"이거나 null인 아이템 (모자·안경·귀걸이·헤어핀 등)
+- "액세서리_손목팔"   슬롯 → category "액세서리"이고, subcategory가 "손목/팔"이거나 null인 아이템 (시계·팔찌 등)
+- "액세서리_기타"     슬롯 → category "액세서리"이고, subcategory가 "기타"이거나 null인 아이템 (가방·목걸이·벨트 등)
+★ subcategory가 null인 액세서리는 아이템 이름과 태그를 보고 가장 어울리는 슬롯 하나에만 배치해.
 ★ 상의 아이템을 액세서리 슬롯에 넣거나, 신발 아이템을 상의 슬롯에 넣는 등 category 불일치는 절대 금지.
 ★ 해당 category의 아이템이 옷장에 없으면 반드시 null로 비워야 한다. 다른 category로 대체하는 것은 엄격히 금지.
+★ "reason" 필드에는 스타일 설명만 작성해. 시스템 오류·subcategory 누락 등 기술적 내용은 절대 작성 금지.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {
