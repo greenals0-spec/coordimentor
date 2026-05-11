@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, X, Shirt, CheckCircle, Loader, Plus } from 'lucide-react';
 import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCached } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
-import { runFullOutfitTryOn } from '../utils/tryon';
+import { runFullOutfitTryOn, runFlatlayTryOn } from '../utils/tryon';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
 const TRYON_SLOTS = ['상의', '하의', '아우터', '신발', '액세서리']; // 가상 입어보기 카테고리
 
-export default function ClosetPage() {
+export default function ClosetPage({ tryOnMode, setTryOnMode }) {
   const { user, userProfile } = useAuth();
   const [active, setActive] = useState('아우터');
   const [items, setItems] = useState([]);
@@ -16,7 +19,6 @@ export default function ClosetPage() {
   const [editingItem, setEditingItem] = useState(null);
 
   // ── 직접 골라 입어보기 상태 ──
-  const [tryOnMode, setTryOnMode] = useState(false);
   const [selected, setSelected] = useState({ 상의: null, 하의: null, 아우터: null, 신발: null, 액세서리: null });
   const [tryOnLoading, setTryOnLoading] = useState(false);
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
@@ -107,6 +109,39 @@ export default function ClosetPage() {
     }
   };
 
+  const handleFlatlayTryOn = async () => {
+    if (!userProfile?.modelPhoto) {
+      alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
+      return;
+    }
+    if (selectedCount === 0) return;
+
+    setTryOnLoading(true);
+    setTryOnProgress({ step: 0, total: 0, label: '' });
+    setTryOnResult(null);
+    try {
+      const recommendation = {
+        top:       selected['상의']    || null,
+        bottom:    selected['하의']    || null,
+        outer:     selected['아우터']  || null,
+        shoes:     selected['신발']    || null,
+        accessory: selected['액세서리'] || null,
+      };
+      const result = await runFlatlayTryOn(
+        userProfile.modelPhoto,
+        recommendation,
+        (step, total, label) => setTryOnProgress({ step, total, label })
+      );
+      setTryOnResult(result);
+    } catch (err) {
+      console.error('TryOn error:', err);
+      alert(`가상 입어보기 오류: ${err.message}`);
+    } finally {
+      setTryOnLoading(false);
+      setTryOnProgress({ step: 0, total: 0, label: '' });
+    }
+  };
+
   const tryOnSteps = TRYON_SLOTS.filter(s => selected[s]);
 
   return (
@@ -115,42 +150,9 @@ export default function ClosetPage() {
       {/* ── 헤더 ── */}
       <div className="closet-header">
         <div className="header-info">
-          <h2 className="page-title" style={{ marginBottom: 4 }}>내 옷장</h2>
+          <h2 className="page-title">내 옷장</h2>
           <p className="user-name">{userProfile?.name || user?.displayName || '사용자'}님의 컬렉션</p>
         </div>
-        {/* 직접 입어보기 토글 */}
-        {!tryOnMode ? (
-          <button
-            onClick={() => setTryOnMode(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-              background: 'linear-gradient(135deg, #C16654, #D4845E)',
-              color: '#fff', border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600, fontFamily: "'Pretendard', sans-serif",
-              boxShadow: '0 4px 14px rgba(193,102,84,0.28)',
-              flexShrink: 0,
-            }}
-          >
-            <Shirt size={14} />
-            입어보기
-          </button>
-        ) : (
-          <button
-            onClick={exitTryOnMode}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-              background: 'var(--border)', color: 'var(--text-muted)',
-              border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600, fontFamily: "'Pretendard', sans-serif",
-              flexShrink: 0,
-            }}
-          >
-            <X size={14} />
-            선택 취소
-          </button>
-        )}
       </div>
 
 
@@ -322,30 +324,32 @@ export default function ClosetPage() {
             })}
           </div>
 
-          {/* 입어보기 버튼 */}
-          <button
-            onClick={handleTryOn}
-            disabled={selectedCount === 0 || tryOnLoading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              borderRadius: 'var(--radius)',
-              border: 'none',
-              background: selectedCount === 0 || tryOnLoading
-                ? 'var(--border)'
-                : 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
-              color: selectedCount === 0 || tryOnLoading ? 'var(--text-muted)' : '#fff',
-              fontSize: 14,
-              fontWeight: 700,
-              fontFamily: "'Pretendard', sans-serif",
-              cursor: selectedCount === 0 || tryOnLoading ? 'not-allowed' : 'pointer',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              gap: 5,
-              boxShadow: selectedCount > 0 && !tryOnLoading ? '0 6px 20px rgba(193,102,84,0.30)' : 'none',
-              transition: 'all 0.25s',
-            }}
-          >
+          {/* 입어보기 버튼들 */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {/* 기존 순차적 입어보기 */}
+            <button
+              onClick={handleTryOn}
+              disabled={selectedCount === 0 || tryOnLoading}
+              style={{
+                flex: 1,
+                padding: '14px 10px',
+                borderRadius: 'var(--radius)',
+                border: 'none',
+                background: selectedCount === 0 || tryOnLoading
+                  ? 'var(--border)'
+                  : 'linear-gradient(135deg, #C16654 0%, #D4845E 60%, #E8A070 100%)',
+                color: selectedCount === 0 || tryOnLoading ? 'var(--text-muted)' : '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                fontFamily: "'Pretendard', sans-serif",
+                cursor: selectedCount === 0 || tryOnLoading ? 'not-allowed' : 'pointer',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 5,
+                boxShadow: selectedCount > 0 && !tryOnLoading ? '0 6px 20px rgba(193,102,84,0.30)' : 'none',
+                transition: 'all 0.25s',
+              }}
+            >
             {tryOnLoading ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -378,14 +382,47 @@ export default function ClosetPage() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Shirt size={16} />
-                <span>
-                  {selectedCount > 0
-                    ? `선택한 ${selectedCount}개 아이템 입어보기`
-                    : '상의/하의/아우터를 먼저 선택하세요'}
-                </span>
+                <span>{selectedCount > 0 ? '순차 입어보기' : '항목 선택'}</span>
               </div>
             )}
-          </button>
+            </button>
+
+            {/* 새로운 Flatlay (초고속) 입어보기 */}
+            <button
+              onClick={handleFlatlayTryOn}
+              disabled={selectedCount === 0 || tryOnLoading}
+              style={{
+                flex: 1,
+                padding: '14px 10px',
+                borderRadius: 'var(--radius)',
+                border: '1px solid ' + (selectedCount === 0 || tryOnLoading ? 'transparent' : '#E8A070'),
+                background: selectedCount === 0 || tryOnLoading
+                  ? 'var(--border)'
+                  : 'rgba(232,160,112,0.1)',
+                color: selectedCount === 0 || tryOnLoading ? 'var(--text-muted)' : '#E8A070',
+                fontSize: 13,
+                fontWeight: 700,
+                fontFamily: "'Pretendard', sans-serif",
+                cursor: selectedCount === 0 || tryOnLoading ? 'not-allowed' : 'pointer',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 5,
+                transition: 'all 0.25s',
+              }}
+            >
+            {tryOnLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Loader size={16} className="spin" />
+                <span>대기 중...</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Shirt size={16} />
+                <span>입어보기 2 (초고속)</span>
+              </div>
+            )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -398,12 +435,13 @@ export default function ClosetPage() {
             background: 'rgba(45,28,20,0.92)',
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
-            padding: '24px 20px',
+            padding: 'max(env(safe-area-inset-top, 40px), 40px) 20px max(env(safe-area-inset-bottom, 24px), 24px)',
+            overflowY: 'auto',
           }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, animation: 'fadeUp 0.4s ease' }}
+            style={{ width: '100%', maxWidth: 400, height: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, animation: 'fadeUp 0.4s ease' }}
           >
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -420,8 +458,9 @@ export default function ClosetPage() {
               </button>
             </div>
 
-            <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.45)' }}>
-              <img src={tryOnResult} alt="가상 착장 결과" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {/* 전신 이미지 — flex: 1을 주어 남는 공간을 차지하되 버튼들을 밀어내지 않게 함 */}
+            <div style={{ width: '100%', flex: 1, minHeight: 0, borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.45)', background: '#1a1008', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <img src={tryOnResult} alt="가상 착장 결과" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'contain' }} />
             </div>
 
             <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>✨ AI가 생성한 가상 착장 이미지입니다</p>
@@ -432,6 +471,50 @@ export default function ClosetPage() {
                 style={{ flex: 1, background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
               >
                 다시 선택
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.onload = async () => {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = img.width;
+                      canvas.height = img.height;
+                      const ctx = canvas.getContext('2d');
+                      ctx.fillStyle = '#FFFFFF';
+                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                      ctx.drawImage(img, 0, 0);
+                      
+                      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                      const base64Data = dataUrl.split(',')[1];
+                      const fileName = `coordimentor_tryon_${Date.now()}.jpg`;
+
+                      canvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        if (Capacitor.isNativePlatform()) {
+                          // 웹뷰에서는 다운로드가 조용히 진행될 수 있으므로 안내
+                          alert('사진이 다운로드 폴더에 저장되었습니다.');
+                        }
+                      }, 'image/jpeg', 0.95);
+                    };
+                    img.src = tryOnResult;
+                  } catch (e) {
+                    console.error('저장 실패:', e);
+                    alert('이미지 저장에 실패했습니다.');
+                  }
+                }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                저장
               </button>
               <button
                 onClick={() => setTryOnResult(null)}

@@ -37,10 +37,14 @@ Task:
 - BOTTOM → replace/overlay lower body clothing.
 - OUTER LAYER → drape over the existing outfit without hiding it completely.
 - SHOES → replace the existing footwear or place on bare feet naturally.
-- ACCESSORY → add to the appropriate location (feet for bag, head for hat, wrist for watch, etc.) without covering the outfit.
+- ACCESSORY → add to the appropriate location (bag for hands, hat for head, wrist for watch, etc.) without covering the outfit.
 - Keep the person's exact pose, face, skin tone, and body proportions unchanged.
 - Add realistic shadows and fabric/material texture.
-- Return ONLY a high-quality, full-body photo-realistic image. No text, no background change.`;
+- CRITICAL OUTPUT RULES:
+  1. The output MUST be EXACTLY ONE single image containing ONLY ONE person.
+  2. ABSOLUTELY NO collages, NO 3-panel layouts, NO grids, NO side-by-side comparisons. 
+  3. The single image MUST show the COMPLETE FULL BODY from head to toe without any cropping.
+- Return ONLY the single full-body photo-realistic result image. No text overlay, no background change.`;
 
   const requestBody = {
     contents: [{
@@ -57,6 +61,10 @@ Task:
   };
 
   // 모델 목록을 순서대로 시도 (404/400이면 다음 모델로)
+  return await callTryOnApi(requestBody);
+}
+
+async function callTryOnApi(requestBody) {
   let res = null;
   let usedModel = null;
   for (const model of TRYON_MODELS) {
@@ -84,14 +92,12 @@ Task:
   const json = await res.json();
   const parts = json.candidates?.[0]?.content?.parts ?? [];
 
-  // 이미지 파트 우선 반환
   const imagePart = parts.find(p => p.inlineData?.mimeType?.startsWith('image/'));
   if (imagePart) {
     const { mimeType, data } = imagePart.inlineData;
     return `data:${mimeType};base64,${data}`;
   }
 
-  // 이미지가 없으면 상세 로그 후 에러
   const textPart = parts.find(p => p.text);
   console.error('Try-on returned text only:', textPart?.text ?? '(empty)', json);
   throw new Error('모델이 이미지를 반환하지 않았습니다.');
@@ -118,6 +124,123 @@ export async function runFullOutfitTryOn(modelPhoto, recommendation, onProgress)
     currentPhoto = await runVirtualTryOn(currentPhoto, item.imageUrl, category);
   }
   return currentPhoto;
+}
+
+
+async function createFlatlayImage(steps) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const SIZE = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, SIZE, SIZE);
+
+      const count = steps.length;
+      const cols = Math.ceil(Math.sqrt(count));
+      const rows = Math.ceil(count / cols);
+      const cellW = SIZE / cols;
+      const cellH = SIZE / rows;
+
+      for (let i = 0; i < count; i++) {
+        const step = steps[i];
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        
+        await new Promise((res, rej) => {
+          img.onload = () => {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const pad = 20;
+            const targetX = col * cellW + pad;
+            const targetY = row * cellH + pad;
+            const targetW = cellW - pad * 2;
+            const targetH = cellH - pad * 2;
+            
+            const ratio = Math.min(targetW / img.width, targetH / img.height);
+            const drawW = img.width * ratio;
+            const drawH = img.height * ratio;
+            const drawX = targetX + (targetW - drawW) / 2;
+            const drawY = targetY + (targetH - drawH) / 2;
+            
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            
+            ctx.fillStyle = '#000000';
+            ctx.font = '24px sans-serif';
+            ctx.fillText(step.category, drawX, drawY + 24);
+            res();
+          };
+          img.onerror = rej;
+          img.src = step.item.imageUrl;
+        });
+      }
+      resolve(canvas.toDataURL('image/jpeg', 0.95));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+export async function runFlatlayTryOn(modelPhoto, recommendation, onProgress) {
+  const steps = [
+    { item: recommendation.top,       category: '상의',    label: '상의' },
+    { item: recommendation.bottom,    category: '하의',    label: '하의' },
+    { item: recommendation.outer,     category: '아우터',   label: '아우터' },
+    { item: recommendation.shoes,     category: '신발',    label: '신발' },
+    { item: recommendation.accessory, category: '액세서리', label: '액세서리' },
+  ].filter(s => s.item?.imageUrl);
+
+  if (steps.length === 0) throw new Error('입혀볼 아이템이 없습니다.');
+
+  onProgress?.(1, 2, '코디 묶음 생성 중');
+  const flatlayDataUrl = await createFlatlayImage(steps);
+
+  onProgress?.(2, 2, 'AI 일괄 착장 중');
+  
+  const personPart  = await toInlinePart(modelPhoto);
+  const flatlayPart = await toInlinePart(flatlayDataUrl);
+
+  const categoriesDesc = steps.map(s => s.category).join(', ');
+
+  const prompt = `You are a fashion AI specializing in virtual try-on.
+Two images are provided:
+1. A person's full-body photo.
+2. A single "Flatlay" collage containing multiple clothing/accessory items: ${categoriesDesc}.
+
+Task:
+- You MUST naturally overlay and place EVERY SINGLE ITEM shown in the flatlay onto the person at the same time.
+- DO NOT OMIT ANY ITEM. If there are shoes in the flatlay, they MUST be on the person's feet. If there is a top and bottom, BOTH MUST be worn.
+- TOP → replace/overlay upper body clothing.
+- BOTTOM → replace/overlay lower body clothing.
+- OUTER LAYER → drape over the existing outfit.
+- SHOES → replace the existing footwear or place on bare feet naturally.
+- ACCESSORY → add to the appropriate location (bag for hands, hat for head, etc).
+- CRITICAL: Accurately maintain the exact color, texture, and pattern of each item. DO NOT mix the texture of the top with the bottom.
+- Keep the person's exact pose, face, skin tone, and body proportions unchanged.
+- Add realistic shadows and fabric/material texture.
+- CRITICAL OUTPUT RULES:
+  1. The output MUST be EXACTLY ONE single image containing ONLY ONE person.
+  2. ABSOLUTELY NO collages, NO 3-panel layouts, NO grids, NO side-by-side comparisons. 
+  3. The single image MUST show the COMPLETE FULL BODY from head to toe without any cropping.
+- Return ONLY the single full-body photo-realistic result image. No text overlay, no background change.`;
+
+  const requestBody = {
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: prompt },
+        personPart,
+        flatlayPart,
+      ],
+    }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    },
+  };
+
+  return await callTryOnApi(requestBody);
 }
 
 /* ── 유틸: URL/base64 → Gemini inlineData part ── */

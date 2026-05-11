@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Shirt, PlusCircle, Sparkles, CalendarDays, Menu } from 'lucide-react';
+import { Home, Shirt, PlusCircle, Sparkles, CalendarDays, Menu, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/Login';
 import HomePage from './pages/Home';
@@ -72,6 +72,13 @@ function Main() {
   });
   const [hideNav, setHideNav] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [closetTryOnMode, setClosetTryOnMode] = useState(false);
+
+  // 탭 이동 시 입어보기 모드 자동 해제
+  const handleTabChange = (newTab) => {
+    if (newTab !== 'closet') setClosetTryOnMode(false);
+    setTab(newTab);
+  };
 
   // ── 푸시 알림 리스너: auth 완료 전 앱 마운트 즉시 등록 (콜드스타트 대응) ──
   useEffect(() => {
@@ -278,9 +285,50 @@ function Main() {
       {/* ── 전역 헤더 ── */}
       <header className="global-header" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 800,
-        padding: '28px 20px 12px', display: 'flex', justifyContent: 'flex-end',
+        padding: 'calc(var(--safe-top) + 16px) 20px 12px',
+        display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8,
         pointerEvents: 'none' // 배경 클릭 방지 안함 (아이콘만 클릭되게)
       }}>
+        {/* 입어보기 버튼 — 내 옷장 탭에서만 표시 */}
+        {tab === 'closet' && (
+          !closetTryOnMode ? (
+            <button
+              onClick={() => setClosetTryOnMode(true)}
+              style={{
+                pointerEvents: 'auto',
+                display: 'flex', alignItems: 'center', gap: 5,
+                height: 40, padding: '0 14px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'linear-gradient(135deg, #C16654, #D4845E)',
+                color: '#fff', border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, fontFamily: "'Pretendard', sans-serif",
+                boxShadow: '0 3px 10px rgba(193,102,84,0.30)',
+              }}
+            >
+              <Shirt size={14} />
+              입어보기
+            </button>
+          ) : (
+            <button
+              onClick={() => setClosetTryOnMode(false)}
+              style={{
+                pointerEvents: 'auto',
+                display: 'flex', alignItems: 'center', gap: 5,
+                height: 40, padding: '0 14px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)',
+                color: 'var(--text-muted)', border: '1px solid var(--border)',
+                cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, fontFamily: "'Pretendard', sans-serif",
+                boxShadow: '0 2px 8px rgba(94,61,49,0.08)',
+              }}
+            >
+              <X size={14} />
+              취소
+            </button>
+          )
+        )}
+        {/* 메뉴 버튼 */}
         <button
           onClick={() => setShowSettings(true)}
           style={{
@@ -298,14 +346,14 @@ function Main() {
 
       <main className="app-content">
         <KeepAliveTab active={tab === 'home'}>
-          <HomePage onNavigate={setTab} />
+          <HomePage onNavigate={handleTabChange} />
         </KeepAliveTab>
         <KeepAliveTab active={tab === 'closet'}>
-          <ClosetPage />
+          <ClosetPage tryOnMode={closetTryOnMode} setTryOnMode={setClosetTryOnMode} />
         </KeepAliveTab>
         <KeepAliveTab active={tab === 'upload'}>
           <UploadPage
-            onSaved={() => { setHideNav(false); setTab('closet'); }}
+            onSaved={() => { setHideNav(false); handleTabChange('closet'); }}
             onCameraOpen={() => setHideNav(true)}
             onCameraClose={() => setHideNav(false)}
           />
@@ -325,7 +373,7 @@ function Main() {
           <button
             key={id}
             className={`nav-item ${tab === id ? 'active' : ''}`}
-            onClick={() => setTab(id)}
+            onClick={() => handleTabChange(id)}
           >
             <div className="nav-icon-wrapper">
               <Icon size={20} />

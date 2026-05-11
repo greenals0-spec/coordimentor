@@ -565,21 +565,34 @@ export default function OutfitPage() {
               </button>
             </div>
 
-            {/* 결과 이미지 */}
-            <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
-              <img src={tryOnModal.imageUrl} alt="가상 입어보기 결과" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {/* 결과 이미지 — 전신 잘림 없이 표시 */}
+            <div style={{ width: '100%', borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', background: '#1a1008' }}>
+              <img src={tryOnModal.imageUrl} alt="가상 입어보기 결과" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'contain' }} />
             </div>
 
             {/* 안내 */}
             <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>✨ AI가 생성한 가상 착장 이미지입니다</p>
 
-            {/* 닫기 버튼 */}
-            <button
-              onClick={() => setTryOnModal(null)}
-              style={{ width: '100%', background: '#5E3D31', color: '#fff', border: 'none', padding: '14px', borderRadius: 14, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
-            >
-              확인했어요
-            </button>
+            {/* 버튼 행 */}
+            <div style={{ width: '100%', display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => {
+                  const a = document.createElement('a');
+                  a.href = tryOnModal.imageUrl;
+                  a.download = `coordimentor_tryon_${Date.now()}.png`;
+                  a.click();
+                }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+              >
+                저장
+              </button>
+              <button
+                onClick={() => setTryOnModal(null)}
+                style={{ flex: 2, background: '#5E3D31', color: '#fff', border: 'none', padding: '14px', borderRadius: 14, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+              >
+                확인했어요
+              </button>
+            </div>
           </div>
         </div>
       )}
