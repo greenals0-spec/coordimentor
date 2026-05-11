@@ -20,21 +20,8 @@ export async function saveImageAsJpg(dataUrl, fileNamePrefix = 'coordimentor_try
         directory: Directory.Cache,
       });
 
-      // 2. 'Coordimentor' 앨범 찾기 또는 생성
-      let albumIdentifier;
-      try {
-        const { albums } = await Media.getAlbums();
-        const existing = albums.find(a => a.name === 'Coordimentor');
-        if (existing) {
-          albumIdentifier = existing.identifier;
-        } else {
-          const created = await Media.createAlbum({ name: 'Coordimentor' });
-          albumIdentifier = created.identifier;
-        }
-      } catch (albumErr) {
-        console.warn('앨범 조회/생성 실패, 기본 갤러리에 저장합니다:', albumErr);
-        albumIdentifier = undefined;
-      }
+      // 2. 'Coordimentor' 앨범 identifier 확보 (Android 필수)
+      const albumIdentifier = await getOrCreateAlbum(Media, 'Coordimentor');
 
       // 3. 갤러리에 저장
       await Media.savePhoto({
@@ -56,6 +43,40 @@ export async function saveImageAsJpg(dataUrl, fileNamePrefix = 'coordimentor_try
     a.click();
     document.body.removeChild(a);
   }
+}
+
+/**
+ * 'Coordimentor' 앨범을 찾거나 없으면 생성해서 identifier 반환
+ * Android는 albumIdentifier 없이 savePhoto() 호출 시 에러 발생
+ */
+async function getOrCreateAlbum(Media, albumName) {
+  // 1차: 기존 앨범 목록에서 탐색
+  try {
+    const { albums } = await Media.getAlbums();
+    const existing = albums.find(a => a.name === albumName);
+    if (existing?.identifier) return existing.identifier;
+  } catch (e) {
+    console.warn('[Media] getAlbums 실패:', e);
+  }
+
+  // 2차: 앨범 생성
+  try {
+    const created = await Media.createAlbum({ name: albumName });
+    if (created?.identifier) return created.identifier;
+  } catch (e) {
+    console.warn('[Media] createAlbum 실패:', e);
+  }
+
+  // 3차: 생성 후 재탐색 (createAlbum이 identifier를 안 줄 때 대비)
+  try {
+    const { albums } = await Media.getAlbums();
+    const found = albums.find(a => a.name === albumName);
+    if (found?.identifier) return found.identifier;
+  } catch (e) {
+    console.warn('[Media] 재탐색 실패:', e);
+  }
+
+  throw new Error(`앨범 "${albumName}"을 생성할 수 없습니다.`);
 }
 
 /** PNG/JPEG data URL → JPEG data URL (Canvas, 즉시 변환) */
