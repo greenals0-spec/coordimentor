@@ -1,0 +1,88 @@
+workflows:
+  ios-release:
+    name: iOS Release (App Store)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store        # TestFlight/App Store 배포
+        bundle_identifier: com.coordimentor.app
+      vars:
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: Encrypted(...)  # 나중에 Codemagic 콘솔에서 설정
+      node: 20.x
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Build React app
+        script: |
+          cp .env.production .env 2>/dev/null || true
+          npm run build
+
+      - name: Capacitor sync iOS
+        script: npx cap sync ios
+
+      - name: Set iOS version
+        script: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+          VERSION=${LATEST_TAG#v}
+          BUILD_NUMBER=$(($(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID") + 1))
+          agvtool new-marketing-version "$VERSION"
+          agvtool new-version -all "$BUILD_NUMBER"
+        working_directory: ios/App
+
+      - name: Build iOS IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY      # Codemagic 환경변수
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true   # TestFlight 자동 업로드
+        submit_to_app_store: false   # 수동 심사 제출로 설정 (true 시 자동 제출)
+      email:
+        recipients:
+          - greenals0@gmail.com       # 빌드 완료/실패 알림 수신
+
+  ios-debug:
+    name: iOS Debug (테스트용)
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.coordimentor.app
+      node: 20.x
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Build React app
+        script: npm run build
+
+      - name: Capacitor sync iOS
+        script: npx cap sync ios
+
+      - name: Build iOS IPA (debug)
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App" \
+            --config Debug
+
+    artifacts:
+      - build/ios/ipa/*.ipa
