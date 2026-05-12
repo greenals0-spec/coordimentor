@@ -3,6 +3,7 @@ import { runFlatlayTryOn } from '../utils/tryon';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useRef } from 'react';
 import { saveImageAsJpg } from '../utils/saveImage';
+import { upscaleImage } from '../utils/upscale';
 
 
 // ── Modern Warm & Cozy palette ──────────────────────────
@@ -30,6 +31,8 @@ export default function MorningRecommendation({ weather, recommendation, onClose
   const [tryOnResult, setTryOnResult] = useState(null);
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [progressPct, setProgressPct]     = useState(0);
+  const [upscaling, setUpscaling]   = useState(false);
+  const [upscalePct, setUpscalePct] = useState(0);
   const progressTimerRef  = useRef(null);
   const progressTargetRef = useRef(0);
 
@@ -198,11 +201,41 @@ export default function MorningRecommendation({ weather, recommendation, onClose
                 <img src={tryOnResult} alt="Try-On Result" style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block' }} />
               </div>
               {/* 저장 버튼 */}
+              {upscaling ? (
+                <div style={{ borderRadius: 12, background: 'rgba(193,102,84,0.08)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: C.brown, fontWeight: 600 }}>고화질 변환 중...</span>
+                    <span style={{ fontSize: 12, color: C.terracotta, fontWeight: 700 }}>{Math.round(upscalePct)}%</span>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 100, background: 'rgba(193,102,84,0.15)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${upscalePct}%`, borderRadius: 100, background: 'linear-gradient(90deg, #C16654, #E8A070)', transition: 'width 0.1s linear' }} />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    setUpscaling(true);
+                    setUpscalePct(0);
+                    try {
+                      const hq = await upscaleImage(tryOnResult, p => setUpscalePct(Math.round(p * 100)));
+                      await saveImageAsJpg(hq, 'coordimentor_morning_hq');
+                    } catch (e) {
+                      alert(`고화질 저장 실패: ${e.message}`);
+                    } finally {
+                      setUpscaling(false);
+                      setUpscalePct(0);
+                    }
+                  }}
+                  style={{ width: '100%', background: 'linear-gradient(135deg, #C16654 0%, #E8A070 100%)', color: '#fff', border: 'none', padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 600 }}
+                >
+                  ✨ 고화질 저장
+                </button>
+              )}
               <button
                 onClick={() => saveImageAsJpg(tryOnResult, 'coordimentor_morning')}
-                style={{ width: '100%', background: C.brown, color: '#fff', border: 'none', padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 600 }}
+                style={{ width: '100%', background: C.ivoryDeep, color: C.brown, border: `1px solid ${C.border}`, padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 500 }}
               >
-                📥 이미지 저장
+                📥 일반 저장
               </button>
               <button
                 onClick={() => { setTryOnResult(null); setProgressPct(0); }}

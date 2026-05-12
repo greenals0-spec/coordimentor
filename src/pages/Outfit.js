@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import FlatLay from '../components/FlatLay';
 import { saveImageAsJpg } from '../utils/saveImage';
+import { upscaleImage } from '../utils/upscale';
 
 
 export default function OutfitPage() {
@@ -28,6 +29,8 @@ export default function OutfitPage() {
   const [tryOnResults, setTryOnResults] = useState({});
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [tryOnModal, setTryOnModal] = useState(null);
+  const [upscaling, setUpscaling] = useState(false);
+  const [upscalePct, setUpscalePct] = useState(0);
   const [progressPct, setProgressPct] = useState(0);
   const progressTimerRef = useRef(null);
   const progressTargetRef = useRef(0);
@@ -579,12 +582,42 @@ export default function OutfitPage() {
             <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>✨ AI가 생성한 가상 착장 이미지입니다</p>
 
             {/* 버튼 행 */}
-            <div style={{ width: '100%', display: 'flex', gap: 10 }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* 고화질 저장 버튼 */}
+              {upscaling ? (
+                <div style={{ background: 'rgba(255,255,255,0.10)', borderRadius: 14, padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>✨ 고화질 변환 중...</span>
+                    <span style={{ fontSize: 12, color: '#E8A070', fontWeight: 700 }}>{Math.round(upscalePct)}%</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 100, background: 'rgba(255,255,255,0.15)' }}>
+                    <div style={{ width: `${upscalePct}%`, height: '100%', borderRadius: 100, background: 'linear-gradient(90deg,#C16654,#E8A070)', transition: 'width 0.2s' }} />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    setUpscaling(true); setUpscalePct(0);
+                    try {
+                      const hq = await upscaleImage(tryOnModal.imageUrl, (p) => setUpscalePct(Math.round(p * 100)));
+                      await saveImageAsJpg(hq, 'coordimentor_hq');
+                    } catch (e) {
+                      alert('고화질 저장 실패: ' + e.message);
+                    } finally {
+                      setUpscaling(false); setUpscalePct(0);
+                    }
+                  }}
+                  style={{ width: '100%', background: 'linear-gradient(135deg,#C16654,#E8A070)', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  ✨ 고화질 저장
+                </button>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={() => saveImageAsJpg(tryOnModal.imageUrl)}
                 style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
               >
-                저장
+                일반 저장
               </button>
               <button
                 onClick={() => setTryOnModal(null)}
@@ -592,6 +625,7 @@ export default function OutfitPage() {
               >
                 확인했어요
               </button>
+              </div>
             </div>
           </div>
         </div>

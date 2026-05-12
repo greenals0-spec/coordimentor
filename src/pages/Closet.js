@@ -4,6 +4,7 @@ import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCache
 import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import { saveImageAsJpg } from '../utils/saveImage';
+import { upscaleImage } from '../utils/upscale';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
@@ -22,6 +23,8 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [tryOnResult, setTryOnResult] = useState(null);
   const [progressPct, setProgressPct] = useState(0);   // 0~100 smooth progress bar
+  const [upscaling, setUpscaling] = useState(false);
+  const [upscalePct, setUpscalePct] = useState(0);
   const progressTimerRef = useRef(null);
   const progressTargetRef = useRef(0);
 
@@ -447,12 +450,39 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
               >
                 다시 선택
               </button>
-              <button
-                onClick={() => saveImageAsJpg(tryOnResult)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-              >
-                저장
-              </button>
+              {upscaling ? (
+                <div style={{ flex: 2, background: 'rgba(255,255,255,0.10)', borderRadius: 14, padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>✨ 고화질 변환 중...</span>
+                    <span style={{ fontSize: 11, color: '#E8A070', fontWeight: 700 }}>{upscalePct}%</span>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 100, background: 'rgba(255,255,255,0.15)' }}>
+                    <div style={{ width: `${upscalePct}%`, height: '100%', borderRadius: 100, background: 'linear-gradient(90deg,#C16654,#E8A070)', transition: 'width 0.2s' }} />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={async () => {
+                      setUpscaling(true); setUpscalePct(0);
+                      try {
+                        const hq = await upscaleImage(tryOnResult, (p) => setUpscalePct(Math.round(p * 100)));
+                        await saveImageAsJpg(hq, 'coordimentor_hq');
+                      } catch (e) { alert('고화질 저장 실패: ' + e.message); }
+                      finally { setUpscaling(false); setUpscalePct(0); }
+                    }}
+                    style={{ flex: 1, background: 'linear-gradient(135deg,#C16654,#E8A070)', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    ✨ 고화질
+                  </button>
+                  <button
+                    onClick={() => saveImageAsJpg(tryOnResult)}
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    일반 저장
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => setTryOnResult(null)}
                 style={{ flex: 1, background: '#5E3D31', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
