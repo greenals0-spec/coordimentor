@@ -15,9 +15,16 @@ export async function upscaleImage(dataUrl, onProgress) {
   // 1. UpscalerJS 인스턴스 lazy-load
   if (!upscalerInstance) {
     onProgress?.(0.1);
-    const { default: Upscaler } = await import('upscaler');
-    const { default: model }   = await import('@upscalerjs/esrgan-slim');
-    upscalerInstance = new Upscaler({ model });
+    try {
+      // webpackIgnore: true → webpack이 빌드 시 번들하지 않고 런타임에 로드
+      const { default: Upscaler } = await import(/* webpackIgnore: true */ 'upscaler');
+      const { default: model }   = await import(/* webpackIgnore: true */ '@upscalerjs/esrgan-slim');
+      upscalerInstance = new Upscaler({ model });
+    } catch (e) {
+      console.warn('Upscaler 로드 실패, 원본 이미지 반환:', e);
+      onProgress?.(1.0);
+      return dataUrl;
+    }
     onProgress?.(0.3);
   }
 
@@ -31,15 +38,21 @@ export async function upscaleImage(dataUrl, onProgress) {
   onProgress?.(0.5);
 
   // 3. 업스케일
-  const result = await upscalerInstance.upscale(img, {
-    output: 'base64',
-    progressCallback: ({ percent }) => {
-      onProgress?.(0.5 + percent * 0.5);
-    },
-  });
-  onProgress?.(1.0);
+  try {
+    const result = await upscalerInstance.upscale(img, {
+      output: 'base64',
+      progressCallback: ({ percent }) => {
+        onProgress?.(0.5 + percent * 0.5);
+      },
+    });
+    onProgress?.(1.0);
 
-  // upscaler returns base64 string → prefix 추가
-  if (result.startsWith('data:')) return result;
-  return `data:image/png;base64,${result}`;
+    // upscaler returns base64 string → prefix 추가
+    if (result.startsWith('data:')) return result;
+    return `data:image/png;base64,${result}`;
+  } catch (e) {
+    console.warn('업스케일 실패, 원본 이미지 반환:', e);
+    onProgress?.(1.0);
+    return dataUrl;
+  }
 }
