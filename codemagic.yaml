@@ -82,6 +82,7 @@ workflows:
             COMPILER_INDEX_STORE_ENABLE=NO \
             DEVELOPMENT_TEAM=9PK89Y8MHZ \
             CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             archive 2>&1 | tee /tmp/xcodebuild_archive.log | grep -E "error:|warning:|FAILED|SUCCEEDED|signing|profile|certificate" || true
 
           echo "=== Full archive log (last 30 lines) ==="
