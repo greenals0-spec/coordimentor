@@ -22,7 +22,7 @@ workflows:
       - name: Build React app
         script: |
           cp .env.production .env 2>/dev/null || true
-          npm run build
+          CI=false npm run build
 
       - name: Capacitor sync iOS
         script: npx cap sync ios
