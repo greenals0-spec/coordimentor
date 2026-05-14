@@ -17,7 +17,9 @@ workflows:
 
     scripts:
       - name: Install dependencies
-        script: npm install --legacy-peer-deps --force
+        script: |
+          npm install --legacy-peer-deps --force
+          npm install -g @capacitor/cli
 
       - name: Build React app
         script: |
@@ -25,7 +27,7 @@ workflows:
           CI=false npm run build
 
       - name: Capacitor sync iOS
-        script: ./node_modules/.bin/cap sync ios
+        script: cap sync ios
 
       - name: Set iOS version
         script: |
