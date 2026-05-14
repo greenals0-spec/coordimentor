@@ -13,13 +13,14 @@ workflows:
       vars:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
-      node: 22.14.0
+      node: latest
 
     scripts:
       - name: Install dependencies
         script: |
+          node --version
           npm install --legacy-peer-deps --force
-          npm install -g @capacitor/cli
+          npm install -g @capacitor/cli@latest
 
       - name: Build React app
         script: |
@@ -68,7 +69,7 @@ workflows:
       ios_signing:
         distribution_type: development
         bundle_identifier: com.coordimentor.app
-      node: 22.14.0
+      node: latest
 
     scripts:
       - name: Install dependencies
