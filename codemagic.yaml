@@ -52,8 +52,12 @@ workflows:
             ios/App/App.xcodeproj/project.pbxproj
           sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = "";/PROVISIONING_PROFILE_SPECIFIER = "Coordimentor App Store";/g' \
             ios/App/App.xcodeproj/project.pbxproj
-          echo "Signing configured:"
+          echo "=== Signing in project.pbxproj ==="
           grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER" ios/App/App.xcodeproj/project.pbxproj
+          echo "=== Installed certificates ==="
+          security find-identity -v -p codesigning
+          echo "=== Installed profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles found"
 
       - name: Build iOS IPA
         script: |
@@ -82,7 +86,8 @@ workflows:
           EOF
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --verbose
 
     artifacts:
       - build/ios/ipa/*.ipa
