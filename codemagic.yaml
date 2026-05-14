@@ -17,7 +17,7 @@ workflows:
 
     scripts:
       - name: Install dependencies
-        script: npm ci
+        script: npm ci --legacy-peer-deps
 
       - name: Build React app
         script: |
