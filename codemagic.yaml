@@ -64,14 +64,22 @@ workflows:
           </dict>
           </plist>
           EOF
-          xcode-project build-ipa \
-            --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME" \
-            --export-options-plist /Users/builder/export_options.plist \
-            --xcarg "-disableAutomaticPackageResolution"
+          xcodebuild \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -archivePath ~/App.xcarchive \
+            -disableAutomaticPackageResolution \
+            archive
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath ~/App.xcarchive \
+            -exportPath ~/ipa \
+            -exportOptionsPlist /Users/builder/export_options.plist
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - ~/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
     publishing:
