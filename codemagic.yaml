@@ -76,6 +76,10 @@ workflows:
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -archivePath ~/App.xcarchive \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="Coordimentor App Store" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM="9PK89Y8MHZ" \
             archive
 
           xcodebuild \
