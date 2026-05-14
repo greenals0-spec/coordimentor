@@ -39,6 +39,13 @@ workflows:
           agvtool new-version -all "$BUILD_NUMBER"
         working_directory: ios/App
 
+      - name: Resolve Swift packages
+        script: |
+          xcodebuild -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -clonedSourcePackagesDirPath ./derived_data
+
       - name: Build iOS IPA
         script: |
           cat > /Users/builder/export_options.plist << 'EOF'
