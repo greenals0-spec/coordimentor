@@ -15,6 +15,11 @@ workflows:
         XCODE_SCHEME: "App"
       node: latest
 
+    cache:
+      cache_paths:
+        - $HOME/Library/Developer/Xcode/DerivedData/App-*/SourcePackages
+        - $HOME/Library/Caches/org.swift.swiftpm
+
     scripts:
       - name: Install dependencies
         script: |
@@ -95,14 +100,14 @@ workflows:
 
     publishing:
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY      # Codemagic 환경변수
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true   # TestFlight 자동 업로드
-        submit_to_app_store: false   # 수동 심사 제출로 설정 (true 시 자동 제출)
+        submit_to_testflight: true
+        submit_to_app_store: false
       email:
         recipients:
-          - greenals0@gmail.com       # 빌드 완료/실패 알림 수신
+          - greenals0@gmail.com
 
   ios-debug:
     name: iOS Debug (테스트용)
