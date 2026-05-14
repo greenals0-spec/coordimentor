@@ -25,7 +25,7 @@ workflows:
           CI=false npm run build
 
       - name: Capacitor sync iOS
-        script: npx cap sync ios
+        script: ./node_modules/.bin/cap sync ios
 
       - name: Set iOS version
         script: |
