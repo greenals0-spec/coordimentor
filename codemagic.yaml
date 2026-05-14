@@ -39,6 +39,13 @@ workflows:
           agvtool new-version -all "$BUILD_NUMBER"
         working_directory: ios/App
 
+      - name: Patch firebase dependency
+        script: |
+          sed -i '' 's/.upToNextMajor(from: "10.0.0")/.upToNextMajor(from: "11.0.0")/' \
+            node_modules/@capacitor-firebase/authentication/Package.swift
+          echo "Patched Package.swift:"
+          grep "firebase-ios-sdk" node_modules/@capacitor-firebase/authentication/Package.swift
+
       - name: Build iOS IPA
         script: |
           cat > /Users/builder/export_options.plist << 'EOF'
@@ -69,7 +76,6 @@ workflows:
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -archivePath ~/App.xcarchive \
-            -disableAutomaticPackageResolution \
             archive
 
           xcodebuild \
