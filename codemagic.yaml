@@ -13,7 +13,7 @@ workflows:
       vars:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
-      node: 20.11.1
+      node: 22.14.0
 
     scripts:
       - name: Install dependencies
@@ -68,7 +68,7 @@ workflows:
       ios_signing:
         distribution_type: development
         bundle_identifier: com.coordimentor.app
-      node: 20.11.1
+      node: 22.14.0
 
     scripts:
       - name: Install dependencies
