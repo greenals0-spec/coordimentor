@@ -53,16 +53,23 @@ workflows:
 
       - name: Configure signing
         script: |
+          # 설치된 프로파일에서 UUID 추출
+          PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
+          PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" | python3 -c "import sys, plistlib; p = plistlib.loads(sys.stdin.buffer.read()); print(p['UUID'])")
+          PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | python3 -c "import sys, plistlib; p = plistlib.loads(sys.stdin.buffer.read()); print(p['Name'])")
+          echo "Profile UUID: $PROFILE_UUID"
+          echo "Profile Name: $PROFILE_NAME"
+
+          # project.pbxproj에 UUID로 설정
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' \
             ios/App/App.xcodeproj/project.pbxproj
-          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = "";/PROVISIONING_PROFILE_SPECIFIER = "Coordimentor App Store";/g' \
+          sed -i '' "s/PROVISIONING_PROFILE_SPECIFIER = \"\";/PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_UUID\";/g" \
             ios/App/App.xcodeproj/project.pbxproj
+
           echo "=== Signing in project.pbxproj ==="
           grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER" ios/App/App.xcodeproj/project.pbxproj
           echo "=== Installed certificates ==="
           security find-identity -v -p codesigning
-          echo "=== Installed profiles ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles found"
 
       - name: Build iOS IPA
         script: |
