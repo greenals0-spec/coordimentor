@@ -74,6 +74,30 @@ workflows:
       - name: Build iOS IPA
         script: |
           set -o pipefail
+
+          # export_options.plist 생성
+          cat > /tmp/export_options.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>9PK89Y8MHZ</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+
+          # Archive
           xcodebuild \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
@@ -83,14 +107,25 @@ workflows:
             DEVELOPMENT_TEAM=9PK89Y8MHZ \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            archive 2>&1 | tee /tmp/xcodebuild_archive.log | grep -E "error:|warning:|FAILED|SUCCEEDED|signing|profile|certificate" || true
+            archive 2>&1 | tee /tmp/xcodebuild_archive.log
 
-          echo "=== Full archive log (last 30 lines) ==="
-          tail -30 /tmp/xcodebuild_archive.log
+          echo "=== Archive completed, exporting IPA ==="
+
+          # Export IPA
+          xcodebuild \
+            -exportArchive \
+            -archivePath ~/App.xcarchive \
+            -exportPath ~/ipa \
+            -exportOptionsPlist /tmp/export_options.plist \
+            2>&1 | tee /tmp/xcodebuild_export.log
+
+          echo "=== IPA files ==="
+          ls -la ~/ipa/
 
     artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - ~/ipa/*.ipa
+      - /tmp/xcodebuild_archive.log
+      - /tmp/xcodebuild_export.log
 
     publishing:
       app_store_connect:
