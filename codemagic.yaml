@@ -87,6 +87,11 @@ workflows:
             <string>9PK89Y8MHZ</string>
             <key>signingStyle</key>
             <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.coordimentor.app</key>
+              <string>Coordimentor App Store</string>
+            </dict>
             <key>stripSwiftSymbols</key>
             <true/>
             <key>uploadBitcode</key>
