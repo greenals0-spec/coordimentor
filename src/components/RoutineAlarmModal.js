@@ -3,6 +3,9 @@ import { X, Bell, Clock, Calendar, Tag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { deductPoints, POINT_COSTS } from '../utils/points';
+import InsufficientPointsModal from './InsufficientPointsModal';
+import { scheduleRoutineAlarms } from '../utils/notifications';
 
 const DAYS = [
   { key: 'mon', label: '월' },
@@ -25,10 +28,11 @@ const SITUATIONS = [
   { key: '기타', emoji: '📌' },
 ];
 
-export default function RoutineAlarmModal({ onClose }) {
-  const { user } = useAuth();
+export default function RoutineAlarmModal({ onClose, onNavigate }) {
+  const { user, points, refreshPoints } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
 
   const [enabled, setEnabled] = useState(true);
   const [selectedDays, setSelectedDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
@@ -46,6 +50,12 @@ export default function RoutineAlarmModal({ onClose }) {
       alert('요일을 하나 이상 선택해주세요.');
       return;
     }
+    // 포인트 확인
+    const cost = POINT_COSTS.ROUTINE_ALARM;
+    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
+    const ok = await deductPoints(user.uid, cost, '루틴 알람 설정');
+    if (!ok) { setShowPointsModal(true); return; }
+    await refreshPoints(user.uid);
     setSaving(true);
     try {
       // 기존 루틴 알람 목록 불러오기
@@ -65,6 +75,7 @@ export default function RoutineAlarmModal({ onClose }) {
       const updated = [...existing.filter(a => !(a.situation === situation && a.time === alarmTime)), newAlarm];
 
       await setDoc(userRef, { routineAlarms: updated }, { merge: true });
+      await scheduleRoutineAlarms(updated);
       setSaved(true);
       setTimeout(() => onClose(), 1000);
     } catch (e) {
@@ -76,6 +87,15 @@ export default function RoutineAlarmModal({ onClose }) {
   };
 
   return (
+    <>
+    {showPointsModal && (
+      <InsufficientPointsModal
+        required={POINT_COSTS.ROUTINE_ALARM}
+        current={points ?? 0}
+        onClose={() => setShowPointsModal(false)}
+        onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
+      />
+    )}
     <div className="modal-overlay" style={{ zIndex: 900, padding: '20px', paddingBottom: '100px' }}>
       <div className="edit-modal" style={{ maxWidth: 380, maxHeight: '88vh', overflowY: 'auto' }}>
 
@@ -240,5 +260,6 @@ export default function RoutineAlarmModal({ onClose }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

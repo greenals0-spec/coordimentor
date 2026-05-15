@@ -8,12 +8,16 @@ import ClosetPage from './pages/Closet';
 import OutfitPage from './pages/Outfit';
 import SavedOutfitsPage from './pages/SavedOutfits';
 import OnboardingPage from './pages/Onboarding';
+import StorePage from './pages/StorePage';
 import SplashScreen from './components/SplashScreen';
 import PermissionsScreen from './components/PermissionsScreen';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { initPushNotifications } from './utils/pushNotifications';
+import { scheduleRoutineAlarms } from './utils/notifications';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import './App.css';
 import SettingsModal from './components/SettingsModal';
 
@@ -73,11 +77,18 @@ function Main() {
   const [hideNav, setHideNav] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [closetTryOnMode, setClosetTryOnMode] = useState(false);
+  const [showStore, setShowStore] = useState(false);
 
   // 탭 이동 시 입어보기 모드 자동 해제
   const handleTabChange = (newTab) => {
     if (newTab !== 'closet') setClosetTryOnMode(false);
     setTab(newTab);
+  };
+
+  // 포인트 충전 페이지 등 특수 화면 이동
+  const handleNavigate = (dest) => {
+    if (dest === 'store') { setShowStore(true); return; }
+    handleTabChange(dest);
   };
 
   // ── 푸시 알림 리스너: auth 완료 전 앱 마운트 즉시 등록 (콜드스타트 대응) ──
@@ -189,6 +200,16 @@ function Main() {
     initPushNotifications(user.uid);
   }, [user]);
 
+  // 로그인 완료 후 Firestore 루틴 알람으로 로컬 알림 동기화
+  useEffect(() => {
+    if (!user) return;
+    if (!Capacitor.isNativePlatform()) return;
+    getDoc(doc(db, 'users', user.uid)).then(snap => {
+      const alarms = snap.data()?.routineAlarms ?? [];
+      scheduleRoutineAlarms(alarms);
+    }).catch(console.error);
+  }, [user]);
+
   // auth 완료 직후 공유 이미지 최종 점검 (스플래시/로딩 중에 타이밍이 엇갈린 경우 복구)
   useEffect(() => {
     if (!user || !userProfile) return;
@@ -240,6 +261,13 @@ function Main() {
     const handleOpenSettings = () => setShowSettings(true);
     window.addEventListener('openSettings', handleOpenSettings);
     return () => window.removeEventListener('openSettings', handleOpenSettings);
+  }, []);
+
+  // 포인트 충전 화면 열기 이벤트 리스너 (SettingsModal 내 루틴 추가 폼용)
+  useEffect(() => {
+    const handleOpenStore = () => setShowStore(true);
+    window.addEventListener('openStore', handleOpenStore);
+    return () => window.removeEventListener('openStore', handleOpenStore);
   }, []);
 
   if (showSplash) {
@@ -344,22 +372,30 @@ function Main() {
         </button>
       </header>
 
+      {/* 포인트 충전 페이지 (오버레이) */}
+      {showStore && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: '#fff', overflowY: 'auto' }}>
+          <StorePage onBack={() => setShowStore(false)} />
+        </div>
+      )}
+
       <main className="app-content">
         <KeepAliveTab active={tab === 'home'}>
-          <HomePage onNavigate={handleTabChange} />
+          <HomePage onNavigate={handleNavigate} />
         </KeepAliveTab>
         <KeepAliveTab active={tab === 'closet'}>
-          <ClosetPage tryOnMode={closetTryOnMode} setTryOnMode={setClosetTryOnMode} />
+          <ClosetPage tryOnMode={closetTryOnMode} setTryOnMode={setClosetTryOnMode} onNavigate={handleNavigate} />
         </KeepAliveTab>
         <KeepAliveTab active={tab === 'upload'}>
           <UploadPage
             onSaved={() => { setHideNav(false); handleTabChange('closet'); }}
             onCameraOpen={() => setHideNav(true)}
             onCameraClose={() => setHideNav(false)}
+            onNavigate={handleNavigate}
           />
         </KeepAliveTab>
         <KeepAliveTab active={tab === 'outfit'}>
-          <OutfitPage />
+          <OutfitPage onNavigate={handleNavigate} />
         </KeepAliveTab>
         <KeepAliveTab active={tab === 'saved'}>
           <SavedOutfitsPage
