@@ -3,10 +3,19 @@ import { Loader, Check, AlertCircle, Camera as CameraIcon, ChevronLeft, Image as
 import { removeBackground, analyzeClothing } from '../utils/api';
 import { uploadImage, saveItem } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
+import { deductPoints, POINT_COSTS } from '../utils/points';
+import InsufficientPointsModal from '../components/InsufficientPointsModal';
 import { Capacitor } from '@capacitor/core';
 import ImageEditor from '../components/ImageEditor';
 
 const CATEGORY_LABELS = ['아우터', '상의', '하의', '신발', '액세서리'];
+
+const SEASON_OPTIONS = [
+  { key: '봄', emoji: '🌸', color: '#F9A8D4' },
+  { key: '여름', emoji: '☀️', color: '#FCD34D' },
+  { key: '가을', emoji: '🍂', color: '#F97316' },
+  { key: '겨울', emoji: '❄️', color: '#93C5FD' },
+];
 
 
 
@@ -132,9 +141,10 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
 }
 
 // ── 메인 컴포넌트 ───────────────────────────────────────────────────────────────
-export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
-  const { user } = useAuth();
+export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNavigate }) {
+  const { user, points, refreshPoints } = useAuth();
   const [step, setStep] = useState('main');
+  const [showPointsModal, setShowPointsModal] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null);
   const [removedUrl, setRemovedUrl] = useState(null);
@@ -144,6 +154,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   const [bulkItems, setBulkItems] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [cameraActionDone, setCameraActionDone] = useState(false);
+  const [seasons, setSeasons] = useState([]);
+  const [seasonError, setSeasonError] = useState(false);
 
   const albumInputRef = useRef(null);
 
@@ -250,6 +262,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
     setBulkItems([]);
     setCurrentIdx(0);
     setCameraActionDone(false);
+    setSeasons([]);
+    setSeasonError(false);
   };
 
   // ── 카메라 버튼 ───────────────────────────────────────────────────────────────
@@ -442,14 +456,22 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   };
 
   const handleSave = async () => {
+    if (seasons.length === 0) { setSeasonError(true); return; }
+    setSeasonError(false);
+    const cost = POINT_COSTS.ITEM_REGISTER;
+    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
     setStep('saving');
     try {
+      const ok = await deductPoints(user.uid, cost, '옷 등록');
+      if (!ok) { setShowPointsModal(true); setStep('review'); return; }
+      await refreshPoints(user.uid);
       let url = '', path = '';
       if (removedBlob) { const result = await uploadImage(user.uid, removedBlob); url = result.url; path = result.path; }
       await saveItem(user.uid, {
         imageUrl: url, imagePath: path,
         category: analysis?.category || '상의', color: analysis?.color || '',
         tags: analysis?.tags || [], name: analysis?.name || '', brand: analysis?.brand || '',
+        seasons,
       });
       setStep('done');
       setTimeout(() => { reset(); onSaved?.(); }, 1200);
@@ -460,9 +482,14 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   };
 
   const handleBulkSave = async () => {
+    const cost = POINT_COSTS.ITEM_REGISTER * bulkItems.length;
+    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
     setStep('saving');
     try {
       for (const item of bulkItems) {
+        const ok = await deductPoints(user.uid, POINT_COSTS.ITEM_REGISTER, '옷 등록');
+        if (!ok) { setShowPointsModal(true); setStep('bulk'); return; }
+        await refreshPoints(user.uid);
         const result = await uploadImage(user.uid, item.removedBlob);
         await saveItem(user.uid, {
           imageUrl: result.url, imagePath: result.path,
@@ -478,6 +505,16 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
   // ── 렌더 ───────────────────────────────────────────────────────────────────────
   return (
     <div className="page upload-page" style={{ display: 'flex', flexDirection: 'column' }}>
+
+      {/* 포인트 부족 모달 */}
+      {showPointsModal && (
+        <InsufficientPointsModal
+          required={POINT_COSTS.ITEM_REGISTER}
+          current={points ?? 0}
+          onClose={() => setShowPointsModal(false)}
+          onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
+        />
+      )}
 
       {/* 숨겨진 앨범 파일 입력 */}
       <input ref={albumInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
@@ -729,6 +766,44 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose }) {
               <span className="label">태그</span>
               <input className="analysis-input" value={analysis.tags ? analysis.tags.join(', ') : ''} placeholder="쉼표로 구분"
                 onChange={(e) => setAnalysis({ ...analysis, tags: e.target.value.split(',').map(t => t.trim()) })} />
+            </div>
+            <div className="analysis-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="label">계절</span>
+                <span style={{ fontSize: 11, color: '#E53E3E', fontWeight: 600 }}>* 필수</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {SEASON_OPTIONS.map(({ key, emoji, color }) => {
+                  const selected = seasons.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setSeasonError(false);
+                        setSeasons(prev =>
+                          prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]
+                        );
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '7px 14px', borderRadius: 20,
+                        border: selected ? `2px solid ${color}` : '1.5px solid var(--border)',
+                        background: selected ? color + '33' : 'var(--surface)',
+                        color: selected ? '#18160F' : 'var(--text-muted)',
+                        fontSize: 13, fontWeight: selected ? 700 : 400,
+                        cursor: 'pointer', transition: 'all 0.15s',
+                      }}
+                    >
+                      {emoji} {key}
+                    </button>
+                  );
+                })}
+              </div>
+              {seasonError && (
+                <p style={{ margin: 0, fontSize: 12, color: '#E53E3E' }}>
+                  ⚠️ 계절을 하나 이상 선택해주세요.
+                </p>
+              )}
             </div>
           </div>
           <div className="preview-actions">

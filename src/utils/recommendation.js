@@ -43,6 +43,29 @@ export function getTempDescription(temp) {
 }
 
 /**
+ * 현재 월 → 계절 반환
+ */
+export function getCurrentSeason() {
+  const month = new Date().getMonth() + 1; // 1~12
+  if (month >= 3 && month <= 5) return '봄';
+  if (month >= 6 && month <= 8) return '여름';
+  if (month >= 9 && month <= 11) return '가을';
+  return '겨울';
+}
+
+/**
+ * 아이템을 현재 계절로 필터링.
+ * seasons 배열이 없는 기존 아이템은 모든 계절에 포함(하위 호환).
+ */
+function filterBySeason(items, season) {
+  if (!items || items.length === 0) return [];
+  const seasonal = items.filter(
+    item => !item.seasons || item.seasons.length === 0 || item.seasons.includes(season)
+  );
+  return seasonal.length > 0 ? seasonal : items; // 필터 후 0개면 전체 반환
+}
+
+/**
  * 상황 키워드와 아이템 tags를 매칭해 점수 계산
  */
 function situationScore(item, keywords) {
@@ -103,8 +126,15 @@ export function recommendOutfit(weather, items, situation = null) {
 
   const keywords = situation ? (SITUATION_KEYWORDS[situation] || []) : [];
 
+  // 샘플 아이템 제외 (실제 등록한 옷만 추천에 사용)
+  const realItems = items.filter(item => !item.isSample);
+
+  // 현재 계절 필터링
+  const currentSeason = getCurrentSeason();
+  const seasonalItems = filterBySeason(realItems, currentSeason);
+
   // 카테고리별 그룹화
-  const categories = items.reduce((acc, item) => {
+  const categories = seasonalItems.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
