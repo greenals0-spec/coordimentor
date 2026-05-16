@@ -34,7 +34,7 @@ function getOutfitThumbs(outfitItems) {
 }
 
 export default function HomePage({ onNavigate }) {
-  const { user, userProfile, signOut } = useAuth();
+  const { user, userProfile, signOut, points } = useAuth();
   const [items, setItems] = useState([]);
   const [savedOutfits, setSavedOutfits] = useState([]);
   const [ootdLogs, setOotdLogs] = useState([]);
@@ -208,13 +208,62 @@ export default function HomePage({ onNavigate }) {
 
   // 날씨에 따른 맞춤 메시지 생성
   const getWeatherMessage = () => {
-    if (!weather) return '오늘의 코디를 준비해드릴까요?';
-    const cond = weather.condition.toLowerCase();
-    if (cond.includes('비')) return '비가 오네요, 레인부츠나 방수 자켓 어때요?';
-    if (cond.includes('눈')) return '눈이 내려요! 따뜻한 코트와 목도리를 챙기세요.';
-    if (weather.temp >= 28) return '무더운 날씨예요. 시원한 리넨 소재를 추천해요.';
-    if (weather.temp <= 5) return '꽤 쌀쌀하네요. 든든한 레이어링이 필요해요.';
-    return '외출하기 좋은 날씨네요. 멋진 코디를 제안할게요!';
+    if (!weather) return '오늘 하루도 멋진 코디로 시작해볼까요?';
+    const temp     = weather.temp ?? 20;
+    const feels    = weather.apparentTemp ?? temp;
+    const wind     = weather.windSpeed ?? 0;
+    const precip   = weather.precipProb ?? 0;
+    const precipMm = weather.precipMm ?? 0;
+    const cond     = weather.condition || '';
+
+    // ── 강수량(mm) 기준 비 강도 분류 ──
+    if (precipMm >= 30 || cond.includes('폭우') || cond.includes('호우')) {
+      return '폭우가 쏟아지고 있어요. 방수 자켓과 레인부츠로 완벽하게 무장해보세요.';
+    }
+    if (precipMm >= 7.6 || (precipMm >= 2.5 && precip >= 60)) {
+      return '제법 굵은 빗줄기가 내리고 있어요. 방수 아우터와 방수 슈즈가 오늘의 필수템이에요.';
+    }
+    if (precipMm >= 2.5 || precip >= 70) {
+      return '비가 촉촉이 내리고 있어요. 가벼운 방수 재킷 하나면 스타일도 기분도 업!';
+    }
+    if (precip >= 40 || cond.includes('소나기')) {
+      return '갑작스러운 소나기가 올 수도 있어요. 접이식 우산 하나 챙겨두면 마음이 든든할 거예요.';
+    }
+
+    // ── 눈 ──
+    if (precipMm >= 5 || cond.includes('폭설')) {
+      return '많은 눈이 내리고 있어요. 따뜻한 패딩과 방한 부츠로 포근하게 입어주세요.';
+    }
+    if (cond.includes('눈')) {
+      return '눈이 소복이 내리고 있어요. 따뜻한 코트와 목도리로 겨울 감성을 느껴보세요.';
+    }
+
+    // ── 기온 기반 ──
+    if (temp >= 33) {
+      return `${temp}°의 뜨거운 날씨예요. 바람이 통하는 린넨이나 면 소재로 가볍게 입어보세요.`;
+    }
+    if (temp >= 28) {
+      return `${temp}°로 꽤 더운 하루예요. 밝고 시원한 컬러로 기분까지 상쾌하게 만들어봐요.`;
+    }
+    if (temp >= 23) {
+      if (wind >= 20) return `${temp}°로 따뜻하지만 바람이 제법 불어요. 얇은 바람막이 하나를 챙겨두면 딱 좋아요.`;
+      return `${temp}°로 쾌적한 날씨예요. 좋아하는 아이템으로 오늘의 코디를 마음껏 표현해보세요.`;
+    }
+    if (temp >= 17) {
+      if (feels <= temp - 4) return `기온은 ${temp}°지만 체감은 ${feels}°로 꽤 서늘해요. 얇은 아우터로 레이어링하면 완벽해요.`;
+      return `${temp}°로 포근하고 기분 좋은 날씨예요. 가디건이나 얇은 재킷으로 스타일리시하게 입어봐요.`;
+    }
+    if (temp >= 12) {
+      if (wind >= 15) return `${temp}°인데 바람까지 불어 꽤 쌀쌀하게 느껴져요. 바람막이나 가벼운 코트로 멋스럽게 입어봐요.`;
+      return `${temp}°로 선선한 가을 느낌이에요. 포근한 니트나 가벼운 재킷이 딱 어울릴 것 같아요.`;
+    }
+    if (temp >= 5) {
+      return `${temp}°로 꽤 쌀쌀한 날이에요. 따뜻한 아우터로 든든하게 레이어링해보세요.`;
+    }
+    if (temp >= 0) {
+      return `${temp}°로 제법 매서운 추위예요. 두꺼운 코트에 목도리와 장갑으로 따뜻하게 챙겨입어요.`;
+    }
+    return `영하 ${Math.abs(temp)}°의 혹독한 추위예요. 패딩과 핫팩은 필수, 최대한 따뜻하게 입고 나서요.`;
   };
 
   // 카테고리별 집계
@@ -327,7 +376,7 @@ export default function HomePage({ onNavigate }) {
           <h1 style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontStyle: 'italic', fontWeight: 400,
-            fontSize: 28, color: '#fff',
+            fontSize: 25, color: '#fff',
             margin: '0 0 10px', lineHeight: 1.2,
           }}>
             {name ? `${name}님,` : ''}<br />{getWeatherMessage()}
@@ -353,8 +402,8 @@ export default function HomePage({ onNavigate }) {
         </div>
       </div>
 
-      {/* ── 날씨 칩 ── */}
-      <div style={{ padding: '14px 20px 16px' }}>
+      {/* ── 날씨 칩 + 포인트 배지 ── */}
+      <div style={{ padding: '14px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {weather ? (
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 7,
@@ -375,6 +424,21 @@ export default function HomePage({ onNavigate }) {
             날씨 불러오는 중…
           </div>
         )}
+        {/* 포인트 배지 */}
+        <button
+          onClick={() => onNavigate('store')}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: 'linear-gradient(135deg, #5E3D31, #C16654)',
+            borderRadius: 20, padding: '6px 14px',
+            border: 'none', cursor: 'pointer',
+            fontSize: 12, fontWeight: 700, color: '#fff',
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          <span style={{ fontSize: 11 }}>P</span>
+          <span>{(points ?? 0).toLocaleString()}</span>
+        </button>
       </div>
 
       {/* 가상 피팅 모델 등록 유도 배너 */}
@@ -574,6 +638,7 @@ export default function HomePage({ onNavigate }) {
           weather={pendingWeather ?? weather}
           recommendation={recommendation}
           onClose={() => { setShowRecommendation(false); setPendingWeather(null); }}
+          onNavigate={onNavigate}
         />
       )}
 

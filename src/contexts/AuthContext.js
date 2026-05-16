@@ -12,12 +12,15 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase';
 import { Capacitor } from '@capacitor/core';
+import { initPoints, getPoints, isAdminUser } from '../utils/points';
+import { initSampleItems } from '../utils/sampleItems';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined);
   const [userProfile, setUserProfile] = useState(undefined);
+  const [points, setPoints] = useState(0);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (currentUser) => {
@@ -27,13 +30,19 @@ export function AuthProvider({ children }) {
           const docRef = doc(db, 'users', currentUser.uid, 'profile', 'info');
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setUserProfile(docSnap.data());
+            const data = docSnap.data();
+            setUserProfile(data);
+            setPoints(isAdminUser() ? 999999 : (data.points ?? 0));
+            // 로그인할 때마다 샘플 의상 체크 (최초 1회, 성별 맞춤 지급)
+            initSampleItems(currentUser.uid, data.gender).catch(() => {});
           } else {
-            setUserProfile(null); // explicitly null means no profile yet
+            setUserProfile(null);
+            setPoints(isAdminUser() ? 999999 : 0);
           }
         } catch (e) {
           console.warn('프로필 조회 실패, 온보딩으로 이동:', e);
-          setUserProfile(null); // 오류 시에도 로딩 해제
+          setUserProfile(null);
+          setPoints(0);
         }
       } else {
         setUserProfile(undefined);
@@ -71,10 +80,22 @@ export function AuthProvider({ children }) {
     const docRef = doc(db, 'users', uid, 'profile', 'info');
     await setDoc(docRef, data, { merge: true });
     setUserProfile(prev => ({ ...prev, ...data }));
+    // 포인트 초기화 (신규 가입 시)
+    await initPoints(uid);
+    const p = await getPoints(uid);
+    setPoints(p);
+    // 샘플 의상 지급 (신규 가입 시, 성별 맞춤 1회 지급)
+    await initSampleItems(uid, data.gender);
+  };
+
+  const refreshPoints = async (uid) => {
+    if (isAdminUser()) { setPoints(999999); return; }
+    const p = await getPoints(uid);
+    setPoints(p);
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, updateUserProfile, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
+    <AuthContext.Provider value={{ user, userProfile, points, updateUserProfile, refreshPoints, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

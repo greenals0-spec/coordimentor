@@ -1,5 +1,3 @@
-import { preserveFace } from './facePreserve';
-
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 // 이미지 생성(출력)을 지원하는 모델 목록 (순서대로 시도, 2026년 5월 기준)
 const TRYON_MODELS = [
@@ -125,12 +123,6 @@ export async function runFullOutfitTryOn(modelPhoto, recommendation, onProgress)
     onProgress?.(i + 1, steps.length, label);
     currentPhoto = await runVirtualTryOn(currentPhoto, item.imageUrl, category);
   }
-  // 얼굴 영역 원본 보존 (마지막 결과에만 적용)
-  try {
-    currentPhoto = await preserveFace(modelPhoto, currentPhoto);
-  } catch (e) {
-    console.warn('[FacePreserve] 얼굴 보존 실패, 원본 결과 사용:', e);
-  }
   return currentPhoto;
 }
 
@@ -248,15 +240,7 @@ Task:
     },
   };
 
-  const result = await callTryOnApi(requestBody);
-
-  // 얼굴 영역 원본 보존
-  try {
-    return await preserveFace(modelPhoto, result);
-  } catch (e) {
-    console.warn('[FacePreserve] 얼굴 보존 실패, 원본 결과 사용:', e);
-    return result;
-  }
+  return await callTryOnApi(requestBody);
 }
 
 /* ── 유틸: URL/base64 → Gemini inlineData part ── */

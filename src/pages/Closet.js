@@ -4,14 +4,15 @@ import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCache
 import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { upscaleImage } from '../utils/upscale';
+import { deductPoints, POINT_COSTS } from '../utils/points';
+import InsufficientPointsModal from '../components/InsufficientPointsModal';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
 const TRYON_SLOTS = ['상의', '하의', '아우터', '신발', '액세서리']; // 가상 입어보기 카테고리
 
-export default function ClosetPage({ tryOnMode, setTryOnMode }) {
-  const { user, userProfile } = useAuth();
+export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
+  const { user, userProfile, points, refreshPoints } = useAuth();
   const [active, setActive] = useState('아우터');
   const [items, setItems] = useState([]);
   const [confirmId, setConfirmId] = useState(null);
@@ -23,8 +24,8 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [tryOnResult, setTryOnResult] = useState(null);
   const [progressPct, setProgressPct] = useState(0);   // 0~100 smooth progress bar
-  const [upscaling, setUpscaling] = useState(false);
-  const [upscalePct, setUpscalePct] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
   const progressTimerRef = useRef(null);
   const progressTargetRef = useRef(0);
 
@@ -112,13 +113,23 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
 
-  const handleFlatlayTryOn = async () => {
+  const handleFlatlayTryOn = () => {
     if (!userProfile?.modelPhoto) {
       alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
       return;
     }
     if (selectedCount === 0) return;
+    setShowDisclaimer(true);
+  };
 
+  const doFlatlayTryOn = async () => {
+    setShowDisclaimer(false);
+    // 포인트 확인
+    const cost = POINT_COSTS.TRY_ON;
+    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
+    const ok = await deductPoints(user.uid, cost, '가상 입어보기');
+    if (!ok) { setShowPointsModal(true); return; }
+    await refreshPoints(user.uid);
     setTryOnLoading(true);
     setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
@@ -155,6 +166,16 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
 
   return (
     <div className="page closet-page">
+
+      {/* 포인트 부족 모달 */}
+      {showPointsModal && (
+        <InsufficientPointsModal
+          required={POINT_COSTS.TRY_ON}
+          current={points ?? 0}
+          onClose={() => setShowPointsModal(false)}
+          onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
+        />
+      )}
 
       {/* ── 헤더 ── */}
       <div className="closet-header">
@@ -235,6 +256,19 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
                   <div className="img-error-placeholder" style={{ display: 'none' }}>
                     <span>재연결 중...</span>
                   </div>
+
+                  {/* 샘플 뱃지 */}
+                  {item.isSample && !tryOnMode && (
+                    <div style={{
+                      position: 'absolute', top: 6, left: 6,
+                      background: 'rgba(193,102,84,0.85)',
+                      color: '#fff', fontSize: 9, fontWeight: 700,
+                      padding: '2px 7px', borderRadius: 10,
+                      letterSpacing: '0.06em',
+                    }}>
+                      SAMPLE
+                    </div>
+                  )}
 
                   {/* 선택 오버레이 */}
                   {isSelected && (
@@ -404,6 +438,33 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
         </div>
       )}
 
+      {/* ── 참고용 안내 팝업 ── */}
+      {showDisclaimer && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 340, width: '100%', textAlign: 'center', animation: 'fadeUp 0.3s ease' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#5E3D31', margin: '0 0 10px', fontFamily: "'Pretendard', sans-serif" }}>가상 피팅 안내</h3>
+            <p style={{ fontSize: 13, color: '#7A4F3E', lineHeight: 1.7, margin: '0 0 22px', fontFamily: "'Pretendard', sans-serif" }}>
+              가상 피팅 이미지는 <strong>AI가 생성한 참고용</strong>으로만 활용해 주세요.<br />
+              실제 착용감이나 색상과 다를 수 있습니다.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1px solid #EDE0D0', background: '#FDF4EB', color: '#7A4F3E', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+              >
+                취소
+              </button>
+              <button
+                onClick={doFlatlayTryOn}
+                style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #C16654, #E8A070)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+              >
+                확인하고 시작
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 가상 입어보기 결과 모달 ── */}
       {tryOnResult && (
         <div
@@ -450,39 +511,12 @@ export default function ClosetPage({ tryOnMode, setTryOnMode }) {
               >
                 다시 선택
               </button>
-              {upscaling ? (
-                <div style={{ flex: 2, background: 'rgba(255,255,255,0.10)', borderRadius: 14, padding: '10px 14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>✨ 고화질 변환 중...</span>
-                    <span style={{ fontSize: 11, color: '#E8A070', fontWeight: 700 }}>{upscalePct}%</span>
-                  </div>
-                  <div style={{ height: 5, borderRadius: 100, background: 'rgba(255,255,255,0.15)' }}>
-                    <div style={{ width: `${upscalePct}%`, height: '100%', borderRadius: 100, background: 'linear-gradient(90deg,#C16654,#E8A070)', transition: 'width 0.2s' }} />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={async () => {
-                      setUpscaling(true); setUpscalePct(0);
-                      try {
-                        const hq = await upscaleImage(tryOnResult, (p) => setUpscalePct(Math.round(p * 100)));
-                        await saveImageAsJpg(hq, 'coordimentor_hq');
-                      } catch (e) { alert('고화질 저장 실패: ' + e.message); }
-                      finally { setUpscaling(false); setUpscalePct(0); }
-                    }}
-                    style={{ flex: 1, background: 'linear-gradient(135deg,#C16654,#E8A070)', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    ✨ 고화질
-                  </button>
-                  <button
-                    onClick={() => saveImageAsJpg(tryOnResult)}
-                    style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    일반 저장
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => saveImageAsJpg(tryOnResult)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', padding: '13px', borderRadius: 14, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              >
+                📥 저장
+              </button>
               <button
                 onClick={() => setTryOnResult(null)}
                 style={{ flex: 1, background: '#5E3D31', color: '#fff', border: 'none', padding: '13px', borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
