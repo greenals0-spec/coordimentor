@@ -13,6 +13,54 @@ const TEMP_GUIDE = [
   { max: 100, label: '민소매, 반팔, 린넨 소재로 시원하게 입어요.' }
 ];
 
+/**
+ * 온도별 선호/회피 태그 정의
+ * prefer: 이 키워드가 있는 아이템 우선 선택
+ * avoid:  이 키워드가 있는 아이템 최대한 제외
+ */
+const TEMP_TAG_RULES = [
+  {
+    minTemp: -999, maxTemp: 4,
+    prefer: ['패딩', '기모', '두꺼운', '방한', '울', '플리스', '목도리', '롱패딩', '다운'],
+    avoid:  ['반팔', '민소매', '린넨', '얇은', '숏'],
+  },
+  {
+    minTemp: 5, maxTemp: 8,
+    prefer: ['코트', '가죽', '니트', '히트텍', '두꺼운', '울'],
+    avoid:  ['반팔', '민소매', '린넨', '숏'],
+  },
+  {
+    minTemp: 9, maxTemp: 11,
+    prefer: ['자켓', '트렌치', '두꺼운', '청자켓', '가디건'],
+    avoid:  ['반팔', '민소매', '린넨'],
+  },
+  {
+    minTemp: 12, maxTemp: 16,
+    prefer: ['자켓', '가디건', '니트', '긴팔'],
+    avoid:  ['패딩', '롱패딩', '기모', '반팔', '민소매'],
+  },
+  {
+    minTemp: 17, maxTemp: 19,
+    prefer: ['맨투맨', '후드', '긴팔', '얇은'],
+    avoid:  ['패딩', '기모', '두꺼운', '민소매'],
+  },
+  {
+    minTemp: 20, maxTemp: 22,
+    prefer: ['긴팔', '얇은', '셔츠', '면'],
+    avoid:  ['패딩', '기모', '두꺼운', '니트', '울', '민소매'],
+  },
+  {
+    minTemp: 23, maxTemp: 27,
+    prefer: ['반팔', '얇은', '면', '셔츠', '숏', '반바지'],
+    avoid:  ['패딩', '기모', '두꺼운', '니트', '울', '긴팔', '민소매'],
+  },
+  {
+    minTemp: 28, maxTemp: 999,
+    prefer: ['민소매', '반팔', '린넨', '얇은', '숏', '반바지', '면'],
+    avoid:  ['패딩', '기모', '두꺼운', '니트', '울', '긴팔', '자켓', '코트'],
+  },
+];
+
 // 상황별 스타일 키워드 (아이템 tags와 매칭)
 const SITUATION_KEYWORDS = {
   '출근': ['정장', '슬랙스', '셔츠', '블라우스', '재킷', '구두', '로퍼', '오피스', '비즈니스', '포멀'],
@@ -34,7 +82,7 @@ const SITUATION_MESSAGES = {
   '여행': '즐거운 여행! 편하면서도 스타일리시한 코디를 준비했어요.',
   '등산': '산에서도 멋지게! 기능성과 스타일을 모두 잡은 코디예요.',
   '모임': '모임 준비 완료! 날씨에 맞는 깔끔한 코디를 골랐어요.',
-  '기타': null, // 기타는 날씨 메시지 사용
+  '기타': null,
 };
 
 export function getTempDescription(temp) {
@@ -46,7 +94,7 @@ export function getTempDescription(temp) {
  * 현재 월 → 계절 반환
  */
 export function getCurrentSeason() {
-  const month = new Date().getMonth() + 1; // 1~12
+  const month = new Date().getMonth() + 1;
   if (month >= 3 && month <= 5) return '봄';
   if (month >= 6 && month <= 8) return '여름';
   if (month >= 9 && month <= 11) return '가을';
@@ -62,59 +110,128 @@ function filterBySeason(items, season) {
   const seasonal = items.filter(
     item => !item.seasons || item.seasons.length === 0 || item.seasons.includes(season)
   );
-  return seasonal.length > 0 ? seasonal : items; // 필터 후 0개면 전체 반환
+  return seasonal.length > 0 ? seasonal : items;
 }
 
 /**
- * 상황 키워드와 아이템 tags를 매칭해 점수 계산
+ * 온도에 맞는 태그 규칙 반환
  */
-function situationScore(item, keywords) {
-  if (!keywords || keywords.length === 0) return 0;
-  const tags = [
+function getTempRules(temp) {
+  return TEMP_TAG_RULES.find(r => temp >= r.minTemp && temp <= r.maxTemp) || { prefer: [], avoid: [] };
+}
+
+/**
+ * 아이템의 텍스트(태그+이름+카테고리) 추출
+ */
+function itemText(item) {
+  return [
     ...(item.tags || []),
     item.name || '',
     item.category || '',
     item.memo || '',
   ].join(' ').toLowerCase();
-  return keywords.filter(k => tags.includes(k)).length;
 }
 
 /**
- * 상황 선호도를 고려해 카테고리에서 아이템 선택
- * 매칭 점수가 높은 아이템을 우선 선택, 없으면 랜덤
+ * 상황 키워드 매칭 점수
  */
+function situationScore(item, keywords) {
+  if (!keywords || keywords.length === 0) return 0;
+  const text = itemText(item);
+  return keywords.filter(k => text.includes(k)).length;
+}
+
 /**
- * 상황 선호도를 고려해 카테고리에서 아이템 선택
- * 1. 상황 키워드와 매칭되는 아이템이 있다면 그 중에서만 랜덤 선택 (엄격한 필터링)
- * 2. 매칭되는 아이템이 없다면 '기본/베이직' 키워드가 포함된 아이템 선택
- * 3. 그것도 없다면 전체에서 랜덤 선택 (최후의 수단)
+ * 온도 적합성 점수
+ * prefer 키워드 포함 시 +2, avoid 키워드 포함 시 -3
  */
-function pickBySituation(list, keywords) {
+function tempScore(item, rules) {
+  const text = itemText(item);
+  let score = 0;
+  (rules.prefer || []).forEach(k => { if (text.includes(k)) score += 2; });
+  (rules.avoid  || []).forEach(k => { if (text.includes(k)) score -= 3; });
+  return score;
+}
+
+/**
+ * 아이템 선택 (온도 적합성 + 상황 키워드 통합 고려)
+ * 1. avoid 태그가 있는 아이템 제외 (가능한 경우)
+ * 2. 상황 키워드 매칭 우선
+ * 3. 온도 prefer 점수 우선
+ * 4. 최후의 수단: 전체 랜덤
+ */
+function pickItem(list, keywords, tempRules) {
   if (!list || list.length === 0) return null;
-  
-  // 1. 상황 키워드 매칭 필터링
-  if (keywords && keywords.length > 0) {
-    const matched = list.filter(item => situationScore(item, keywords) > 0);
-    if (matched.length > 0) {
-      return matched[Math.floor(Math.random() * matched.length)];
-    }
-  }
 
-  // 2. 기본템 필터링 (상황에 맞는게 없을 때 안전한 선택)
-  const basicKeywords = ['기본', '베이직', '무지', '심플', '평상시', '데일리'];
-  const basicItems = list.filter(item => situationScore(item, basicKeywords) > 0);
-  if (basicItems.length > 0) {
-    return basicItems[Math.floor(Math.random() * basicItems.length)];
-  }
+  // avoid 아이템 제거 (남은 게 있을 때만)
+  const notAvoided = list.filter(item => tempScore(item, tempRules) >= 0);
+  const pool = notAvoided.length > 0 ? notAvoided : list;
 
-  // 3. 최후의 수단 (랜덤)
-  return list[Math.floor(Math.random() * list.length)];
+  // 상황 키워드 AND 온도 prefer 모두 고려한 종합 점수
+  const scored = pool.map(item => ({
+    item,
+    score: situationScore(item, keywords) * 3 + tempScore(item, tempRules),
+  }));
+
+  const maxScore = Math.max(...scored.map(s => s.score));
+
+  // 최고 점수 그룹에서 랜덤 선택
+  const best = scored.filter(s => s.score === maxScore);
+  return best[Math.floor(Math.random() * best.length)].item;
+}
+
+/**
+ * 카테고리 + 계절 + 온도 → 무신사/네이버 쇼핑 검색 키워드 생성
+ */
+const SHOPPING_KEYWORDS = {
+  상의: {
+    겨울: ['기모 맨투맨', '두꺼운 니트', '울 스웨터'],
+    봄:   ['봄 셔츠', '봄 가디건', '봄 니트'],
+    여름: ['반팔 티셔츠', '린넨 셔츠', '민소매 탑'],
+    가을: ['가을 니트', '긴팔 셔츠', '가을 맨투맨'],
+  },
+  하의: {
+    겨울: ['기모 바지', '겨울 슬랙스', '두꺼운 청바지'],
+    봄:   ['봄 슬랙스', '봄 청바지', '면 바지'],
+    여름: ['여름 반바지', '린넨 팬츠', '숏팬츠'],
+    가을: ['가을 청바지', '코듀로이 팬츠', '가을 슬랙스'],
+  },
+  아우터: {
+    겨울: ['롱패딩', '두꺼운 코트', '퍼 자켓'],
+    봄:   ['봄 자켓', '트렌치코트', '봄 가디건'],
+    여름: ['얇은 가디건', '여름 자켓'],
+    가을: ['가을 자켓', '트렌치코트', '데님 자켓'],
+  },
+  신발: {
+    겨울: ['겨울 부츠', '방한 스니커즈'],
+    봄:   ['봄 스니커즈', '로퍼', '봄 단화'],
+    여름: ['여름 샌들', '슬리퍼', '캔버스화'],
+    가을: ['가을 로퍼', '가을 스니커즈', '첼시부츠'],
+  },
+  액세서리: {
+    겨울: ['겨울 목도리', '비니', '장갑'],
+    봄:   ['봄 모자', '경량 스카프'],
+    여름: ['여름 모자', '선글라스'],
+    가을: ['가을 모자', '스카프'],
+  },
+};
+
+function generateShoppingLinks(category, season) {
+  const keywords = SHOPPING_KEYWORDS[category]?.[season] || [];
+  if (keywords.length === 0) return null;
+  const keyword = keywords[Math.floor(Math.random() * keywords.length)];
+  return {
+    category,
+    keyword,
+    musinsaUrl: `https://www.musinsa.com/search/musinsa/integration?q=${encodeURIComponent(keyword)}`,
+    naverUrl:   `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(keyword)}`,
+  };
 }
 
 /**
  * 날씨 + 상황 기반 코디 추천
- * @param {Object} weather { temp, condition, emoji }
- * @param {Array}  items   옷장 아이템 배열
+ * @param {Object} weather   { temp, condition, emoji }
+ * @param {Array}  items     옷장 아이템 배열
  * @param {string} situation '출근'|'운동'|'등교'|'데이트'|'여행'|'등산'|'모임'|'기타'|null
  */
 export function recommendOutfit(weather, items, situation = null) {
@@ -124,12 +241,13 @@ export function recommendOutfit(weather, items, situation = null) {
   const isRaining = condition.includes('비');
   const isSnowing = condition.includes('눈');
 
-  const keywords = situation ? (SITUATION_KEYWORDS[situation] || []) : [];
+  const keywords  = situation ? (SITUATION_KEYWORDS[situation] || []) : [];
+  const tempRules = getTempRules(temp);
 
-  // 샘플 아이템 제외 (실제 등록한 옷만 추천에 사용)
+  // 샘플 아이템 제외
   const realItems = items.filter(item => !item.isSample);
 
-  // 현재 계절 필터링
+  // 계절 필터링
   const currentSeason = getCurrentSeason();
   const seasonalItems = filterBySeason(realItems, currentSeason);
 
@@ -150,29 +268,38 @@ export function recommendOutfit(weather, items, situation = null) {
     situation: situation || null,
   };
 
-  // 상황 기반 아이템 선택
-  recommendation.top      = pickBySituation(categories['상의'], keywords);
-  recommendation.bottom   = pickBySituation(categories['하의'], keywords);
-  recommendation.shoes    = pickBySituation(categories['신발'], keywords);
-  recommendation.accessory = pickBySituation(categories['액세서리'], keywords);
+  // 온도 + 상황 통합 선택
+  recommendation.top       = pickItem(categories['상의'],     keywords, tempRules);
+  recommendation.bottom    = pickItem(categories['하의'],     keywords, tempRules);
+  recommendation.shoes     = pickItem(categories['신발'],     keywords, tempRules);
+  recommendation.accessory = pickItem(categories['액세서리'], keywords, tempRules);
 
   // 아우터: 23도 미만일 때만
   if (temp < 23) {
-    recommendation.outer = pickBySituation(categories['아우터'], keywords);
+    recommendation.outer = pickItem(categories['아우터'], keywords, tempRules);
   }
 
-  // 메시지 조합: 상황 메시지 + 날씨 설명
+  // 메시지 조합
   const situationMsg = situation ? SITUATION_MESSAGES[situation] : null;
   const weatherMsg   = getTempDescription(temp);
 
-  if (situationMsg) {
-    recommendation.message = `${situationMsg}\n${weatherMsg}`;
-  } else {
-    recommendation.message = weatherMsg;
-  }
+  recommendation.message = situationMsg
+    ? `${situationMsg}\n${weatherMsg}`
+    : weatherMsg;
 
-  if (isRaining)  recommendation.message += '\n☂️ 비가 오니 우산과 방수 신발을 챙기세요!';
-  if (isSnowing)  recommendation.message += '\n❄️ 눈이 오니 미끄럽지 않은 신발을 신으세요!';
+  if (isRaining) recommendation.message += '\n☂️ 비가 오니 우산과 방수 신발을 챙기세요!';
+  if (isSnowing) recommendation.message += '\n❄️ 눈이 오니 미끄럽지 않은 신발을 신으세요!';
+
+  // 옷장에 없는 카테고리 → 쇼핑 추천 링크 생성
+  const missingCategories = [];
+  if (!recommendation.top)       missingCategories.push('상의');
+  if (!recommendation.bottom)    missingCategories.push('하의');
+  if (!recommendation.shoes)     missingCategories.push('신발');
+  if (temp < 23 && !recommendation.outer) missingCategories.push('아우터');
+
+  recommendation.shoppingSuggestions = missingCategories
+    .map(cat => generateShoppingLinks(cat, currentSeason))
+    .filter(Boolean);
 
   return recommendation;
 }
