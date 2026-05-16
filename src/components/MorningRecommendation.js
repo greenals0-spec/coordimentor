@@ -1,9 +1,10 @@
-import { X, Sparkles, Shirt } from 'lucide-react';
+import { X, Sparkles, Shirt, ShoppingBag, ExternalLink } from 'lucide-react';
 import { runFlatlayTryOn } from '../utils/tryon';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useRef } from 'react';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { upscaleImage } from '../utils/upscale';
+import { deductPoints, POINT_COSTS } from '../utils/points';
+import InsufficientPointsModal from './InsufficientPointsModal';
 
 
 // ── Modern Warm & Cozy palette ──────────────────────────
@@ -25,14 +26,14 @@ const SITUATION_EMOJI = {
   '여행': '✈️', '등산': '🏔️', '모임': '🎉', '기타': '📌',
 };
 
-export default function MorningRecommendation({ weather, recommendation, onClose }) {
-  const { userProfile } = useAuth();
-  const [tryingOn, setTryingOn]     = useState(false);
+export default function MorningRecommendation({ weather, recommendation, onClose, onNavigate }) {
+  const { userProfile, user, points, refreshPoints } = useAuth();
+  const [tryingOn, setTryingOn]       = useState(false);
   const [tryOnResult, setTryOnResult] = useState(null);
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
-  const [progressPct, setProgressPct]     = useState(0);
-  const [upscaling, setUpscaling]   = useState(false);
-  const [upscalePct, setUpscalePct] = useState(0);
+  const [progressPct, setProgressPct] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
   const progressTimerRef  = useRef(null);
   const progressTargetRef = useRef(0);
 
@@ -56,7 +57,7 @@ export default function MorningRecommendation({ weather, recommendation, onClose
     }, 30);
   };
 
-  const handleTryOn = async () => {
+  const handleTryOn = () => {
     if (!userProfile?.modelPhoto) {
       alert('설정에서 "나의 모델(전신사진)"을 먼저 등록해주세요!');
       return;
@@ -67,7 +68,17 @@ export default function MorningRecommendation({ weather, recommendation, onClose
       alert('입혀볼 옷이 없어요. 옷장에 아이템을 추가해주세요!');
       return;
     }
+    setShowDisclaimer(true);
+  };
 
+  const doTryOn = async () => {
+    setShowDisclaimer(false);
+    // 포인트 확인
+    const cost = POINT_COSTS.TRY_ON;
+    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
+    const ok = await deductPoints(user.uid, cost, '가상 입어보기');
+    if (!ok) { setShowPointsModal(true); return; }
+    await refreshPoints(user.uid);
     setTryingOn(true);
     setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
@@ -78,7 +89,6 @@ export default function MorningRecommendation({ weather, recommendation, onClose
         recommendation,
         (step, total, label) => {
           setTryOnProgress({ step, total, label });
-          // flatlay: step1=코디묶음생성(50%), step2=AI착장(100%)
           animateToTarget(step === 1 ? 50 : 100);
         }
       );
@@ -102,6 +112,15 @@ export default function MorningRecommendation({ weather, recommendation, onClose
   ].filter(i => i.item);
 
   return (
+    <>
+    {showPointsModal && (
+      <InsufficientPointsModal
+        required={POINT_COSTS.TRY_ON}
+        current={points ?? 0}
+        onClose={() => setShowPointsModal(false)}
+        onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
+      />
+    )}
     <div className="modal-overlay" style={{ zIndex: 3000, background: 'rgba(45, 28, 20, 0.88)', alignItems: 'center', padding: '16px 0 90px' }}>
       <div style={{
         width: '92%',
@@ -188,6 +207,75 @@ export default function MorningRecommendation({ weather, recommendation, onClose
           ))}
         </div>
 
+        {/* 쇼핑 추천 섹션 — 옷장에 없는 카테고리 있을 때만 표시 */}
+        {recommendation.shoppingSuggestions?.length > 0 && (
+          <div style={{ padding: '0 24px 20px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #FEF3E8 0%, #FDF0E0 100%)',
+              borderRadius: 16, padding: '16px',
+              border: `1px solid ${C.border}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <ShoppingBag size={16} color={C.terracotta} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.brown }}>
+                  옷장에 없는 아이템 쇼핑 추천
+                </span>
+              </div>
+              <p style={{ fontSize: 11, color: C.muted, margin: '0 0 12px', lineHeight: 1.5 }}>
+                이번 계절 코디에 필요한 아이템이에요. 쇼핑몰에서 찾아보세요!
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {recommendation.shoppingSuggestions.map((s, i) => (
+                  <div key={i} style={{
+                    background: '#fff', borderRadius: 12, padding: '10px 12px',
+                    border: `1px solid ${C.border}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <div>
+                      <span style={{ fontSize: 10, color: C.faint, fontWeight: 600, textTransform: 'uppercase' }}>
+                        {s.category}
+                      </span>
+                      <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: C.brown }}>
+                        {s.keyword}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <a
+                        href={s.musinsaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 3,
+                          padding: '6px 10px', borderRadius: 8,
+                          background: '#000', color: '#fff',
+                          fontSize: 11, fontWeight: 600,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        무신사 <ExternalLink size={10} />
+                      </a>
+                      <a
+                        href={s.naverUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 3,
+                          padding: '6px 10px', borderRadius: 8,
+                          background: '#03C75A', color: '#fff',
+                          fontSize: 11, fontWeight: 600,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        네이버 <ExternalLink size={10} />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         </div>{/* 스크롤 영역 끝 */}
 
         {/* Try-On + 확인 버튼 — 항상 하단 고정 */}
@@ -200,42 +288,11 @@ export default function MorningRecommendation({ weather, recommendation, onClose
               <div style={{ width: '100%', borderRadius: 20, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', marginBottom: 10 }}>
                 <img src={tryOnResult} alt="Try-On Result" style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block' }} />
               </div>
-              {/* 저장 버튼 */}
-              {upscaling ? (
-                <div style={{ borderRadius: 12, background: 'rgba(193,102,84,0.08)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: C.brown, fontWeight: 600 }}>고화질 변환 중...</span>
-                    <span style={{ fontSize: 12, color: C.terracotta, fontWeight: 700 }}>{Math.round(upscalePct)}%</span>
-                  </div>
-                  <div style={{ height: 8, borderRadius: 100, background: 'rgba(193,102,84,0.15)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${upscalePct}%`, borderRadius: 100, background: 'linear-gradient(90deg, #C16654, #E8A070)', transition: 'width 0.1s linear' }} />
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={async () => {
-                    setUpscaling(true);
-                    setUpscalePct(0);
-                    try {
-                      const hq = await upscaleImage(tryOnResult, p => setUpscalePct(Math.round(p * 100)));
-                      await saveImageAsJpg(hq, 'coordimentor_morning_hq');
-                    } catch (e) {
-                      alert(`고화질 저장 실패: ${e.message}`);
-                    } finally {
-                      setUpscaling(false);
-                      setUpscalePct(0);
-                    }
-                  }}
-                  style={{ width: '100%', background: 'linear-gradient(135deg, #C16654 0%, #E8A070 100%)', color: '#fff', border: 'none', padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 600 }}
-                >
-                  ✨ 고화질 저장
-                </button>
-              )}
               <button
                 onClick={() => saveImageAsJpg(tryOnResult, 'coordimentor_morning')}
-                style={{ width: '100%', background: C.ivoryDeep, color: C.brown, border: `1px solid ${C.border}`, padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 500 }}
+                style={{ width: '100%', background: C.brown, color: '#fff', border: 'none', padding: '12px', borderRadius: 12, fontSize: 13, cursor: 'pointer', marginBottom: 4, fontFamily: "'Pretendard', sans-serif", fontWeight: 600 }}
               >
-                📥 일반 저장
+                📥 이미지 저장
               </button>
               <button
                 onClick={() => { setTryOnResult(null); setProgressPct(0); }}
@@ -308,6 +365,34 @@ export default function MorningRecommendation({ weather, recommendation, onClose
         </div>
       </div>
 
+      {/* 참고용 안내 팝업 */}
+      {showDisclaimer && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 340, width: '100%', textAlign: 'center', animation: 'fadeUp 0.3s ease' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>👗</div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: C.brown, margin: '0 0 10px', fontFamily: "'Pretendard', sans-serif" }}>가상 피팅 안내</h3>
+            <p style={{ fontSize: 13, color: C.brownLight, lineHeight: 1.7, margin: '0 0 22px', fontFamily: "'Pretendard', sans-serif" }}>
+              가상 피팅 이미지는 <strong>AI가 생성한 참고용</strong>으로만 활용해 주세요.<br />
+              실제 착용감이나 색상과 다를 수 있습니다.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: C.ivoryDeep, color: C.brownLight, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+              >
+                취소
+              </button>
+              <button
+                onClick={doTryOn}
+                style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #C16654, #E8A070)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard', sans-serif" }}
+              >
+                확인하고 시작
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes modalSlideUp {
           from { opacity: 0; transform: translateY(40px); }
@@ -319,5 +404,6 @@ export default function MorningRecommendation({ weather, recommendation, onClose
         }
       `}</style>
     </div>
+    </>
   );
 }
