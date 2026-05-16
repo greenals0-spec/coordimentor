@@ -29,7 +29,14 @@ workflows:
 
       - name: Build React app
         script: |
-          cp .env.production .env 2>/dev/null || true
+          cat > .env << EOF
+          REACT_APP_KMA_API_KEY=$REACT_APP_KMA_API_KEY
+          REACT_APP_ANTHROPIC_API_KEY=$REACT_APP_ANTHROPIC_API_KEY
+          REACT_APP_GEMINI_API_KEY=$REACT_APP_GEMINI_API_KEY
+          REACT_APP_HF_API_KEY=$REACT_APP_HF_API_KEY
+          REACT_APP_REMOVEBG_API_KEY=$REACT_APP_REMOVEBG_API_KEY
+          REACT_APP_REMBG_SERVER_URL=$REACT_APP_REMBG_SERVER_URL
+          EOF
           CI=false npm run build
 
       - name: Capacitor sync iOS

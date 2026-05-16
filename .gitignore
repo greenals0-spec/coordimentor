@@ -36,3 +36,5 @@ build_fresh/
 build_new/
 src/utils/api.js.tmp
 functions/node_modules/
+.env.production
+.env.production

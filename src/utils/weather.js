@@ -117,11 +117,36 @@ function interpretKMA(sky, pty) {
     3: { condition: '구름많음', emoji: '⛅' },
     4: { condition: '흐림',     emoji: '☁️' },
   };
-  return skyMap[sky] || { condition: '흐림', emoji: '☁️' };
+  // sky가 null이면(실황 데이터) 강수 없으므로 맑음으로 기본 처리
+  return skyMap[sky] || { condition: '맑음', emoji: '☀️' };
 }
 
-// ─── 기상청 초단기실황 (현재 날씨) ───────────────────────────────────────────
-async function fetchKmaCurrent(nx, ny) {
+// ─── 초단기예보 base_time 계산 (30분 단위, 발표 후 15분 이용 가능) ──────────
+function getUltraSrtFcstBaseTime() {
+  const { date, hour, min, kst } = getNowKST();
+  const pad = (n) => String(n).padStart(2, '0');
+
+  let baseHour = hour;
+  let baseMin  = 0;
+
+  if (min >= 45) {
+    baseMin = 30;
+  } else if (min >= 15) {
+    baseMin = 0;
+  } else {
+    // 이전 30분 단위로
+    const prev = new Date(kst.getTime() - 30 * 60 * 1000);
+    return {
+      base_date: `${prev.getUTCFullYear()}${pad(prev.getUTCMonth()+1)}${pad(prev.getUTCDate())}`,
+      base_time: `${pad(prev.getUTCHours())}30`,
+    };
+  }
+
+  return { base_date: date, base_time: `${pad(baseHour)}${pad(baseMin)}` };
+}
+
+// ─── 기상청 초단기실황 (현재 온도·강수) ──────────────────────────────────────
+async function fetchKmaNcst(nx, ny) {
   const { base_date, base_time } = getUltraNcstBaseTime();
   const url = `${KMA_BASE}/getUltraSrtNcst`
     + `?serviceKey=${encodeURIComponent(KMA_KEY)}`
@@ -135,19 +160,53 @@ async function fetchKmaCurrent(nx, ny) {
   if (!items?.length) throw new Error('기상청 실황 데이터 없음');
 
   const get = (cat) => items.find(i => i.category === cat)?.obsrValue;
-  const sky = null; // 실황에는 SKY 없음
-  const pty = Number(get('PTY') ?? 0);
-  const tmp = Number(get('T1H'));
-  const wsd = Number(get('WSD') ?? 0);
-
-  const { condition, emoji } = interpretKMA(sky, pty);
   return {
-    temp:         Math.round(tmp),
-    apparentTemp: Math.round(tmp), // 실황엔 체감온도 없음
+    tmp: Number(get('T1H')),
+    pty: Number(get('PTY') ?? 0),
+    wsd: Number(get('WSD') ?? 0),
+  };
+}
+
+// ─── 기상청 초단기예보 (현재 SKY 코드) ───────────────────────────────────────
+async function fetchKmaUltraSky(nx, ny) {
+  const { base_date, base_time } = getUltraSrtFcstBaseTime();
+  const url = `${KMA_BASE}/getUltraSrtFcst`
+    + `?serviceKey=${encodeURIComponent(KMA_KEY)}`
+    + `&pageNo=1&numOfRows=60&dataType=JSON`
+    + `&base_date=${base_date}&base_time=${base_time}`
+    + `&nx=${nx}&ny=${ny}`;
+
+  const res  = await fetch(url);
+  const data = await res.json();
+  const items = data?.response?.body?.items?.item;
+  if (!items?.length) throw new Error('초단기예보 데이터 없음');
+
+  // 가장 가까운 미래(첫 번째 예보 시각)의 SKY 값
+  const skyItem = items.find(i => i.category === 'SKY');
+  return skyItem ? Number(skyItem.fcstValue) : null;
+}
+
+// ─── 기상청 현재 날씨 (실황 온도 + 예보 SKY 결합) ────────────────────────────
+async function fetchKmaCurrent(nx, ny) {
+  // 1. 실황: 온도, 강수형태, 풍속 (가장 정확한 현재값)
+  const ncst = await fetchKmaNcst(nx, ny);
+
+  // 2. 초단기예보: SKY 코드 (실황엔 없음) — 실패해도 fallback
+  let sky = null;
+  try {
+    sky = await fetchKmaUltraSky(nx, ny);
+  } catch (e) {
+    console.warn('초단기예보 SKY 가져오기 실패, PTY만으로 날씨 판단:', e.message);
+  }
+
+  const { condition, emoji } = interpretKMA(sky, ncst.pty);
+  return {
+    temp:         Math.round(ncst.tmp),
+    apparentTemp: Math.round(ncst.tmp),
     condition,
     emoji,
     precipProb:   null,
-    windSpeed:    Math.round(wsd * 3.6), // m/s → km/h
+    windSpeed:    Math.round(ncst.wsd * 3.6),
     source:       'KMA',
   };
 }
@@ -225,12 +284,12 @@ async function fetchOpenMeteo(lat, lon, targetDate, targetHour) {
   const curHour  = now.getHours();
   const isCurrent = !targetDate || (targetDate === todayStr && Number(targetHour) === curHour);
 
-  let temp, apparentTemp, code, precipProb, windSpeed;
+  let temp, apparentTemp, code, precipProb, precipMm, windSpeed;
 
   if (isCurrent) {
     const res  = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-      + `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m`
+      + `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation`
       + `&timezone=Asia%2FSeoul`
     );
     if (!res.ok) throw new Error('Open-Meteo 오류');
@@ -239,11 +298,12 @@ async function fetchOpenMeteo(lat, lon, targetDate, targetHour) {
     apparentTemp = Math.round(data.current.apparent_temperature);
     code         = data.current.weather_code;
     windSpeed    = Math.round(data.current.wind_speed_10m ?? 0);
+    precipMm     = data.current.precipitation ?? 0;
     precipProb   = null;
   } else {
     const res  = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-      + `&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,wind_speed_10m`
+      + `&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation,wind_speed_10m`
       + `&timezone=Asia%2FSeoul&forecast_days=8`
     );
     if (!res.ok) throw new Error('Open-Meteo 오류');
@@ -255,11 +315,12 @@ async function fetchOpenMeteo(lat, lon, targetDate, targetHour) {
     apparentTemp = Math.round(data.hourly.apparent_temperature[idx]);
     code         = data.hourly.weather_code[idx];
     precipProb   = data.hourly.precipitation_probability?.[idx] ?? null;
+    precipMm     = data.hourly.precipitation?.[idx] ?? 0;
     windSpeed    = Math.round(data.hourly.wind_speed_10m?.[idx] ?? 0);
   }
 
   const { condition, emoji } = WMO_MAP[code] ?? { condition: '흐림', emoji: '⛅' };
-  return { temp, apparentTemp, condition, emoji, precipProb, windSpeed, source: 'Global' };
+  return { temp, apparentTemp, condition, emoji, precipProb, precipMm, windSpeed, source: 'Global' };
 }
 
 // ─── 한국 좌표 여부 ───────────────────────────────────────────────────────────
