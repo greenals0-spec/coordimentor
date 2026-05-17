@@ -75,15 +75,33 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
       const targetEl = document.getElementById(`outfit-capture-${outfit.id}`);
       if (!targetEl) throw new Error('캡처 대상을 찾을 수 없습니다.');
 
-      // 이미지 베이킹 로직
+      // 이미지 베이킹 로직 (직접 fetch → weserv.nl 프록시 순서로 시도)
       const images = Array.from(targetEl.getElementsByTagName('img'));
-      for (const img of images) {
-        if (img.src.startsWith('data:')) continue;
+      await Promise.allSettled(images.map(async (img) => {
+        if (!img.src || img.src.startsWith('data:')) return;
+        const bakeImage = async (url) => {
+          // 1순위: 직접 fetch
+          try {
+            const res = await Promise.race([
+              fetch(url),
+              new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
+            ]);
+            if (res.ok) return await res.blob();
+          } catch {}
+          // 2순위: weserv.nl 프록시
+          try {
+            const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`;
+            const res = await Promise.race([
+              fetch(proxyUrl),
+              new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
+            ]);
+            if (res.ok) return await res.blob();
+          } catch {}
+          return null;
+        };
         try {
-          const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(img.src)}&output=png`;
-          const response = await fetch(proxyUrl);
-          if (!response.ok) throw new Error('Proxy fetch failed');
-          const blob = await response.blob();
+          const blob = await bakeImage(img.src);
+          if (!blob) return;
           const dataUrl = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result);
@@ -91,9 +109,9 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
           });
           img.src = dataUrl;
         } catch (bakeErr) {
-          console.warn('이미지 베이킹 실패 (기본 주소 사용):', img.src, bakeErr);
+          console.warn('이미지 베이킹 실패:', img.src, bakeErr);
         }
-      }
+      }));
 
       await new Promise(r => setTimeout(r, 300));
 

@@ -74,42 +74,24 @@ export default function CalendarView() {
   // URL → Blob (네이티브: CapacitorHttp로 CORS 우회 / 웹: fetch)
   const fetchImageBlob = async (url) => {
     if (!url) return null;
+    // 1순위: 직접 fetch (Firebase Storage는 CORS 지원)
     try {
-      if (Capacitor.isNativePlatform()) {
-        const res = await Promise.race([
-          CapacitorHttp.get({ url, responseType: 'blob' }),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
-        ]);
-        if (!res || res.status !== 200 || !res.data) return null;
-        const ct = (res.headers?.['content-type'] || 'image/jpeg').split(';')[0];
-        const d = res.data;
-        if (typeof d === 'string' && d.length > 0) {
-          const bytes = Uint8Array.from(atob(d), c => c.charCodeAt(0));
-          return new Blob([bytes], { type: ct });
-        }
-        if (d instanceof Blob) return d;
-        if (d instanceof ArrayBuffer) return new Blob([d], { type: ct });
-        return null;
-      } else {
-        // 웹: CORS 우회를 위해 weserv.nl 프록시 사용
-        const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`;
-        try {
-          const res = await Promise.race([
-            fetch(proxyUrl),
-            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000)),
-          ]);
-          if (res.ok) return await res.blob();
-        } catch {}
-        // 프록시 실패시 직접 시도
-        try {
-          const res = await Promise.race([
-            fetch(url, { mode: 'cors' }),
-            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
-          ]);
-          return res.ok ? await res.blob() : null;
-        } catch { return null; }
-      }
-    } catch { return null; }
+      const res = await Promise.race([
+        fetch(url),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000)),
+      ]);
+      if (res.ok) return await res.blob();
+    } catch {}
+    // 2순위: weserv.nl 프록시
+    try {
+      const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`;
+      const res = await Promise.race([
+        fetch(proxyUrl),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000)),
+      ]);
+      if (res.ok) return await res.blob();
+    } catch {}
+    return null;
   };
 
   // Blob → base64 문자열 (data: prefix 없음)
