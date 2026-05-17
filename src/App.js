@@ -312,7 +312,8 @@ function Main() {
     <div className="app-shell">
       {/* ── 전역 헤더 ── */}
       <header className="global-header" style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 800,
+        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 430, zIndex: 800,
         padding: 'calc(var(--safe-top) + 16px) 20px 12px',
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8,
         pointerEvents: 'none' // 배경 클릭 방지 안함 (아이콘만 클릭되게)
