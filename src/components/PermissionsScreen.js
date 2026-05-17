@@ -26,19 +26,27 @@ export default function PermissionsScreen({ onDone }) {
   const handleAllow = async () => {
     setRequesting(true);
     try {
-      // 1. 위치 권한
-      await new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(resolve, resolve, { timeout: 5000 });
-      });
-
-      // 2. 카메라 권한 (네이티브)
       if (Capacitor.isNativePlatform()) {
+        // 1. 위치 권한 (Capacitor - 실제 위치 조회 없이 권한만 요청)
+        try {
+          const { Geolocation } = await import('@capacitor/geolocation');
+          await Geolocation.requestPermissions();
+        } catch (e) {
+          console.warn('Geolocation permission request failed:', e);
+        }
+
+        // 2. 카메라 + 사진 권한
         try {
           const { Camera } = await import('@capacitor/camera');
           await Camera.requestPermissions({ permissions: ['camera', 'photos'] });
         } catch (e) {
           console.warn('Camera permission request failed:', e);
         }
+      } else {
+        // 웹 환경
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(resolve, resolve, { timeout: 5000 });
+        });
       }
     } catch (e) {
       console.warn('Permission request error:', e);
