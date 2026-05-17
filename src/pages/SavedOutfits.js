@@ -3,7 +3,6 @@ import { Loader, Trash2, Calendar, MapPin, List, X, Share2, Download, Check, Cal
 import { subscribeToSavedOutfits, deleteSavedOutfit } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import FlatLay from '../components/FlatLay';
-import { toBlob } from 'html-to-image';
 import CalendarView from '../components/CalendarView';
 import OotdUploadModal from '../components/OotdUploadModal';
 import { Capacitor } from '@capacitor/core';
@@ -65,83 +64,91 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
     }
   };
 
+  // URL → Blob
+  const fetchImgBlob = async (url) => {
+    if (!url) return null;
+    try {
+      const res = await Promise.race([fetch(url), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))]);
+      if (res.ok) return await res.blob();
+    } catch {}
+    try {
+      const res = await Promise.race([
+        fetch(`https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`),
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000)),
+      ]);
+      if (res.ok) return await res.blob();
+    } catch {}
+    return null;
+  };
+
+  const blobToDataUrl = (blob) => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+
+  const loadImg = (src) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+
+  // Canvas로 outfit 아이템 이미지 합성
+  const composeOutfitCanvas = async (outfit) => {
+    const items = Object.values(outfit.items || {}).filter(v => v?.imageUrl);
+    const SIZE = 800;
+    const cols = Math.min(items.length, 3);
+    const rows = Math.ceil(items.length / cols);
+    const PAD = 20;
+    const cellSize = (SIZE - PAD * 2 - (cols - 1) * PAD) / cols;
+    const canvasH = PAD + rows * cellSize + (rows - 1) * PAD + PAD;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, SIZE, canvasH);
+
+    // 아이템 이미지 병렬 로드
+    const dataUrls = await Promise.all(items.map(async (item) => {
+      const blob = await fetchImgBlob(item.imageUrl);
+      return blob ? await blobToDataUrl(blob) : null;
+    }));
+    const imgs = await Promise.all(dataUrls.map(d => d ? loadImg(d) : Promise.resolve(null)));
+
+    imgs.forEach((img, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = PAD + col * (cellSize + PAD);
+      const y = PAD + row * (cellSize + PAD);
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(x, y, cellSize, cellSize);
+      if (img) {
+        const ratio = Math.min(cellSize / img.width, cellSize / img.height);
+        const dw = img.width * ratio, dh = img.height * ratio;
+        ctx.drawImage(img, x + (cellSize - dw) / 2, y + (cellSize - dh) / 2, dw, dh);
+      }
+    });
+
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  };
+
   const prepareShareImage = async (outfit) => {
     if (sharingId) return;
     setSharingId(outfit.id);
-    
     const shareText = `[출처: 코디멘토 Coordimentor]\n\n상황: ${outfit.tpoInfo?.event || '일상'}\n날씨: ${outfit.weather?.temp}°C\n\n"${outfit.reason}"\n\n나만의 스타일 멘토, 코디멘토에서 추천받은 룩입니다.`;
 
     try {
-      const targetEl = document.getElementById(`outfit-capture-${outfit.id}`);
-      if (!targetEl) throw new Error('캡처 대상을 찾을 수 없습니다.');
-
-      // 이미지 베이킹 로직 (직접 fetch → weserv.nl 프록시 순서로 시도)
-      const images = Array.from(targetEl.getElementsByTagName('img'));
-      await Promise.allSettled(images.map(async (img) => {
-        if (!img.src || img.src.startsWith('data:')) return;
-        const bakeImage = async (url) => {
-          // 1순위: 직접 fetch
-          try {
-            const res = await Promise.race([
-              fetch(url),
-              new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
-            ]);
-            if (res.ok) return await res.blob();
-          } catch {}
-          // 2순위: weserv.nl 프록시
-          try {
-            const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`;
-            const res = await Promise.race([
-              fetch(proxyUrl),
-              new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
-            ]);
-            if (res.ok) return await res.blob();
-          } catch {}
-          return null;
-        };
-        try {
-          const blob = await bakeImage(img.src);
-          if (!blob) return;
-          const dataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-          });
-          img.src = dataUrl;
-        } catch (bakeErr) {
-          console.warn('이미지 베이킹 실패:', img.src, bakeErr);
-        }
-      }));
-
-      await new Promise(r => setTimeout(r, 300));
-
-      const capturePromise = toBlob(targetEl, {
-        backgroundColor: '#ffffff',
-        cacheBust: true,
-        pixelRatio: 2,
-        style: { borderRadius: '0' }
-      });
-
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('이미지 생성 시간 초과')), 10000)
-      );
-
-      const blob = await Promise.race([capturePromise, timeoutPromise]);
-      if (!blob) throw new Error('이미지 데이터 생성 실패');
-
-      const file = new File([blob], `coordimentor-outfit.png`, { type: 'image/png' });
+      const blob = await composeOutfitCanvas(outfit);
+      if (!blob) throw new Error('이미지 생성 실패');
+      const file = new File([blob], 'coordimentor-outfit.png', { type: 'image/png' });
       const objectUrl = URL.createObjectURL(blob);
-
-      // 이미지가 준비되면 팝업을 띄움
-      setShareModalData({
-        file,
-        objectUrl,
-        shareText
-      });
-
+      setShareModalData({ file, objectUrl, shareText });
     } catch (e) {
       console.error('이미지 준비 오류:', e);
-      alert('이미지를 준비하는 중 문제가 발생했습니다. 나중에 다시 시도해주세요.');
+      alert('이미지를 준비하는 중 문제가 발생했습니다.');
     } finally {
       setSharingId(null);
     }

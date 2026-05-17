@@ -7,8 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import FlatLay from './FlatLay';
 import { Share2, Download, Loader } from 'lucide-react';
-import { toBlob } from 'html-to-image';
-import { CapacitorHttp, Capacitor } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { saveImageAsJpg } from '../utils/saveImage';
@@ -102,7 +101,7 @@ export default function CalendarView() {
     reader.readAsDataURL(blob);
   });
 
-  // URL → data URL (html-to-image 캡처용 img src 교체에 사용)
+  // URL → data URL
   const imgToDataUrl = async (url) => {
     const blob = await fetchImageBlob(url);
     if (!blob) return null;
@@ -112,6 +111,110 @@ export default function CalendarView() {
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(blob);
     });
+  };
+
+  // data URL → HTMLImageElement (로드 완료 보장)
+  const loadImage = (dataUrl) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+
+  // Canvas로 직접 공유 이미지 합성 (iOS html-to-image 우회)
+  const composeCanvasBlob = async (fmt, log, dateStr) => {
+    const SIZE = 1080;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 아이템 목록 추출
+    const outfitItems = Object.values(log.outfit || {}).filter(v => v?.imageUrl);
+
+    // 모든 이미지 병렬 로드
+    const [photoDataUrl, ...itemDataUrls] = await Promise.all([
+      log.photoUrl ? imgToDataUrl(log.photoUrl) : Promise.resolve(null),
+      ...outfitItems.map(item => imgToDataUrl(item.imageUrl)),
+    ]);
+    const photoImg = photoDataUrl ? await loadImage(photoDataUrl) : null;
+    const itemImgs = await Promise.all(itemDataUrls.map(d => d ? loadImage(d) : Promise.resolve(null)));
+
+    const drawCover = (img, x, y, w, h) => {
+      if (!img) return;
+      const ratio = Math.max(w / img.width, h / img.height);
+      const sw = w / ratio, sh = h / ratio;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    };
+
+    const drawContain = (img, x, y, w, h) => {
+      if (!img) return;
+      const ratio = Math.min(w / img.width, h / img.height);
+      const dw = img.width * ratio, dh = img.height * ratio;
+      ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    };
+
+    if (fmt === 'split') {
+      canvas.width = SIZE; canvas.height = SIZE;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, SIZE, SIZE);
+
+      // 왼쪽: 내 사진
+      ctx.fillStyle = '#f5f5f5'; ctx.fillRect(0, 0, SIZE / 2, SIZE);
+      if (photoImg) drawCover(photoImg, 0, 0, SIZE / 2, SIZE);
+
+      // 오른쪽: 아이템 그리드
+      const PAD = 40, cols = 2;
+      const cellSize = (SIZE / 2 - PAD * 2 - (cols - 1) * 16) / cols;
+      const rows = Math.ceil(itemImgs.length / cols);
+      const gridH = rows * cellSize + (rows - 1) * 16;
+      const startY = (SIZE - gridH) / 2;
+
+      itemImgs.forEach((img, i) => {
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = SIZE / 2 + PAD + col * (cellSize + 16);
+        const y = startY + row * (cellSize + 16);
+        ctx.fillStyle = '#f9f9f9'; ctx.fillRect(x, y, cellSize, cellSize);
+        if (img) drawContain(img, x, y, cellSize, cellSize);
+      });
+
+      // 워터마크
+      ctx.fillStyle = '#888'; ctx.font = 'italic 22px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Coordimentor', SIZE * 3 / 4, SIZE - 30);
+
+    } else {
+      // vertical
+      const photoH = photoImg ? Math.round(SIZE * photoImg.height / photoImg.width) : 0;
+      const PAD = 60, cols = 3;
+      const cellSize = (SIZE - PAD * 2 - (cols - 1) * 20) / cols;
+      const rows = Math.ceil(itemImgs.length / cols);
+      const gridH = rows * cellSize + (rows - 1) * 20;
+      canvas.width = SIZE;
+      canvas.height = (photoH || 0) + gridH + PAD * 3 + 60;
+
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      let curY = 0;
+
+      if (photoImg) {
+        drawCover(photoImg, 0, 0, SIZE, photoH);
+        curY = photoH + PAD;
+      } else {
+        curY = PAD;
+      }
+
+      itemImgs.forEach((img, i) => {
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = PAD + col * (cellSize + 20);
+        const y = curY + row * (cellSize + 20);
+        ctx.fillStyle = '#f9f9f9'; ctx.fillRect(x, y, cellSize, cellSize);
+        if (img) drawContain(img, x, y, cellSize, cellSize);
+      });
+
+      ctx.fillStyle = '#888'; ctx.font = 'italic 26px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Coordimentor', SIZE / 2, canvas.height - 20);
+    }
+
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   };
 
   // Blob을 저장/공유 (네이티브: Filesystem + Share / 웹: navigator.share or <a download>)
@@ -163,36 +266,12 @@ export default function CalendarView() {
       return;
     }
 
-    // ── 인스타그램/세로 레이아웃 캡처 ───────────────────────
-    const targetEl = document.getElementById(`ootd-share-capture-${fmt}-${formattedSelectedDate}`);
-    const images = targetEl ? Array.from(targetEl.getElementsByTagName('img')) : [];
-    const origSrcs = images.map(img => img.src);
-
+    // ── Canvas로 직접 합성 ────────────────────────────────────
     try {
-      if (!targetEl) throw new Error('캡처 대상을 찾을 수 없습니다.');
-
-      await Promise.allSettled(
-        images.map(async (img) => {
-          if (!img.src || img.src.startsWith('data:')) return;
-          const d = await imgToDataUrl(img.src);
-          if (d) img.src = d;
-        })
-      );
-
-      await new Promise(r => setTimeout(r, 400));
-
-      const captureBlob = await Promise.race([
-        toBlob(targetEl, { backgroundColor: '#ffffff', pixelRatio: 2, skipFonts: true }),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('캡처 시간 초과')), 20000)),
-      ]);
-
-      images.forEach((img, i) => { img.src = origSrcs[i]; });
-
-      if (!captureBlob) throw new Error('이미지 생성 실패');
-      await shareOrDownload(captureBlob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
-
+      const blob = await composeCanvasBlob(fmt, activeLog, formattedSelectedDate);
+      if (!blob) throw new Error('이미지 생성 실패');
+      await shareOrDownload(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
     } catch (e) {
-      images.forEach((img, i) => { try { img.src = origSrcs[i]; } catch {} });
       if (e.name !== 'AbortError') alert('저장 실패: ' + e.message);
     } finally {
       setSharingDate(null);
@@ -232,29 +311,12 @@ export default function CalendarView() {
       return;
     }
 
-    const targetEl = document.getElementById(`ootd-share-capture-${fmt}-${formattedSelectedDate}`);
-    const images = targetEl ? Array.from(targetEl.getElementsByTagName('img')) : [];
-    const origSrcs = images.map(img => img.src);
-
+    // ── Canvas로 직접 합성 ────────────────────────────────────
     try {
-      if (!targetEl) throw new Error('캡처 대상을 찾을 수 없습니다.');
-      await Promise.allSettled(
-        images.map(async (img) => {
-          if (!img.src || img.src.startsWith('data:')) return;
-          const d = await imgToDataUrl(img.src);
-          if (d) img.src = d;
-        })
-      );
-      await new Promise(r => setTimeout(r, 400));
-      const captureBlob = await Promise.race([
-        toBlob(targetEl, { backgroundColor: '#ffffff', pixelRatio: 2, skipFonts: true }),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('캡처 시간 초과')), 20000)),
-      ]);
-      images.forEach((img, i) => { img.src = origSrcs[i]; });
-      if (!captureBlob) throw new Error('이미지 생성 실패');
-      await saveToDevice(captureBlob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
+      const blob = await composeCanvasBlob(fmt, activeLog, formattedSelectedDate);
+      if (!blob) throw new Error('이미지 생성 실패');
+      await saveToDevice(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
     } catch (e) {
-      images.forEach((img, i) => { try { img.src = origSrcs[i]; } catch {} });
       if (e.name !== 'AbortError') alert('저장 실패: ' + e.message);
     } finally {
       setSavingDate(null);
