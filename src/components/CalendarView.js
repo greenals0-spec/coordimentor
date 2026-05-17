@@ -121,97 +121,148 @@ export default function CalendarView() {
     img.src = dataUrl;
   });
 
-  // Canvas로 직접 공유 이미지 합성 (iOS html-to-image 우회)
+  // FlatLay 카테고리별 기본 사이즈 (FlatLay.js와 동일)
+  const FL_BASE = {
+    '얼굴/머리': { w: 120, h: 120 },
+    '상의':      { w: 180, h: 200 },
+    '하의':      { w: 150, h: 250 },
+    '아우터':    { w: 190, h: 210 },
+    '신발':      { w: 120, h: 120 },
+    '손목/팔':   { w: 110, h: 110 },
+    '기타':      { w: 160, h: 160 },
+  };
+
+  // outfit 객체 → FlatLay 순서대로 정렬된 [{img, type}] 반환
+  const buildFlatLayOrder = (outfit) => {
+    const o = outfit || {};
+    const face  = o['액세서리_얼굴머리'];
+    const outer = o['아우터'];
+    const top   = o['상의'];
+    const wrist = o['액세서리_손목팔'];
+    const bot   = o['하의'];
+    const shoes = o['신발'];
+    const etc   = o['액세서리_기타'];
+    const order = [];
+    if (face)  order.push({ item: face,  type: '얼굴/머리' });
+    if (outer) order.push({ item: outer, type: '아우터' });
+    if (top)   order.push({ item: top,   type: '상의' });
+    if (wrist) order.push({ item: wrist, type: '손목/팔' });
+    if (bot)   order.push({ item: bot,   type: '하의' });
+    if (shoes) order.push({ item: shoes, type: '신발' });
+    if (etc)   order.push({ item: etc,   type: '기타' });
+    return order;
+  };
+
+  // Canvas에 FlatLay 세로 컬럼 그리기 → 그린 총 높이 반환
+  const drawFlatLayColumn = (ctx, imgMap, ordered, cx, startY, scale) => {
+    let curY = startY;
+    const GAP = 8 * scale;
+    ordered.forEach(({ item, type }) => {
+      const base = FL_BASE[type] || { w: 140, h: 140 };
+      const w = base.w * scale, h = base.h * scale;
+      const x = cx - w / 2;
+      ctx.fillStyle = '#f7f5f2';
+      ctx.fillRect(x, curY, w, h);
+      const img = imgMap[item.imageUrl];
+      if (img) {
+        const r = Math.min(w / img.width, h / img.height);
+        const dw = img.width * r, dh = img.height * r;
+        ctx.drawImage(img, x + (w - dw) / 2, curY + (h - dh) / 2, dw, dh);
+      }
+      curY += h + GAP;
+    });
+    return curY - startY;
+  };
+
+  // Canvas로 직접 공유 이미지 합성 (원래 SNS형/세로형 레이아웃 재현)
   const composeCanvasBlob = async (fmt, log, dateStr) => {
     const SIZE = 1080;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 아이템 목록 추출
-    const outfitItems = Object.values(log.outfit || {}).filter(v => v?.imageUrl);
+    const ordered = buildFlatLayOrder(log.outfit);
 
-    // 모든 이미지 병렬 로드
-    const [photoDataUrl, ...itemDataUrls] = await Promise.all([
-      log.photoUrl ? imgToDataUrl(log.photoUrl) : Promise.resolve(null),
-      ...outfitItems.map(item => imgToDataUrl(item.imageUrl)),
-    ]);
-    const photoImg = photoDataUrl ? await loadImage(photoDataUrl) : null;
-    const itemImgs = await Promise.all(itemDataUrls.map(d => d ? loadImage(d) : Promise.resolve(null)));
+    // 모든 이미지 병렬 로드 (data URL → Image)
+    const allUrls = [
+      ...(log.photoUrl ? [log.photoUrl] : []),
+      ...ordered.map(o => o.item.imageUrl),
+    ];
+    const dataUrls = await Promise.all(allUrls.map(u => imgToDataUrl(u)));
+    const imgMap = {};
+    await Promise.all(allUrls.map(async (url, i) => {
+      if (dataUrls[i]) imgMap[url] = await loadImage(dataUrls[i]);
+    }));
+
+    const photoImg = log.photoUrl ? imgMap[log.photoUrl] : null;
 
     const drawCover = (img, x, y, w, h) => {
       if (!img) return;
-      const ratio = Math.max(w / img.width, h / img.height);
-      const sw = w / ratio, sh = h / ratio;
-      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
-      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-    };
-
-    const drawContain = (img, x, y, w, h) => {
-      if (!img) return;
-      const ratio = Math.min(w / img.width, h / img.height);
-      const dw = img.width * ratio, dh = img.height * ratio;
-      ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+      const r = Math.max(w / img.width, h / img.height);
+      const sw = w / r, sh = h / r;
+      ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
     };
 
     if (fmt === 'split') {
+      // ── SNS형: 1080×1080, 왼쪽=내사진, 오른쪽=코디 ──
       canvas.width = SIZE; canvas.height = SIZE;
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, SIZE, SIZE);
 
       // 왼쪽: 내 사진
-      ctx.fillStyle = '#f5f5f5'; ctx.fillRect(0, 0, SIZE / 2, SIZE);
+      ctx.fillStyle = '#f0ece6';
+      ctx.fillRect(0, 0, SIZE / 2, SIZE);
       if (photoImg) drawCover(photoImg, 0, 0, SIZE / 2, SIZE);
 
-      // 오른쪽: 아이템 그리드
-      const PAD = 40, cols = 2;
-      const cellSize = (SIZE / 2 - PAD * 2 - (cols - 1) * 16) / cols;
-      const rows = Math.ceil(itemImgs.length / cols);
-      const gridH = rows * cellSize + (rows - 1) * 16;
-      const startY = (SIZE - gridH) / 2;
+      // 오른쪽: 코디 세로 배열
+      const rightX = SIZE / 2, rightW = SIZE / 2;
+      const PAD_TOP = 80;
+      // scale 계산: 가용 높이에 맞게
+      const totalH = ordered.reduce((s, { type }) => s + (FL_BASE[type]?.h || 140) + 8, 0);
+      const availH = SIZE - PAD_TOP * 2;
+      const scale = Math.min(1.8, availH / (totalH || 1));
+      const scaledTotal = ordered.reduce((s, { type }) => s + (FL_BASE[type]?.h || 140) * scale + 8 * scale, 0);
+      const startY = PAD_TOP + (availH - scaledTotal) / 2;
 
-      itemImgs.forEach((img, i) => {
-        const col = i % cols, row = Math.floor(i / cols);
-        const x = SIZE / 2 + PAD + col * (cellSize + 16);
-        const y = startY + row * (cellSize + 16);
-        ctx.fillStyle = '#f9f9f9'; ctx.fillRect(x, y, cellSize, cellSize);
-        if (img) drawContain(img, x, y, cellSize, cellSize);
-      });
+      drawFlatLayColumn(ctx, imgMap, ordered, rightX + rightW / 2, startY, scale);
 
-      // 워터마크
-      ctx.fillStyle = '#888'; ctx.font = 'italic 22px serif';
+      // 날짜 + 브랜드
+      ctx.fillStyle = '#9a8a7a';
+      ctx.font = `${Math.round(20 * scale)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('Coordimentor', SIZE * 3 / 4, SIZE - 30);
+      ctx.fillText(dateStr, rightX + rightW / 2, SIZE - 56);
+      ctx.font = `italic ${Math.round(22 * scale)}px serif`;
+      ctx.fillStyle = '#7a6a5a';
+      ctx.fillText('Coordimentor', rightX + rightW / 2, SIZE - 28);
 
     } else {
-      // vertical
-      const photoH = photoImg ? Math.round(SIZE * photoImg.height / photoImg.width) : 0;
-      const PAD = 60, cols = 3;
-      const cellSize = (SIZE - PAD * 2 - (cols - 1) * 20) / cols;
-      const rows = Math.ceil(itemImgs.length / cols);
-      const gridH = rows * cellSize + (rows - 1) * 20;
+      // ── 세로형: 1080px 너비, 위=내사진, 아래=코디 ──
+      const photoH = photoImg ? Math.round(SIZE * Math.min(1.2, photoImg.height / photoImg.width)) : 0;
+      const PAD = 60;
+      const totalItemH = ordered.reduce((s, { type }) => s + (FL_BASE[type]?.h || 140) * 2.2 + 8 * 2.2, 0);
       canvas.width = SIZE;
-      canvas.height = (photoH || 0) + gridH + PAD * 3 + 60;
+      canvas.height = photoH + PAD + totalItemH + PAD + 80;
 
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      let curY = 0;
 
-      if (photoImg) {
-        drawCover(photoImg, 0, 0, SIZE, photoH);
-        curY = photoH + PAD;
-      } else {
-        curY = PAD;
-      }
+      if (photoImg) drawCover(photoImg, 0, 0, SIZE, photoH);
 
-      itemImgs.forEach((img, i) => {
-        const col = i % cols, row = Math.floor(i / cols);
-        const x = PAD + col * (cellSize + 20);
-        const y = curY + row * (cellSize + 20);
-        ctx.fillStyle = '#f9f9f9'; ctx.fillRect(x, y, cellSize, cellSize);
-        if (img) drawContain(img, x, y, cellSize, cellSize);
-      });
+      // 제목
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 52px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('나의 코디', PAD, photoH + 70);
+      ctx.font = '36px sans-serif';
+      ctx.fillStyle = '#888';
+      ctx.textAlign = 'right';
+      ctx.fillText(dateStr, SIZE - PAD, photoH + 70);
 
-      ctx.fillStyle = '#888'; ctx.font = 'italic 26px serif';
+      // 코디 컬럼
+      drawFlatLayColumn(ctx, imgMap, ordered, SIZE / 2, photoH + PAD + 60, 2.2);
+
+      // 브랜드
+      ctx.fillStyle = '#9a8a7a';
+      ctx.font = 'italic 30px serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Coordimentor', SIZE / 2, canvas.height - 20);
+      ctx.fillText('Coordimentor', SIZE / 2, canvas.height - 24);
     }
 
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));

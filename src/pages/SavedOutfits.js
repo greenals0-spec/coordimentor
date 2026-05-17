@@ -94,43 +94,87 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
     img.src = src;
   });
 
-  // Canvas로 outfit 아이템 이미지 합성
+  // FlatLay 카테고리별 기본 사이즈
+  const FL_BASE = {
+    '얼굴/머리': { w: 120, h: 120 },
+    '상의':      { w: 180, h: 200 },
+    '하의':      { w: 150, h: 250 },
+    '아우터':    { w: 190, h: 210 },
+    '신발':      { w: 120, h: 120 },
+    '손목/팔':   { w: 110, h: 110 },
+    '기타':      { w: 160, h: 160 },
+  };
+
+  const getItemType = (item) => {
+    const cat = item.category || '';
+    if (cat.includes('아우터')) return '아우터';
+    if (cat.includes('상의'))   return '상의';
+    if (cat.includes('하의'))   return '하의';
+    if (cat.includes('신발'))   return '신발';
+    if (cat.includes('얼굴') || cat.includes('머리')) return '얼굴/머리';
+    if (cat.includes('손목') || cat.includes('팔'))   return '손목/팔';
+    return '기타';
+  };
+
+  // Canvas로 FlatLay 세로 배열 합성 (원래 레이아웃 재현)
   const composeOutfitCanvas = async (outfit) => {
-    const items = Object.values(outfit.items || {}).filter(v => v?.imageUrl);
-    const SIZE = 800;
-    const cols = Math.min(items.length, 3);
-    const rows = Math.ceil(items.length / cols);
-    const PAD = 20;
-    const cellSize = (SIZE - PAD * 2 - (cols - 1) * PAD) / cols;
-    const canvasH = PAD + rows * cellSize + (rows - 1) * PAD + PAD;
+    const itemsObj = outfit.items || {};
+    // FlatLay 순서: 얼굴→아우터→상의→손목→하의→신발→기타
+    const ORDER = ['액세서리_얼굴머리','아우터','상의','액세서리_손목팔','하의','신발','액세서리_기타'];
+    const ordered = ORDER.map(k => itemsObj[k]).filter(v => v?.imageUrl);
+    // 키가 없으면 배열 형태 fallback
+    const fallback = Array.isArray(itemsObj)
+      ? itemsObj.filter(v => v?.imageUrl)
+      : Object.values(itemsObj).filter(v => v?.imageUrl);
+    const items = ordered.length ? ordered : fallback;
+
+    const SCALE = 2.2;
+    const GAP = 12;
+    const PAD = 40;
+    const totalH = items.reduce((s, item) => {
+      const type = getItemType(item);
+      return s + (FL_BASE[type]?.h || 140) * SCALE + GAP;
+    }, 0);
+    const maxW = Math.max(...items.map(item => (FL_BASE[getItemType(item)]?.w || 140) * SCALE));
+    const SIZE_W = maxW + PAD * 2;
+    const SIZE_H = totalH + PAD * 2 + 60;
 
     const canvas = document.createElement('canvas');
-    canvas.width = SIZE;
-    canvas.height = canvasH;
+    canvas.width = SIZE_W;
+    canvas.height = SIZE_H;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, SIZE, canvasH);
+    ctx.fillRect(0, 0, SIZE_W, SIZE_H);
 
-    // 아이템 이미지 병렬 로드
+    // 이미지 로드
     const dataUrls = await Promise.all(items.map(async (item) => {
       const blob = await fetchImgBlob(item.imageUrl);
       return blob ? await blobToDataUrl(blob) : null;
     }));
     const imgs = await Promise.all(dataUrls.map(d => d ? loadImg(d) : Promise.resolve(null)));
 
-    imgs.forEach((img, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const x = PAD + col * (cellSize + PAD);
-      const y = PAD + row * (cellSize + PAD);
-      ctx.fillStyle = '#f5f5f5';
-      ctx.fillRect(x, y, cellSize, cellSize);
+    let curY = PAD;
+    items.forEach((item, i) => {
+      const type = getItemType(item);
+      const base = FL_BASE[type] || { w: 140, h: 140 };
+      const w = base.w * SCALE, h = base.h * SCALE;
+      const x = (SIZE_W - w) / 2;
+      ctx.fillStyle = '#f7f5f2';
+      ctx.fillRect(x, curY, w, h);
+      const img = imgs[i];
       if (img) {
-        const ratio = Math.min(cellSize / img.width, cellSize / img.height);
-        const dw = img.width * ratio, dh = img.height * ratio;
-        ctx.drawImage(img, x + (cellSize - dw) / 2, y + (cellSize - dh) / 2, dw, dh);
+        const r = Math.min(w / img.width, h / img.height);
+        const dw = img.width * r, dh = img.height * r;
+        ctx.drawImage(img, x + (w - dw) / 2, curY + (h - dh) / 2, dw, dh);
       }
+      curY += h + GAP;
     });
+
+    // 브랜드
+    ctx.fillStyle = '#9a8a7a';
+    ctx.font = 'italic 24px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Coordimentor', SIZE_W / 2, SIZE_H - 16);
 
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   };
