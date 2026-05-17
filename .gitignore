@@ -38,3 +38,5 @@ src/utils/api.js.tmp
 functions/node_modules/
 .env.production
 .env.production
+distribution.csr
+distribution.key

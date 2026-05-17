@@ -173,12 +173,14 @@ async function generateAndSavePendingRecommendation(db, uid, situation) {
     // 날씨 조회
     const weather = await fetchWeather(lat, lon);
 
-    // 아이템 목록 로드
+    // 아이템 목록 로드 (샘플 아이템 제외)
     const itemsSnap = await db.collection('users').doc(uid).collection('items').get();
-    const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const items = itemsSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(item => !item.isSample);
 
     if (items.length === 0) {
-      console.log(`[Recommendation] No items for user ${uid}, skipping`);
+      console.log(`[Recommendation] No real items for user ${uid}, skipping`);
       return false;
     }
 
@@ -215,7 +217,8 @@ exports.sendMorningAlarms = onSchedule(
     const hours   = String(koreaTime.getHours()).padStart(2, '0');
     const minutes = String(koreaTime.getMinutes()).padStart(2, '0');
     const currentTime = `${hours}:${minutes}`;
-    const todayStr = koreaTime.toISOString().slice(0, 10);
+    // toISOString()은 UTC 기준이라 한국 자정~09시 구간에서 전날 날짜가 됨 → 로컬 날짜 컴포넌트 직접 사용
+    const todayStr = `${koreaTime.getFullYear()}-${String(koreaTime.getMonth() + 1).padStart(2, '0')}-${String(koreaTime.getDate()).padStart(2, '0')}`;
 
     // ── Phase 1: N분 전 → 추천 미리 생성 ──
     const prepTargetTime = addMinutesToTime(currentTime, PRE_GENERATE_MINUTES); // 현재+5 = 알람시각
@@ -310,7 +313,8 @@ exports.sendRoutineAlarms = onSchedule(
     const minutes    = String(koreaTime.getMinutes()).padStart(2, '0');
     const currentTime = `${hours}:${minutes}`;
     const currentDay  = DAY_KEYS[koreaTime.getDay()];
-    const todayStr    = koreaTime.toISOString().slice(0, 10);
+    // toISOString()은 UTC 기준이라 한국 자정~09시 구간에서 전날 날짜가 됨 → 로컬 날짜 컴포넌트 직접 사용
+    const todayStr    = `${koreaTime.getFullYear()}-${String(koreaTime.getMonth() + 1).padStart(2, '0')}-${String(koreaTime.getDate()).padStart(2, '0')}`;
 
     // 5분 후 알람 시각 (= 지금 pre-generate 해야 할 알람)
     const prepTargetTime = addMinutesToTime(currentTime, PRE_GENERATE_MINUTES);
