@@ -53,53 +53,29 @@ export default function HomePage({ onNavigate }) {
 
   useEffect(() => {
     // 날씨 조회 + 위경도 Firestore 저장
-    const loadWeather = async () => {
-      try {
-        // Capacitor 네이티브(iOS/Android)에서는 Capacitor Geolocation 사용
-        const { Capacitor } = await import('@capacitor/core');
-        if (Capacitor.isNativePlatform()) {
-          const { Geolocation } = await import('@capacitor/geolocation');
-          const pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: false,
-            timeout: 10000,
-          });
+    if (!navigator.geolocation) {
+      getWeatherByLocation().then(setWeather).catch(() => {});
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
           const { fetchWeatherFromCoords } = await import('../utils/weather');
-          const w = await fetchWeatherFromCoords(pos.coords.latitude, pos.coords.longitude);
+          const w = await fetchWeatherFromCoords(coords.latitude, coords.longitude);
           setWeather(w);
-          if (user?.uid) {
-            setDoc(doc(db, 'users', user.uid), {
-              lastKnownLat: pos.coords.latitude,
-              lastKnownLon: pos.coords.longitude,
-            }, { merge: true }).catch(() => {});
-          }
-        } else {
-          // 웹 환경: navigator.geolocation 사용
-          navigator.geolocation?.getCurrentPosition(
-            async ({ coords }) => {
-              try {
-                const { fetchWeatherFromCoords } = await import('../utils/weather');
-                const w = await fetchWeatherFromCoords(coords.latitude, coords.longitude);
-                setWeather(w);
-              } catch {
-                getWeatherByLocation().then(setWeather).catch(() => {});
-              }
-              if (user?.uid) {
-                setDoc(doc(db, 'users', user.uid), {
-                  lastKnownLat: coords.latitude,
-                  lastKnownLon: coords.longitude,
-                }, { merge: true }).catch(() => {});
-              }
-            },
-            () => getWeatherByLocation().then(setWeather).catch(() => {}),
-            { enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 }
-          );
+        } catch {
+          getWeatherByLocation().then(setWeather).catch(() => {});
         }
-      } catch (e) {
-        console.warn('날씨 조회 실패:', e.message);
-        getWeatherByLocation().then(setWeather).catch(() => {});
-      }
-    };
-    loadWeather();
+        if (user?.uid) {
+          setDoc(doc(db, 'users', user.uid), {
+            lastKnownLat: coords.latitude,
+            lastKnownLon: coords.longitude,
+          }, { merge: true }).catch(() => {});
+        }
+      },
+      () => getWeatherByLocation().then(setWeather).catch(() => {}),
+      { enableHighAccuracy: false, maximumAge: 300000, timeout: 15000 }
+    );
   }, [user?.uid]);
 
   // ── Firestore pendingRecommendation 확인 (Cloud Function이 미리 생성한 추천) ──

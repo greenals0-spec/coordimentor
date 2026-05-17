@@ -461,41 +461,29 @@ export async function fetchWeatherFromCoords(lat, lon, targetDate = null, target
 }
 
 // ─── 현재 위치 기반 날씨 ──────────────────────────────────────────────────────
-export const getWeatherByLocation = async (targetDate = null, targetHour = null) => {
-  let lat, lon;
-
-  try {
-    // Capacitor 네이티브 환경에서는 Capacitor Geolocation 사용 (iOS에서 더 안정적)
-    const { Capacitor } = await import('@capacitor/core');
-    if (Capacitor.isNativePlatform()) {
-      const { Geolocation } = await import('@capacitor/geolocation');
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 15000,
-      });
-      lat = pos.coords.latitude;
-      lon = pos.coords.longitude;
-    } else {
-      throw new Error('웹 환경');
-    }
-  } catch (e) {
-    // 웹 환경이거나 Capacitor 실패 시 navigator.geolocation 사용
+export const getWeatherByLocation = (targetDate = null, targetHour = null) =>
+  new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      throw new Error('위치 정보를 지원하지 않는 브라우저예요.');
+      reject(new Error('위치 정보를 지원하지 않는 브라우저예요.'));
+      return;
     }
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, (err) => {
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const w = await fetchWeatherData(coords.latitude, coords.longitude, targetDate, targetHour);
+          resolve(w);
+        } catch (e) {
+          reject(new Error(e.message || '날씨 데이터를 가져오지 못했습니다.'));
+        }
+      },
+      (err) => {
         if (err.code === 1) reject(new Error('위치 권한이 필요합니다. 앱 설정에서 위치 정보를 허용해주세요.'));
         else if (err.code === 3) reject(new Error('위치 정보를 가져오는 데 시간이 너무 오래 걸렸어요.'));
         else reject(new Error('현재 위치를 가져올 수 없어요. GPS가 켜져 있는지 확인해주세요.'));
-      }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 });
-    });
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-  }
-
-  return await fetchWeatherData(lat, lon, targetDate, targetHour);
-};
+      },
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
+    );
+  });
 
 // ─── 지명 기반 날씨 ───────────────────────────────────────────────────────────
 export async function getWeatherByLocationName(locationName, targetDate = null, targetHour = null) {
