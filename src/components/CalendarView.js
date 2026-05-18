@@ -177,7 +177,7 @@ export default function CalendarView() {
       const base = FL_BASE[type] || { w: 140, h: 140 };
       const w = base.w * scale, h = base.h * scale;
       const x = cx - w / 2;
-      ctx.fillStyle = '#f7f5f2';
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(x, curY, w, h);
       const img = imgMap[item.imageUrl];
       if (img) {
@@ -281,7 +281,7 @@ export default function CalendarView() {
       ctx.fillText('Coordimentor', SIZE / 2, canvas.height - 24);
     }
 
-    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
   };
 
   // Blob을 저장/공유 (네이티브: Filesystem + Share / 웹: navigator.share or <a download>)
@@ -356,7 +356,7 @@ export default function CalendarView() {
         images.forEach((img, i) => { img.src = origSrcs[i]; });
       }
       if (!blob) throw new Error('이미지 생성 실패');
-      await shareOrDownload(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
+      await shareOrDownload(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.jpg`);
     } catch (e) {
       images.forEach((img, i) => { try { img.src = origSrcs[i]; } catch {} });
       if (e.name !== 'AbortError') alert('저장 실패: ' + e.message);
@@ -421,7 +421,7 @@ export default function CalendarView() {
         images2.forEach((img, i) => { img.src = origSrcs2[i]; });
       }
       if (!blob) throw new Error('이미지 생성 실패');
-      await saveToDevice(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
+      await saveToDevice(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.jpg`);
     } catch (e) {
       if (e.name !== 'AbortError') alert('저장 실패: ' + e.message);
     } finally {

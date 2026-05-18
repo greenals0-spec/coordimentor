@@ -176,7 +176,7 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
       const base = FL_BASE[type] || { w: 140, h: 140 };
       const w = base.w * SCALE, h = base.h * SCALE;
       const x = (SIZE_W - w) / 2;
-      ctx.fillStyle = '#f7f5f2';
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(x, curY, w, h);
       const img = imgs[i];
       if (img) {
@@ -193,7 +193,7 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
     ctx.textAlign = 'center';
     ctx.fillText('Coordimentor', SIZE_W / 2, SIZE_H - 16);
 
-    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
   };
 
   const prepareShareImage = async (outfit) => {
@@ -239,7 +239,7 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
       }
 
       if (!blob) throw new Error('이미지 생성 실패');
-      const file = new File([blob], 'coordimentor-outfit.png', { type: 'image/png' });
+      const file = new File([blob], 'coordimentor-outfit.jpg', { type: 'image/jpeg' });
       const objectUrl = URL.createObjectURL(blob);
       setShareModalData({ file, objectUrl, shareText });
     } catch (e) {
