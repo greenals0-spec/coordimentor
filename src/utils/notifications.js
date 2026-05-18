@@ -34,28 +34,6 @@ function makeNotifId(alarmId, dayKey) {
   return base * 10 + (dayIdx >= 0 ? dayIdx : 0);
 }
 
-/**
- * 특정 요일·시간의 다음 발생 Date 계산 (항상 미래 시각 반환)
- * weekday: 1(일)~7(토), hour: 0~23, minute: 0~59
- */
-function getNextOccurrence(weekday, hour, minute) {
-  const now = new Date();
-  // Capacitor weekday: 1=일, 2=월, ..., 7=토 → JS getDay(): 0=일, 1=월, ..., 6=토
-  const targetJsDay = weekday - 1; // 0=일, 1=월, ..., 6=토
-  const result = new Date(now);
-  result.setHours(hour, minute, 0, 0);
-
-  const currentJsDay = now.getDay();
-  let daysUntil = (targetJsDay - currentJsDay + 7) % 7;
-
-  // 오늘이 대상 요일인데 이미 시간이 지났으면 7일 뒤
-  if (daysUntil === 0 && result <= now) {
-    daysUntil = 7;
-  }
-
-  result.setDate(result.getDate() + daysUntil);
-  return result;
-}
 
 async function ensureChannel() {
   await LocalNotifications.createChannel({
@@ -120,8 +98,8 @@ export const scheduleRoutineAlarms = async (routineAlarms = []) => {
     }
 
     // 3. 각 알람 × 각 요일 → 알림 생성
-    // at + repeats 방식 사용: 정확한 다음 발생 시각을 계산해 등록
-    // (on: { weekday } 방식은 일부 Android에서 즉시 발동하거나 시간대 오류 발생)
+    // on: { weekday, hour, minute } + repeats: true 방식 사용
+    // → Capacitor 공식 권장 방식, 매주 지정 요일·시간에 1번만 반복 발동
     const notifications = [];
     const registeredIds = [];
 
@@ -134,16 +112,14 @@ export const scheduleRoutineAlarms = async (routineAlarms = []) => {
         if (!weekday) continue;
 
         const notifId = makeNotifId(alarm.id, day);
-        const nextAt = getNextOccurrence(weekday, hours, minutes);
 
         notifications.push({
           id: notifId,
           title: `${emoji} ${alarm.situation} 코디 추천`,
           body: '날씨에 맞는 옷차림을 준비했어요. 지금 확인해보세요!',
           schedule: {
-            at: nextAt,
-            repeats: true,          // 매주 같은 요일·시간에 반복
-            every: 'week',          // 1주 간격 반복
+            on: { weekday, hour: hours, minute: minutes },
+            repeats: true,   // 매주 동일 요일·시간 반복 (1회 → 자동 재등록)
           },
           sound: 'default',
           channelId: 'morning_recommendation',
