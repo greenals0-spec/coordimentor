@@ -9,7 +9,13 @@ import InsufficientPointsModal from '../components/InsufficientPointsModal';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
-const TRYON_SLOTS = ['상의', '하의', '아우터', '신발', '액세서리']; // 가상 입어보기 카테고리
+const TRYON_SLOTS = ['상의', '하의', '아우터', '신발', '액세서리'];
+const SEASON_OPTIONS = [
+  { key: '봄', emoji: '🌸', color: '#F9A8D4' },
+  { key: '여름', emoji: '☀️', color: '#FCD34D' },
+  { key: '가을', emoji: '🍂', color: '#F97316' },
+  { key: '겨울', emoji: '❄️', color: '#93C5FD' },
+];
 
 export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
   const { user, userProfile, points, refreshPoints } = useAuth();
@@ -76,12 +82,16 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
   };
 
   const handleEditClick = (item) => {
-    setEditingItem({ ...item, tagsString: item.tags ? item.tags.join(', ') : '' });
+    setEditingItem({
+      ...item,
+      tagsString: item.tags ? item.tags.join(', ') : '',
+      seasons: item.seasons || [],
+    });
   };
 
   const handleSaveEdit = async () => {
     if (!editingItem) return;
-    const { id, tagsString, ...rest } = editingItem;
+    const { id, tagsString, seasons, ...rest } = editingItem;
     const newTags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
     await updateItem(user.uid, id, {
       name: rest.name,
@@ -89,6 +99,7 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
       category: rest.category,
       color: rest.color || '',
       tags: newTags,
+      seasons: seasons || [],
     });
     setEditingItem(null);
   };
@@ -581,6 +592,37 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
                   <span className="label">태그</span>
                   <input className="analysis-input" value={editingItem.tagsString || ''} placeholder="쉼표로 구분"
                     onChange={(e) => setEditingItem({ ...editingItem, tagsString: e.target.value })} />
+                </div>
+                <div className="analysis-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+                  <span className="label">계절</span>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {SEASON_OPTIONS.map(({ key, emoji, color }) => {
+                      const selected = (editingItem.seasons || []).includes(key);
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            const prev = editingItem.seasons || [];
+                            const next = prev.includes(key)
+                              ? prev.filter(s => s !== key)
+                              : [...prev, key];
+                            setEditingItem({ ...editingItem, seasons: next });
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            padding: '7px 14px', borderRadius: 20,
+                            border: selected ? `2px solid ${color}` : '1.5px solid var(--border)',
+                            background: selected ? color + '33' : 'var(--surface)',
+                            color: selected ? '#18160F' : 'var(--text-muted)',
+                            fontSize: 13, fontWeight: selected ? 700 : 400,
+                            cursor: 'pointer', transition: 'all 0.15s',
+                          }}
+                        >
+                          {emoji} {key}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
