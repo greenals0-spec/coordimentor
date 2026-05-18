@@ -5,10 +5,13 @@ import { useAuth } from '../contexts/AuthContext';
 import FlatLay from '../components/FlatLay';
 import CalendarView from '../components/CalendarView';
 import OotdUploadModal from '../components/OotdUploadModal';
+import { toBlob } from 'html-to-image';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { saveImageAsJpg } from '../utils/saveImage';
+
+const IS_IOS = Capacitor.getPlatform() === 'ios';
 
 const getTitleFontSize = (text = '') => {
   const len = text.length;
@@ -199,7 +202,42 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
     const shareText = `[출처: 코디멘토 Coordimentor]\n\n상황: ${outfit.tpoInfo?.event || '일상'}\n날씨: ${outfit.weather?.temp}°C\n\n"${outfit.reason}"\n\n나만의 스타일 멘토, 코디멘토에서 추천받은 룩입니다.`;
 
     try {
-      const blob = await composeOutfitCanvas(outfit);
+      let blob;
+
+      if (IS_IOS) {
+        // iOS: Canvas API 사용 (WKWebView CORS 우회)
+        blob = await composeOutfitCanvas(outfit);
+      } else {
+        // Android/Web: 기존 html-to-image 방식
+        const targetEl = document.getElementById(`outfit-capture-${outfit.id}`);
+        if (!targetEl) throw new Error('캡처 대상 요소를 찾을 수 없습니다.');
+
+        // 이미지를 data URL로 미리 변환 (CORS 우회)
+        const images = Array.from(targetEl.querySelectorAll('img'));
+        const originalSrcs = [];
+        await Promise.allSettled(images.map(async (img) => {
+          const originalSrc = img.src;
+          originalSrcs.push(originalSrc);
+          try {
+            const blob = await fetchImgBlob(originalSrc);
+            if (blob) {
+              const dataUrl = await blobToDataUrl(blob);
+              img.src = dataUrl;
+              await new Promise(r => { img.onload = r; img.onerror = r; setTimeout(r, 1000); });
+            }
+          } catch {}
+        }));
+        await new Promise(r => setTimeout(r, 400));
+
+        blob = await Promise.race([
+          toBlob(targetEl, { backgroundColor: '#ffffff', pixelRatio: 2, skipFonts: true }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('캡처 시간 초과')), 20000)),
+        ]);
+
+        // 원래 src 복원
+        images.forEach((img, i) => { if (originalSrcs[i]) img.src = originalSrcs[i]; });
+      }
+
       if (!blob) throw new Error('이미지 생성 실패');
       const file = new File([blob], 'coordimentor-outfit.png', { type: 'image/png' });
       const objectUrl = URL.createObjectURL(blob);

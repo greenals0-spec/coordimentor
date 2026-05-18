@@ -7,10 +7,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import FlatLay from './FlatLay';
 import { Share2, Download, Loader } from 'lucide-react';
+import { toBlob } from 'html-to-image';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { saveImageAsJpg } from '../utils/saveImage';
+
+const IS_IOS = Capacitor.getPlatform() === 'ios';
 
 export default function CalendarView() {
   const { user } = useAuth();
@@ -330,12 +333,32 @@ export default function CalendarView() {
       return;
     }
 
-    // ── Canvas로 직접 합성 ────────────────────────────────────
+    // ── iOS: Canvas 합성 / Android·Web: 기존 html-to-image ──
+    const targetEl = document.getElementById(`ootd-share-capture-${fmt}-${formattedSelectedDate}`);
+    const images = targetEl ? Array.from(targetEl.getElementsByTagName('img')) : [];
+    const origSrcs = images.map(img => img.src);
     try {
-      const blob = await composeCanvasBlob(fmt, activeLog, formattedSelectedDate);
+      let blob;
+      if (IS_IOS) {
+        blob = await composeCanvasBlob(fmt, activeLog, formattedSelectedDate);
+      } else {
+        if (!targetEl) throw new Error('캡처 대상을 찾을 수 없습니다.');
+        await Promise.allSettled(images.map(async (img) => {
+          if (!img.src || img.src.startsWith('data:')) return;
+          const d = await imgToDataUrl(img.src);
+          if (d) img.src = d;
+        }));
+        await new Promise(r => setTimeout(r, 400));
+        blob = await Promise.race([
+          toBlob(targetEl, { backgroundColor: '#ffffff', pixelRatio: 2, skipFonts: true }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('캡처 시간 초과')), 20000)),
+        ]);
+        images.forEach((img, i) => { img.src = origSrcs[i]; });
+      }
       if (!blob) throw new Error('이미지 생성 실패');
       await shareOrDownload(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
     } catch (e) {
+      images.forEach((img, i) => { try { img.src = origSrcs[i]; } catch {} });
       if (e.name !== 'AbortError') alert('저장 실패: ' + e.message);
     } finally {
       setSharingDate(null);
@@ -375,9 +398,28 @@ export default function CalendarView() {
       return;
     }
 
-    // ── Canvas로 직접 합성 ────────────────────────────────────
+    // ── iOS: Canvas 합성 / Android·Web: 기존 html-to-image ──
+    const targetEl2 = document.getElementById(`ootd-share-capture-${fmt}-${formattedSelectedDate}`);
+    const images2 = targetEl2 ? Array.from(targetEl2.getElementsByTagName('img')) : [];
+    const origSrcs2 = images2.map(img => img.src);
     try {
-      const blob = await composeCanvasBlob(fmt, activeLog, formattedSelectedDate);
+      let blob;
+      if (IS_IOS) {
+        blob = await composeCanvasBlob(fmt, activeLog, formattedSelectedDate);
+      } else {
+        if (!targetEl2) throw new Error('캡처 대상을 찾을 수 없습니다.');
+        await Promise.allSettled(images2.map(async (img) => {
+          if (!img.src || img.src.startsWith('data:')) return;
+          const d = await imgToDataUrl(img.src);
+          if (d) img.src = d;
+        }));
+        await new Promise(r => setTimeout(r, 400));
+        blob = await Promise.race([
+          toBlob(targetEl2, { backgroundColor: '#ffffff', pixelRatio: 2, skipFonts: true }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('캡처 시간 초과')), 20000)),
+        ]);
+        images2.forEach((img, i) => { img.src = origSrcs2[i]; });
+      }
       if (!blob) throw new Error('이미지 생성 실패');
       await saveToDevice(blob, `coordimentor-ootd-${fmt}-${formattedSelectedDate}.png`);
     } catch (e) {
