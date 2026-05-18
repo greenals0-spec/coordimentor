@@ -548,20 +548,18 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
               <button className="close-btn" onClick={() => setEditingItem(null)}><X size={24} /></button>
             </div>
             <div className="edit-modal-body">
-              <div className="cloth-img-wrapper" style={{ borderRadius: 'var(--radius-md)', marginBottom: '20px' }}>
+              <div style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                background: 'var(--surface-2)', borderRadius: 'var(--radius-md)',
+                overflow: 'hidden', maxHeight: 160, flexShrink: 0,
+              }}>
                 <img
                   src={editingItem.imageUrl}
                   alt="item"
                   onLoad={(e) => { e.target.style.opacity = '1'; }}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                  style={{ opacity: 0, transition: 'opacity 0.2s' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                  style={{ maxHeight: 160, width: '100%', objectFit: 'contain', opacity: 0, transition: 'opacity 0.2s', padding: 8 }}
                 />
-                <div className="img-error-placeholder" style={{ display: 'none' }}>
-                  <span>이미지 없음</span>
-                </div>
               </div>
               <div className="analysis-result">
                 <div className="analysis-row">
