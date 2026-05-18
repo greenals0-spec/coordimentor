@@ -26,32 +26,43 @@ export async function runVirtualTryOn(personImageUrl, garmentImageUrl, category)
     category === '액세서리' ? 'fashion accessory (bag, belt, hat, scarf, jewelry, etc.) — add naturally to the outfit' :
     category;
 
-  const prompt = `You are a fashion AI specializing in virtual try-on.
+  const prompt = `You are a fashion AI specializing in virtual try-on. Your top priority is to preserve the original person's identity exactly.
+
 Two images are provided:
-1. A person's full-body photo (may already have clothes from a previous step).
+1. A person's full-body REFERENCE photo — this is the GROUND TRUTH for the person's identity.
 2. A single clothing/accessory item: ${categoryDesc}.
 
-Task:
+IDENTITY PRESERVATION (HIGHEST PRIORITY — NON-NEGOTIABLE):
+- The person's FACE must be reproduced pixel-perfectly from the reference photo. Same facial features, same expression, same eye shape, same nose, same lips, same hairstyle, same hair color.
+- The person's SKIN TONE must match the reference photo exactly.
+- The person's BODY PROPORTIONS, HEIGHT, and BUILD must remain identical.
+- The person's POSE and POSITION must remain identical.
+- NEVER alter or "improve" the person's face or body. Copy them exactly as they appear in the reference.
+
+CLOTHING TASK:
 - Naturally overlay or place the item onto the person.
 - TOP → replace/overlay upper body clothing.
 - BOTTOM → replace/overlay lower body clothing.
 - OUTER LAYER → drape over the existing outfit without hiding it completely.
 - SHOES → replace the existing footwear or place on bare feet naturally.
 - ACCESSORY → add to the appropriate location (bag for hands, hat for head, wrist for watch, etc.) without covering the outfit.
-- Keep the person's exact pose, face, skin tone, and body proportions unchanged.
-- Add realistic shadows and fabric/material texture.
-- CRITICAL OUTPUT RULES:
+- Add realistic shadows and fabric/material texture to the clothing only.
+
+CRITICAL OUTPUT RULES:
   1. The output MUST be EXACTLY ONE single image containing ONLY ONE person.
-  2. ABSOLUTELY NO collages, NO 3-panel layouts, NO grids, NO side-by-side comparisons. 
+  2. ABSOLUTELY NO collages, NO 3-panel layouts, NO grids, NO side-by-side comparisons.
   3. The single image MUST show the COMPLETE FULL BODY from head to toe without any cropping.
-- Return ONLY the single full-body photo-realistic result image. No text overlay, no background change.`;
+  4. Background must remain unchanged from the reference photo.
+- Return ONLY the single full-body photo-realistic result image. No text overlay.`;
 
   const requestBody = {
     contents: [{
       role: 'user',
       parts: [
         { text: prompt },
+        { text: '[IMAGE 1 — PERSON REFERENCE PHOTO: Copy this person\'s face, hair, skin tone, and body exactly]' },
         personPart,
+        { text: '[IMAGE 2 — CLOTHING ITEM: Apply this item onto the person above]' },
         garmentPart,
       ],
     }],
@@ -204,12 +215,20 @@ export async function runFlatlayTryOn(modelPhoto, recommendation, onProgress) {
 
   const categoriesDesc = steps.map(s => s.category).join(', ');
 
-  const prompt = `You are a fashion AI specializing in virtual try-on.
+  const prompt = `You are a fashion AI specializing in virtual try-on. Your top priority is to preserve the original person's identity exactly.
+
 Two images are provided:
-1. A person's full-body photo.
+1. A person's full-body REFERENCE photo — this is the GROUND TRUTH for the person's identity.
 2. A single "Flatlay" collage containing multiple clothing/accessory items: ${categoriesDesc}.
 
-Task:
+IDENTITY PRESERVATION (HIGHEST PRIORITY — NON-NEGOTIABLE):
+- The person's FACE must be reproduced pixel-perfectly from the reference photo. Same facial features, same expression, same eye shape, same nose, same lips, same hairstyle, same hair color.
+- The person's SKIN TONE must match the reference photo exactly.
+- The person's BODY PROPORTIONS, HEIGHT, and BUILD must remain identical.
+- The person's POSE and POSITION must remain identical.
+- NEVER alter or "improve" the person's face or body. Copy them exactly as they appear in the reference.
+
+CLOTHING TASK:
 - You MUST naturally overlay and place EVERY SINGLE ITEM shown in the flatlay onto the person at the same time.
 - DO NOT OMIT ANY ITEM. If there are shoes in the flatlay, they MUST be on the person's feet. If there is a top and bottom, BOTH MUST be worn.
 - TOP → replace/overlay upper body clothing.
@@ -218,20 +237,23 @@ Task:
 - SHOES → replace the existing footwear or place on bare feet naturally.
 - ACCESSORY → add to the appropriate location (bag for hands, hat for head, etc).
 - CRITICAL: Accurately maintain the exact color, texture, and pattern of each item. DO NOT mix the texture of the top with the bottom.
-- Keep the person's exact pose, face, skin tone, and body proportions unchanged.
-- Add realistic shadows and fabric/material texture.
-- CRITICAL OUTPUT RULES:
+- Add realistic shadows and fabric/material texture to the clothing only.
+
+CRITICAL OUTPUT RULES:
   1. The output MUST be EXACTLY ONE single image containing ONLY ONE person.
-  2. ABSOLUTELY NO collages, NO 3-panel layouts, NO grids, NO side-by-side comparisons. 
+  2. ABSOLUTELY NO collages, NO 3-panel layouts, NO grids, NO side-by-side comparisons.
   3. The single image MUST show the COMPLETE FULL BODY from head to toe without any cropping.
-- Return ONLY the single full-body photo-realistic result image. No text overlay, no background change.`;
+  4. Background must remain unchanged from the reference photo.
+- Return ONLY the single full-body photo-realistic result image. No text overlay.`;
 
   const requestBody = {
     contents: [{
       role: 'user',
       parts: [
         { text: prompt },
+        { text: '[IMAGE 1 — PERSON REFERENCE PHOTO: Copy this person\'s face, hair, skin tone, and body exactly]' },
         personPart,
+        { text: '[IMAGE 2 — CLOTHING FLATLAY: Apply these clothing items onto the person above]' },
         flatlayPart,
       ],
     }],
@@ -249,16 +271,15 @@ async function toInlinePart(url) {
     const [header, data] = url.split(',');
     return { inlineData: { data, mimeType: header.split(':')[1].split(';')[0] } };
   }
-  // 원격 URL → fetch → base64
+  // 원격 URL → fetch → base64 (ArrayBuffer 방식으로 재압축 없이 원본 바이트 유지)
   const res  = await fetch(url);
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const [header, data] = reader.result.split(',');
-      resolve({ inlineData: { data, mimeType: blob.type } });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+  const mimeType = res.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+  const buffer = await res.arrayBuffer();
+  const bytes  = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const data = btoa(binary);
+  return { inlineData: { data, mimeType } };
 }
