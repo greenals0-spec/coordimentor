@@ -1505,7 +1505,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 90dvh;
+  max-height: 95dvh;
   animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
