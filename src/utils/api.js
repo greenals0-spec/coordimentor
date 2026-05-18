@@ -1,3 +1,7 @@
+import { Capacitor } from '@capacitor/core';
+
+const IS_IOS = Capacitor.getPlatform() === 'ios';
+
 // Hugging Face RMBG-2.0 API (서버 사이드 배경 제거)
 const HF_TOKEN = process.env.REACT_APP_HF_API_KEY || '';
 const RMBG_API_URL = 'https://api-inference.huggingface.co/models/briaai/RMBG-2.0';
@@ -252,9 +256,50 @@ const callHfRemoveBg = async (apiUrl, imageFile, timeoutMs = 35000) => {
   return await response.blob();
 };
 
+// ─── iOS 전용: @imgly/background-removal (온디바이스 AI) ──────────────────────
+const removeBackgroundWithImgly = async (imageFile, onProgress) => {
+  const { removeBackground: imglyRemoveBg } = await import('@imgly/background-removal');
+
+  const blob = await imglyRemoveBg(imageFile, {
+    model: 'medium',
+    output: { format: 'image/png', quality: 0.9 },
+    progress: (key, current, total) => {
+      if (!onProgress || total === 0) return;
+      // key: 'fetch:model', 'fetch:inference', 'compute:inference' 등
+      const base = key.startsWith('fetch:model') ? 0
+                 : key.startsWith('fetch:inference') ? 30
+                 : 60;
+      const pct = base + Math.round((current / total) * 30);
+      onProgress(Math.min(95, pct));
+    },
+  });
+
+  return blob;
+};
+
 // ─── 배경 제거 (전용 서버 → HF RMBG-2.0 → RMBG-1.4 폴백 → 색상 감지 폴백) ───────────
 export const removeBackground = async (imageFile, onProgress) => {
   const optimizedFile = await resizeImageForAI(imageFile);
+
+  // iOS: @imgly/background-removal 온디바이스 AI 우선 사용
+  if (IS_IOS) {
+    try {
+      if (onProgress) onProgress(5);
+      const blob = await removeBackgroundWithImgly(optimizedFile, onProgress);
+      const objectUrl = URL.createObjectURL(blob);
+      try {
+        const croppedUrl = await cropTransparentImage(objectUrl);
+        if (onProgress) onProgress(100);
+        return croppedUrl;
+      } catch {
+        if (onProgress) onProgress(100);
+        return objectUrl;
+      }
+    } catch (err) {
+      console.warn('[누끼] imgly 실패, 서버 방식으로 폴백:', err.message);
+      // 실패 시 기존 서버 방식으로 계속
+    }
+  }
 
   if (onProgress) onProgress(10, 'upload');
 

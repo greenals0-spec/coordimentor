@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Loader, Check, AlertCircle, Camera as CameraIcon, ChevronLeft, Image as ImageIcon, ClipboardPaste } from 'lucide-react';
+import { Loader, Check, AlertCircle, Camera as CameraIcon, ChevronLeft, Image as ImageIcon } from 'lucide-react';
 import { removeBackground, analyzeClothing } from '../utils/api';
 import { uploadImage, saveItem } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,8 @@ import { deductPoints, POINT_COSTS } from '../utils/points';
 import InsufficientPointsModal from '../components/InsufficientPointsModal';
 import { Capacitor } from '@capacitor/core';
 import ImageEditor from '../components/ImageEditor';
+
+const IS_IOS = Capacitor.getPlatform() === 'ios';
 
 const CATEGORY_LABELS = ['아우터', '상의', '하의', '신발', '액세서리'];
 
@@ -271,14 +273,33 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
     if (Capacitor.isNativePlatform()) {
       try {
         const { Camera: CapCamera, CameraResultType, CameraSource } = await import('@capacitor/camera');
-        await CapCamera.getPhoto({
-          quality: 90,
-          allowEditing: false,
-          resultType: CameraResultType.Uri,
-          source: CameraSource.Camera,
-          saveToGallery: true,
-        });
-        setCameraActionDone(true);
+
+        if (IS_IOS) {
+          // iOS: 사진을 DataUrl로 직접 받아 자동 누끼 처리
+          const photo = await CapCamera.getPhoto({
+            quality: 90,
+            allowEditing: false,
+            resultType: CameraResultType.DataUrl,
+            source: CameraSource.Camera,
+            saveToGallery: true,
+          });
+          if (photo.dataUrl) {
+            const res = await fetch(photo.dataUrl);
+            const blob = await res.blob();
+            const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
+            await processFile(file);
+          }
+        } else {
+          // Android: 기존 URI 방식 (갤러리 → 공유 흐름)
+          await CapCamera.getPhoto({
+            quality: 90,
+            allowEditing: false,
+            resultType: CameraResultType.Uri,
+            source: CameraSource.Camera,
+            saveToGallery: true,
+          });
+          setCameraActionDone(true);
+        }
       } catch (e) {
         if (!e.message?.includes('cancel') && !e.message?.includes('User cancelled')) {
           setError('카메라를 열 수 없어요: ' + e.message);
@@ -297,8 +318,11 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
 
   // ── 앨범 버튼 ─────────────────────────────────────────────────────────────────
   const handleOpenAlbum = () => {
-    if (Capacitor.isNativePlatform() && window.AndroidShare) {
-      // 갤러리 앱 직접 오픈 (누끼 따기 → 공유 흐름용)
+    if (IS_IOS) {
+      // iOS: 표준 파일 선택 → 자동 누끼 처리
+      albumInputRef.current?.click();
+    } else if (Capacitor.isNativePlatform() && window.AndroidShare) {
+      // Android: 갤러리 앱 직접 오픈 (누끼 따기 → 공유 흐름용)
       window.AndroidShare.openGallery();
     } else {
       albumInputRef.current?.click();
@@ -312,7 +336,36 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
     const dataUrl = await blobToDataUrl(file);
     setPreview(dataUrl);
     setRemovedBlob(file);
-    setStep('capture_preview');
+
+    if (IS_IOS) {
+      // iOS: 바로 자동 누끼 실행
+      setStep('removing');
+      setBgProgress(0);
+      try {
+        const bgRemovedUrl = await removeBackground(file, (pct) => setBgProgress(pct));
+        setRemovedUrl(bgRemovedUrl);
+        let blob;
+        if (bgRemovedUrl.startsWith('data:')) {
+          const arr = bgRemovedUrl.split(',');
+          const mime = arr[0].match(/:(.*?);/)[1];
+          const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
+          while (n--) u8[n] = bstr.charCodeAt(n);
+          blob = new Blob([u8], { type: mime });
+        } else {
+          const r = await fetch(bgRemovedUrl);
+          blob = await r.blob();
+        }
+        setRemovedBlob(blob);
+        setStep('editing');
+      } catch (e) {
+        console.warn('자동 누끼 실패, 원본으로 진행:', e.message);
+        setRemovedUrl(dataUrl);
+        setStep('editing');
+      }
+    } else {
+      // Android/Web: 기존 캡처 프리뷰 → 갤러리 공유 흐름
+      setStep('capture_preview');
+    }
   };
 
   const processBulk = async (files) => {
@@ -530,7 +583,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* 촬영 후 가져오기 */}
             <button
-              onClick={() => setStep('guide_camera')}
+              onClick={IS_IOS ? handleOpenCamera : () => setStep('guide_camera')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 18,
                 background: 'var(--surface)', border: '1.5px solid var(--border)',
@@ -553,7 +606,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
 
             {/* 앨범에서 가져오기 */}
             <button
-              onClick={() => setStep('guide_album')}
+              onClick={IS_IOS ? handleOpenAlbum : () => setStep('guide_album')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 18,
                 background: 'var(--surface)', border: '1.5px solid var(--border)',
@@ -573,31 +626,20 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
               <span style={{ color: 'var(--text-muted)', fontSize: 20 }}>›</span>
             </button>
 
-            {/* 클립보드 붙여넣기 (iOS 누끼 최적화 - iOS에서만 표시) */}
-            {Capacitor.getPlatform() === 'ios' && (
-              <button
-                onClick={handlePasteImage}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 18,
-                  background: 'var(--surface)', border: '1.5px solid var(--primary-light, #E8F0FE)',
-                  borderRadius: 18, padding: '20px 20px', cursor: 'pointer', textAlign: 'left',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                }}
-              >
-                <div style={{
-                  width: 52, height: 52, borderRadius: 14, background: 'var(--primary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <ClipboardPaste size={26} color="white" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>복사한 누끼 붙여넣기</p>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--primary)', fontWeight: 500, lineHeight: 1.5 }}>
-                    아이폰 갤러리에서 누끼 따고<br/>여기에 바로 붙여넣으세요
-                  </p>
-                </div>
-                <span style={{ color: 'var(--primary)', fontSize: 20 }}>›</span>
-              </button>
+            {/* iOS: 자동 누끼 안내 문구 */}
+            {IS_IOS && (
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                fontSize: 12,
+                color: 'var(--text-muted)',
+                lineHeight: 1.6,
+                textAlign: 'center',
+              }}>
+                📸 사진을 선택하면 AI가 자동으로 배경을 제거합니다
+              </div>
             )}
           </div>
 
