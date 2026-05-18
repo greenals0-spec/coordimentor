@@ -258,14 +258,27 @@ const callHfRemoveBg = async (apiUrl, imageFile, timeoutMs = 35000) => {
 
 // ─── iOS 전용: @imgly/background-removal (온디바이스 AI) ──────────────────────
 const removeBackgroundWithImgly = async (imageFile, onProgress) => {
+  // WKWebView WASM 호환성: SharedArrayBuffer 없이 단일 스레드 강제
+  try {
+    const ort = await import('onnxruntime-web');
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.proxy = false;
+    ort.env.wasm.simd = true; // SIMD는 시도, 안되면 자동 폴백
+  } catch (e) {
+    console.warn('[imgly] ort env 설정 실패:', e.message);
+  }
+
   const { removeBackground: imglyRemoveBg } = await import('@imgly/background-removal');
 
   const blob = await imglyRemoveBg(imageFile, {
     model: 'medium',
+    proxyToWorker: false,   // Web Worker 미사용 (WKWebView 호환)
     output: { format: 'image/png', quality: 0.9 },
+    ort: {
+      executionProviders: ['wasm'],
+    },
     progress: (key, current, total) => {
       if (!onProgress || total === 0) return;
-      // key: 'fetch:model', 'fetch:inference', 'compute:inference' 등
       const base = key.startsWith('fetch:model') ? 0
                  : key.startsWith('fetch:inference') ? 30
                  : 60;
@@ -274,8 +287,33 @@ const removeBackgroundWithImgly = async (imageFile, onProgress) => {
     },
   });
 
+  // 결과 검증: 투명 픽셀이 없으면 모델이 제대로 동작하지 않은 것
+  const isValid = await checkBlobHasTransparency(blob);
+  if (!isValid) throw new Error('누끼 결과 없음 (투명 픽셀 미검출)');
+
   return blob;
 };
+
+// 누끼 결과 유효성 검사 (투명 픽셀 존재 여부)
+const checkBlobHasTransparency = (blob) => new Promise((resolve) => {
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.min(img.width, 120);
+    canvas.height = Math.min(img.height, 120);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    URL.revokeObjectURL(url);
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 200) return resolve(true);
+    }
+    resolve(false);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+  img.src = url;
+});
 
 // ─── 배경 제거 (전용 서버 → HF RMBG-2.0 → RMBG-1.4 폴백 → 색상 감지 폴백) ───────────
 export const removeBackground = async (imageFile, onProgress) => {
