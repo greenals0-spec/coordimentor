@@ -155,20 +155,20 @@ function tempScore(item, rules) {
 
 /**
  * 아이템 선택 (온도 적합성 + 상황 키워드 통합 고려)
- * 1. avoid 태그가 있는 아이템 제외 (가능한 경우)
- * 2. 상황 키워드 매칭 우선
- * 3. 온도 prefer 점수 우선
- * 4. 최후의 수단: 전체 랜덤
+ * 1. avoid 태그가 있는 아이템 무조건 제외 — 폴백 없음
+ *    → 온도에 맞는 아이템이 없으면 null 반환 (쇼핑 추천으로 유도)
+ * 2. 남은 아이템 중 상황 키워드 매칭 우선
+ * 3. 온도 prefer 점수 보조
  */
 function pickItem(list, keywords, tempRules) {
   if (!list || list.length === 0) return null;
 
-  // avoid 아이템 제거 (남은 게 있을 때만)
+  // avoid 아이템 제거 — 온도에 맞지 않으면 null 반환 (텍스트-이미지 불일치 방지)
   const notAvoided = list.filter(item => tempScore(item, tempRules) >= 0);
-  const pool = notAvoided.length > 0 ? notAvoided : list;
+  if (notAvoided.length === 0) return null;
 
   // 상황 키워드 AND 온도 prefer 모두 고려한 종합 점수
-  const scored = pool.map(item => ({
+  const scored = notAvoided.map(item => ({
     item,
     score: situationScore(item, keywords) * 3 + tempScore(item, tempRules),
   }));
@@ -197,16 +197,16 @@ const SHOPPING_KEYWORDS = {
     가을: ['가을 청바지', '코듀로이 팬츠', '가을 슬랙스'],
   },
   아우터: {
-    겨울: ['롱패딩', '두꺼운 코트', '퍼 자켓'],
-    봄:   ['봄 자켓', '트렌치코트', '봄 가디건'],
-    여름: ['얇은 가디건', '여름 자켓'],
+    겨울: ['롱패딩', '두꺼운 코트', '플리스 자켓'],
+    봄:   ['봄 자켓', '트렌치코트', '바람막이'],
+    여름: ['얇은 바람막이', '여름 자켓'],
     가을: ['가을 자켓', '트렌치코트', '데님 자켓'],
   },
   신발: {
     겨울: ['겨울 부츠', '방한 스니커즈'],
-    봄:   ['봄 스니커즈', '로퍼', '봄 단화'],
+    봄:   ['봄 스니커즈', '봄 단화', '캔버스화'],
     여름: ['여름 샌들', '슬리퍼', '캔버스화'],
-    가을: ['가을 로퍼', '가을 스니커즈', '첼시부츠'],
+    가을: ['가을 스니커즈', '앵클부츠', '첼시부츠'],
   },
   액세서리: {
     겨울: ['겨울 목도리', '비니', '장갑'],
@@ -216,7 +216,76 @@ const SHOPPING_KEYWORDS = {
   },
 };
 
-function generateShoppingLinks(category, season) {
+/**
+ * 상황별 쇼핑 키워드 (상황이 명확할 때 계절 키워드보다 우선 적용)
+ * 등산·운동처럼 기능성이 중요한 상황은 반드시 상황 특화 키워드 사용
+ */
+const SITUATION_SHOPPING_KEYWORDS = {
+  '등산': {
+    상의: ['등산 긴팔 티셔츠', '아웃도어 기능성 티셔츠', '등산 반팔'],
+    하의: ['등산 바지', '트레킹 팬츠', '기능성 등산 레깅스'],
+    아우터: ['등산 바람막이', '아웃도어 경량 자켓', '방수 등산 자켓'],
+    신발: ['등산화', '트레킹화', '아웃도어 슈즈'],
+    액세서리: ['등산 모자', '등산 스틱', '아웃도어 가방'],
+  },
+  '운동': {
+    상의: ['스포츠 반팔 티셔츠', '운동 기능성 티셔츠', '러닝 티셔츠'],
+    하의: ['운동 반바지', '트레이닝 팬츠', '스포츠 레깅스'],
+    아우터: ['스포츠 집업', '트레이닝 자켓', '러닝 바람막이'],
+    신발: ['러닝화', '운동화', '스포츠 스니커즈'],
+    액세서리: ['스포츠 모자', '운동 크로스백', '스포츠 양말'],
+  },
+  '출근': {
+    상의: ['오피스 셔츠', '비즈니스 블라우스', '오피스 니트'],
+    하의: ['슬랙스', '정장 바지', '오피스 스커트'],
+    아우터: ['정장 자켓', '블레이저', '오피스 코트'],
+    신발: ['구두', '오피스 로퍼', '힐'],
+    액세서리: ['비즈니스 가방', '오피스 벨트'],
+  },
+  '데이트': {
+    상의: ['데이트 블라우스', '페미닌 니트', '데이트 티셔츠'],
+    하의: ['플리츠 스커트', '데이트 원피스', '슬림 팬츠'],
+    아우터: ['데이트 가디건', '로맨틱 자켓'],
+    신발: ['여성 힐', '앵클부츠', '예쁜 플랫슈즈'],
+    액세서리: ['미니 크로스백', '데이트 귀걸이'],
+  },
+  '여행': {
+    상의: ['여행 편한 티셔츠', '캐주얼 린넨 셔츠', '여행 맨투맨'],
+    하의: ['여행 편한 팬츠', '조거 팬츠', '캐주얼 청바지'],
+    아우터: ['여행 가디건', '경량 패딩 조끼', '여행 바람막이'],
+    신발: ['여행 스니커즈', '편한 슬립온', '워킹화'],
+    액세서리: ['여행 크로스백', '여행 모자', '여행 파우치'],
+  },
+  '등교': {
+    상의: ['캐주얼 맨투맨', '학생 후드티', '캐주얼 티셔츠'],
+    하의: ['청바지', '캐주얼 조거팬츠', '트레이닝 바지'],
+    아우터: ['캐주얼 자켓', '후드 집업', '봄 가디건'],
+    신발: ['캐주얼 스니커즈', '슬립온', '편한 운동화'],
+    액세서리: ['학생 백팩', '캔버스 토트백'],
+  },
+  '모임': {
+    상의: ['세미캐주얼 셔츠', '모임 니트', '깔끔한 블라우스'],
+    하의: ['세미캐주얼 슬랙스', '깔끔한 팬츠', '미디 스커트'],
+    아우터: ['모임 블레이저', '가디건 자켓', '세미캐주얼 코트'],
+    신발: ['로퍼', '앵클부츠', '세미캐주얼 단화'],
+    액세서리: ['클러치백', '세미캐주얼 크로스백'],
+  },
+};
+
+function generateShoppingLinks(category, season, situation = null) {
+  // 상황이 명확하고 해당 카테고리의 상황별 키워드가 있으면 우선 사용
+  if (situation && SITUATION_SHOPPING_KEYWORDS[situation]?.[category]) {
+    const situationKws = SITUATION_SHOPPING_KEYWORDS[situation][category];
+    const keyword = situationKws[Math.floor(Math.random() * situationKws.length)];
+    return {
+      category,
+      keyword,
+      musinsaUrl: `https://www.musinsa.com/search/musinsa/integration?q=${encodeURIComponent(keyword)}`,
+      naverUrl:   `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(keyword)}`,
+    };
+  }
+
+  // 상황 키워드 없으면 계절 기반 폴백
   const keywords = SHOPPING_KEYWORDS[category]?.[season] || [];
   if (keywords.length === 0) return null;
   const keyword = keywords[Math.floor(Math.random() * keywords.length)];
@@ -298,7 +367,7 @@ export function recommendOutfit(weather, items, situation = null) {
   if (temp < 23 && !recommendation.outer) missingCategories.push('아우터');
 
   recommendation.shoppingSuggestions = missingCategories
-    .map(cat => generateShoppingLinks(cat, currentSeason))
+    .map(cat => generateShoppingLinks(cat, currentSeason, situation))
     .filter(Boolean);
 
   return recommendation;
