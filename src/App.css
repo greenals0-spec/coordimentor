@@ -782,14 +782,16 @@ body {
 .analysis-row:last-child { border-bottom: none; padding-bottom: 0; }
 
 .label {
-  width: 52px;
+  width: 62px;
+  min-width: 62px;
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
   padding-top: 10px;
   flex-shrink: 0;
+  word-break: keep-all;
 }
 
 .analysis-input {
@@ -1544,9 +1546,10 @@ body {
 .close-btn:hover { color: var(--primary); }
 
 .edit-modal-body {
-  padding: 0 0 16px;
+  padding: 16px 20px 24px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   flex: 1;
   min-height: 0;
   display: flex;

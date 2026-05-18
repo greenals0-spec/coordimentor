@@ -548,17 +548,13 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
               <button className="close-btn" onClick={() => setEditingItem(null)}><X size={24} /></button>
             </div>
             <div className="edit-modal-body">
-              <div style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                background: 'var(--surface-2)', borderRadius: 'var(--radius-md)',
-                overflow: 'hidden', maxHeight: 130, flexShrink: 0,
-              }}>
+              <div className="cloth-img-wrapper" style={{ borderRadius: 'var(--radius-md)', flexShrink: 0 }}>
                 <img
                   src={editingItem.imageUrl}
                   alt="item"
                   onLoad={(e) => { e.target.style.opacity = '1'; }}
                   onError={(e) => { e.target.style.display = 'none'; }}
-                  style={{ maxHeight: 130, width: '100%', objectFit: 'contain', opacity: 0, transition: 'opacity 0.2s', padding: 8 }}
+                  style={{ opacity: 0, transition: 'opacity 0.2s' }}
                 />
               </div>
               <div className="analysis-result">
