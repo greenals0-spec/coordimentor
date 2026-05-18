@@ -132,24 +132,37 @@ export default function CalendarView() {
     '기타':      { w: 160, h: 160 },
   };
 
-  // outfit 객체 → FlatLay 순서대로 정렬된 [{img, type}] 반환
+  // outfit 객체/배열 → 정규화된 키 객체 (FlatLay.js와 동일 로직)
+  const normalizeOutfit = (outfit) => {
+    if (!outfit) return {};
+    if (Array.isArray(outfit)) {
+      return outfit.reduce((acc, item) => {
+        if (!item) return acc;
+        const cat = item.category || '';
+        if (cat.includes('아우터'))                          acc['아우터'] = item;
+        else if (cat.includes('상의'))                       acc['상의'] = item;
+        else if (cat.includes('하의'))                       acc['하의'] = item;
+        else if (cat.includes('신발'))                       acc['신발'] = item;
+        else if (cat.includes('얼굴') || cat.includes('머리')) acc['액세서리_얼굴머리'] = item;
+        else if (cat.includes('손목') || cat.includes('팔'))   acc['액세서리_손목팔'] = item;
+        else                                                  acc['액세서리_기타'] = item;
+        return acc;
+      }, {});
+    }
+    return outfit;
+  };
+
+  // outfit → FlatLay 순서대로 [{item, type}] 반환
   const buildFlatLayOrder = (outfit) => {
-    const o = outfit || {};
-    const face  = o['액세서리_얼굴머리'];
-    const outer = o['아우터'];
-    const top   = o['상의'];
-    const wrist = o['액세서리_손목팔'];
-    const bot   = o['하의'];
-    const shoes = o['신발'];
-    const etc   = o['액세서리_기타'];
+    const o = normalizeOutfit(outfit);
     const order = [];
-    if (face)  order.push({ item: face,  type: '얼굴/머리' });
-    if (outer) order.push({ item: outer, type: '아우터' });
-    if (top)   order.push({ item: top,   type: '상의' });
-    if (wrist) order.push({ item: wrist, type: '손목/팔' });
-    if (bot)   order.push({ item: bot,   type: '하의' });
-    if (shoes) order.push({ item: shoes, type: '신발' });
-    if (etc)   order.push({ item: etc,   type: '기타' });
+    if (o['액세서리_얼굴머리']) order.push({ item: o['액세서리_얼굴머리'], type: '얼굴/머리' });
+    if (o['아우터'])            order.push({ item: o['아우터'],            type: '아우터' });
+    if (o['상의'])              order.push({ item: o['상의'],              type: '상의' });
+    if (o['액세서리_손목팔'])   order.push({ item: o['액세서리_손목팔'],   type: '손목/팔' });
+    if (o['하의'])              order.push({ item: o['하의'],              type: '하의' });
+    if (o['신발'])              order.push({ item: o['신발'],              type: '신발' });
+    if (o['액세서리_기타'])     order.push({ item: o['액세서리_기타'],     type: '기타' });
     return order;
   };
 

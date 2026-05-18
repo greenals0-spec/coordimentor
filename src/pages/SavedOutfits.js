@@ -116,17 +116,31 @@ export default function SavedOutfitsPage({ onSheetOpen, onSheetClose }) {
     return '기타';
   };
 
+  // outfit 객체/배열 정규화 (FlatLay.js와 동일)
+  const normalizeOutfit = (raw) => {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+      return raw.reduce((acc, item) => {
+        if (!item) return acc;
+        const cat = item.category || '';
+        if (cat.includes('아우터'))                            acc['아우터'] = item;
+        else if (cat.includes('상의'))                         acc['상의'] = item;
+        else if (cat.includes('하의'))                         acc['하의'] = item;
+        else if (cat.includes('신발'))                         acc['신발'] = item;
+        else if (cat.includes('얼굴') || cat.includes('머리')) acc['액세서리_얼굴머리'] = item;
+        else if (cat.includes('손목') || cat.includes('팔'))   acc['액세서리_손목팔'] = item;
+        else                                                    acc['액세서리_기타'] = item;
+        return acc;
+      }, {});
+    }
+    return raw;
+  };
+
   // Canvas로 FlatLay 세로 배열 합성 (원래 레이아웃 재현)
   const composeOutfitCanvas = async (outfit) => {
-    const itemsObj = outfit.items || {};
-    // FlatLay 순서: 얼굴→아우터→상의→손목→하의→신발→기타
+    const normalized = normalizeOutfit(outfit.items || outfit);
     const ORDER = ['액세서리_얼굴머리','아우터','상의','액세서리_손목팔','하의','신발','액세서리_기타'];
-    const ordered = ORDER.map(k => itemsObj[k]).filter(v => v?.imageUrl);
-    // 키가 없으면 배열 형태 fallback
-    const fallback = Array.isArray(itemsObj)
-      ? itemsObj.filter(v => v?.imageUrl)
-      : Object.values(itemsObj).filter(v => v?.imageUrl);
-    const items = ordered.length ? ordered : fallback;
+    const items = ORDER.map(k => normalized[k]).filter(v => v?.imageUrl);
 
     const SCALE = 2.2;
     const GAP = 12;
