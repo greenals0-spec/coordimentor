@@ -5,16 +5,56 @@ const DAY_TO_WEEKDAY = {
   sun: 1, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7,
 };
 
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
 const SITUATION_EMOJI = {
   '출근': '💼', '운동': '🏃', '등교': '📚', '데이트': '💑',
   '여행': '✈️', '등산': '🏔️', '모임': '🎉', '기타': '📌',
 };
 
-// alarmId(string) + dayKey → 고유한 숫자 ID
+// localStorage 키: 현재 등록된 알림 ID 목록 추적
+const NOTIF_IDS_KEY = 'coordimentor_notif_ids';
+
+function getSavedNotifIds() {
+  try {
+    return JSON.parse(localStorage.getItem(NOTIF_IDS_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveNotifIds(ids) {
+  localStorage.setItem(NOTIF_IDS_KEY, JSON.stringify(ids));
+}
+
+// alarmId(string) + dayKey → 고유한 숫자 ID (NaN 방지)
 function makeNotifId(alarmId, dayKey) {
-  const base = parseInt(alarmId.slice(-7), 10) % 100000;
-  const dayIdx = Object.keys(DAY_TO_WEEKDAY).indexOf(dayKey);
-  return base * 10 + dayIdx;
+  // alarmId는 Date.now().toString() 형식 → 마지막 6자리 사용
+  const digits = alarmId.replace(/\D/g, '');
+  const base = digits.length > 0 ? (parseInt(digits.slice(-6), 10) % 10000) : 0;
+  const dayIdx = DAY_KEYS.indexOf(dayKey);
+  return base * 10 + (dayIdx >= 0 ? dayIdx : 0);
+}
+
+/**
+ * 특정 요일·시간의 다음 발생 Date 계산 (항상 미래 시각 반환)
+ * weekday: 1(일)~7(토), hour: 0~23, minute: 0~59
+ */
+function getNextOccurrence(weekday, hour, minute) {
+  const now = new Date();
+  // Capacitor weekday: 1=일, 2=월, ..., 7=토 → JS getDay(): 0=일, 1=월, ..., 6=토
+  const targetJsDay = weekday - 1; // 0=일, 1=월, ..., 6=토
+  const result = new Date(now);
+  result.setHours(hour, minute, 0, 0);
+
+  const currentJsDay = now.getDay();
+  let daysUntil = (targetJsDay - currentJsDay + 7) % 7;
+
+  // 오늘이 대상 요일인데 이미 시간이 지났으면 7일 뒤
+  if (daysUntil === 0 && result <= now) {
+    daysUntil = 7;
+  }
+
+  result.setDate(result.getDate() + daysUntil);
+  return result;
 }
 
 async function ensureChannel() {
@@ -29,13 +69,22 @@ async function ensureChannel() {
   });
 }
 
-/** 모든 대기 중인 로컬 알림을 취소 */
+/** 모든 대기 중인 로컬 알림을 취소 (pending + 저장된 ID 목록 모두) */
 export const cancelAllNotifications = async () => {
   try {
+    // 1. Capacitor pending 목록으로 취소
     const pending = await LocalNotifications.getPending();
     if (pending.notifications.length > 0) {
       await LocalNotifications.cancel(pending);
     }
+    // 2. 로컬에 저장된 ID 목록으로도 취소 (repeating 알림이 pending에 안 잡히는 경우 대비)
+    const savedIds = getSavedNotifIds();
+    if (savedIds.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: savedIds.map(id => ({ id })),
+      }).catch(() => {});
+    }
+    saveNotifIds([]);
   } catch (e) {
     console.error('cancelAllNotifications error:', e);
   }
@@ -71,7 +120,11 @@ export const scheduleRoutineAlarms = async (routineAlarms = []) => {
     }
 
     // 3. 각 알람 × 각 요일 → 알림 생성
+    // at + repeats 방식 사용: 정확한 다음 발생 시각을 계산해 등록
+    // (on: { weekday } 방식은 일부 Android에서 즉시 발동하거나 시간대 오류 발생)
     const notifications = [];
+    const registeredIds = [];
+
     for (const alarm of activeAlarms) {
       const [hours, minutes] = alarm.time.split(':').map(Number);
       const emoji = SITUATION_EMOJI[alarm.situation] || '👗';
@@ -80,12 +133,17 @@ export const scheduleRoutineAlarms = async (routineAlarms = []) => {
         const weekday = DAY_TO_WEEKDAY[day];
         if (!weekday) continue;
 
+        const notifId = makeNotifId(alarm.id, day);
+        const nextAt = getNextOccurrence(weekday, hours, minutes);
+
         notifications.push({
-          id: makeNotifId(alarm.id, day),
+          id: notifId,
           title: `${emoji} ${alarm.situation} 코디 추천`,
           body: '날씨에 맞는 옷차림을 준비했어요. 지금 확인해보세요!',
           schedule: {
-            on: { weekday, hour: hours, minute: minutes },
+            at: nextAt,
+            repeats: true,          // 매주 같은 요일·시간에 반복
+            every: 'week',          // 1주 간격 반복
           },
           sound: 'default',
           channelId: 'morning_recommendation',
@@ -95,33 +153,18 @@ export const scheduleRoutineAlarms = async (routineAlarms = []) => {
             alarmId: alarm.id,
           },
         });
+        registeredIds.push(notifId);
       }
     }
 
     if (notifications.length > 0) {
       await LocalNotifications.schedule({ notifications });
-      console.log(`Scheduled ${notifications.length} routine notification(s).`);
+      saveNotifIds(registeredIds); // 취소용 ID 목록 저장
+      console.log(`Scheduled ${notifications.length} routine notification(s).`, registeredIds);
     }
   } catch (error) {
     console.error('scheduleRoutineAlarms error:', error);
   }
-};
-
-/** 하위 호환: 단일 시간 매일 알림 (기존 코드에서 호출 시 대응) */
-export const scheduleMorningNotification = async (timeStr, enabled) => {
-  if (!enabled) {
-    await cancelAllNotifications();
-    return;
-  }
-  await scheduleRoutineAlarms([
-    {
-      id: 'legacy_morning',
-      enabled: true,
-      days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-      time: timeStr,
-      situation: '기타',
-    },
-  ]);
 };
 
 /** 테스트용: 5초 후 즉시 알림 */
