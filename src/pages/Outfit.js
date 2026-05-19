@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader, Sparkles, MapPin, RefreshCw, Send, Heart, List, X, Shirt, CheckCircle } from 'lucide-react';
+import { Loader, Sparkles, MapPin, RefreshCw, Send, Heart, List, X, Shirt, CheckCircle, ExternalLink } from 'lucide-react';
 import { getItemsOnce, saveOutfit, deleteSavedOutfit, getSavedOutfitsOnce } from '../utils/storage';
 import { getOutfitRecommendation, adjustOutfit, recordRecommendedOutfits } from '../utils/api';
 import { getWeatherByLocation, getWeatherByLocationName, extractLocationFromText } from '../utils/weather';
@@ -580,6 +580,50 @@ export default function OutfitPage({ onNavigate }) {
           })}
         </div>
       )}
+
+      {/* ── 쇼핑 바로가기 ── */}
+      <div style={{
+        margin: '8px 0 24px',
+        padding: '18px 16px',
+        background: '#FAFAF8',
+        borderRadius: 'var(--radius)',
+        border: '1px solid var(--border)',
+      }}>
+        <p style={{
+          margin: '0 0 12px',
+          fontSize: 13, fontWeight: 700,
+          color: 'var(--text)',
+          fontFamily: "'Pretendard', sans-serif",
+          textAlign: 'center',
+        }}>
+          🛍️ 새 옷이 필요하세요?
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[
+            { label: '무신사', url: 'https://www.musinsa.com', bg: '#000', color: '#fff' },
+            { label: '29CM', url: 'https://www.29cm.co.kr', bg: '#1A1A1A', color: '#fff' },
+            { label: 'KREAM', url: 'https://kream.co.kr', bg: '#FF5A3C', color: '#fff' },
+            { label: '에이블리', url: 'https://a-bly.com', bg: '#FF4B84', color: '#fff' },
+          ].map(({ label, url, bg, color }) => (
+            <a
+              key={label}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                padding: '11px 8px', borderRadius: 10,
+                background: bg, color,
+                fontSize: 13, fontWeight: 700,
+                textDecoration: 'none',
+                fontFamily: "'Pretendard', sans-serif",
+              }}
+            >
+              {label} <ExternalLink size={11} />
+            </a>
+          ))}
+        </div>
+      </div>
 
       {/* ── 참고용 안내 팝업 ── */}
       {showDisclaimer && (

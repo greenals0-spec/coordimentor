@@ -1,4 +1,4 @@
-import { X, Sparkles, Shirt, ShoppingBag, ExternalLink } from 'lucide-react';
+import { X, Sparkles, Shirt } from 'lucide-react';
 import { runFlatlayTryOn } from '../utils/tryon';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useRef } from 'react';
@@ -222,57 +222,6 @@ export default function MorningRecommendation({ weather, recommendation, onClose
           })}
         </div>
 
-        {/* 쇼핑 추천 섹션 — 옷장에 없는 카테고리 있을 때만 표시 */}
-        {recommendation.shoppingSuggestions?.length > 0 && (
-          <div style={{ padding: '0 24px 20px' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #FEF3E8 0%, #FDF0E0 100%)',
-              borderRadius: 16, padding: '18px 16px',
-              border: `1px solid ${C.border}`,
-              textAlign: 'center',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
-                <ShoppingBag size={16} color={C.terracotta} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.brown }}>
-                  어울리는 옷을 찾을 수 없습니다
-                </span>
-              </div>
-              <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.6 }}>
-                쇼핑몰에서 어울리는 옷을 찾아볼까요?
-              </p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a
-                  href="https://www.musinsa.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                    padding: '12px', borderRadius: 12,
-                    background: '#000', color: '#fff',
-                    fontSize: 13, fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  무신사 <ExternalLink size={12} />
-                </a>
-                <a
-                  href="https://shopping.naver.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                    padding: '12px', borderRadius: 12,
-                    background: '#03C75A', color: '#fff',
-                    fontSize: 13, fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  네이버 쇼핑 <ExternalLink size={12} />
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
 
         </div>{/* 스크롤 영역 끝 */}
 
