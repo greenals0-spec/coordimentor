@@ -192,19 +192,34 @@ export default function MorningRecommendation({ weather, recommendation, onClose
 
         {/* 아이템 그리드 */}
         <div style={{ padding: '8px 24px 20px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-          {items.map(({ label, item }) => (
-            <div key={label} style={{ background: C.ivory, border: `1px solid ${C.border}`, borderRadius: 16, padding: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ aspectRatio: '1', background: C.ivoryDeep, borderRadius: 10, overflow: 'hidden' }}>
-                <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {items.map(({ label, item }, idx) => {
+            // 홀수 개일 때 마지막 아이템이 빈 칸 없이 2칸 차지
+            const isLastOdd = items.length % 2 === 1 && idx === items.length - 1;
+            return (
+              <div key={label} style={{
+                gridColumn: isLastOdd ? 'span 2' : 'auto',
+                background: C.ivory, border: `1px solid ${C.border}`, borderRadius: 16, padding: 8,
+                display: 'flex', flexDirection: isLastOdd ? 'row' : 'column', gap: isLastOdd ? 14 : 6,
+                alignItems: isLastOdd ? 'center' : 'stretch',
+              }}>
+                <div style={{
+                  aspectRatio: isLastOdd ? 'auto' : '1',
+                  width: isLastOdd ? 80 : '100%',
+                  height: isLastOdd ? 80 : undefined,
+                  flexShrink: 0,
+                  background: C.ivoryDeep, borderRadius: 10, overflow: 'hidden',
+                }}>
+                  <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div>
+                  <span style={{ fontSize: 9, color: C.faint, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
+                  <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 600, color: C.brown, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {item.name}
+                  </p>
+                </div>
               </div>
-              <div>
-                <span style={{ fontSize: 9, color: C.faint, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
-                <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 600, color: C.brown, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {item.name}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 쇼핑 추천 섹션 — 옷장에 없는 카테고리 있을 때만 표시 */}
@@ -212,65 +227,48 @@ export default function MorningRecommendation({ weather, recommendation, onClose
           <div style={{ padding: '0 24px 20px' }}>
             <div style={{
               background: 'linear-gradient(135deg, #FEF3E8 0%, #FDF0E0 100%)',
-              borderRadius: 16, padding: '16px',
+              borderRadius: 16, padding: '18px 16px',
               border: `1px solid ${C.border}`,
+              textAlign: 'center',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
                 <ShoppingBag size={16} color={C.terracotta} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: C.brown }}>
-                  옷장에 없는 아이템 쇼핑 추천
+                  어울리는 옷을 찾을 수 없습니다
                 </span>
               </div>
-              <p style={{ fontSize: 11, color: C.muted, margin: '0 0 12px', lineHeight: 1.5 }}>
-                이번 계절 코디에 필요한 아이템이에요. 쇼핑몰에서 찾아보세요!
+              <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.6 }}>
+                쇼핑몰에서 어울리는 옷을 찾아볼까요?
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {recommendation.shoppingSuggestions.map((s, i) => (
-                  <div key={i} style={{
-                    background: '#fff', borderRadius: 12, padding: '10px 12px',
-                    border: `1px solid ${C.border}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  }}>
-                    <div>
-                      <span style={{ fontSize: 10, color: C.faint, fontWeight: 600, textTransform: 'uppercase' }}>
-                        {s.category}
-                      </span>
-                      <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: C.brown }}>
-                        {s.keyword}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <a
-                        href={s.musinsaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 3,
-                          padding: '6px 10px', borderRadius: 8,
-                          background: '#000', color: '#fff',
-                          fontSize: 11, fontWeight: 600,
-                          textDecoration: 'none',
-                        }}
-                      >
-                        무신사 <ExternalLink size={10} />
-                      </a>
-                      <a
-                        href={s.naverUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 3,
-                          padding: '6px 10px', borderRadius: 8,
-                          background: '#03C75A', color: '#fff',
-                          fontSize: 11, fontWeight: 600,
-                          textDecoration: 'none',
-                        }}
-                      >
-                        네이버 <ExternalLink size={10} />
-                      </a>
-                    </div>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a
+                  href="https://www.musinsa.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                    padding: '12px', borderRadius: 12,
+                    background: '#000', color: '#fff',
+                    fontSize: 13, fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  무신사 <ExternalLink size={12} />
+                </a>
+                <a
+                  href="https://shopping.naver.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                    padding: '12px', borderRadius: 12,
+                    background: '#03C75A', color: '#fff',
+                    fontSize: 13, fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  네이버 쇼핑 <ExternalLink size={12} />
+                </a>
               </div>
             </div>
           </div>

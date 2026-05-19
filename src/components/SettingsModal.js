@@ -44,9 +44,6 @@ const SITUATIONS = [
   { key: '등교', emoji: '📚' },
   { key: '데이트', emoji: '💑' },
   { key: '여행', emoji: '✈️' },
-  { key: '등산', emoji: '🏔️' },
-  { key: '모임', emoji: '🎉' },
-  { key: '기타', emoji: '📌' },
 ];
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
