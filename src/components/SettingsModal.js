@@ -3,8 +3,6 @@ import { X, Sparkles, Clock, Plus, Trash2, Calendar, Tag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // setDoc: routineAlarms 토글/삭제에 사용
 import { db } from '../firebase';
-import { deductPoints, POINT_COSTS } from '../utils/points';
-import InsufficientPointsModal from './InsufficientPointsModal';
 import { scheduleRoutineAlarms } from '../utils/notifications';
 
 // ── 이미지 압축 유틸 (Canvas 리사이즈 + JPEG 압축) ──
@@ -58,13 +56,11 @@ function formatDays(days) {
 
 // ── 루틴 알람 추가 폼 (인라인) ──
 function AddRoutineForm({ onSave, onCancel, userId }) {
-  const { points, refreshPoints } = useAuth();
   const [enabled, setEnabled] = useState(true);
   const [selectedDays, setSelectedDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [alarmTime, setAlarmTime] = useState('08:00');
   const [situation, setSituation] = useState('출근');
   const [saving, setSaving] = useState(false);
-  const [showPointsModal, setShowPointsModal] = useState(false);
 
   const toggleDay = (key) => {
     setSelectedDays(prev =>
@@ -77,12 +73,6 @@ function AddRoutineForm({ onSave, onCancel, userId }) {
       alert('요일을 하나 이상 선택해주세요.');
       return;
     }
-    // 포인트 확인
-    const cost = POINT_COSTS.ROUTINE_ALARM;
-    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
-    const ok = await deductPoints(userId, cost, '루틴 알람 설정');
-    if (!ok) { setShowPointsModal(true); return; }
-    await refreshPoints(userId);
     setSaving(true);
     try {
       const userRef = doc(db, 'users', userId);
@@ -111,17 +101,6 @@ function AddRoutineForm({ onSave, onCancel, userId }) {
 
   return (
     <>
-    {showPointsModal && (
-      <InsufficientPointsModal
-        required={POINT_COSTS.ROUTINE_ALARM}
-        current={points ?? 0}
-        onClose={() => setShowPointsModal(false)}
-        onCharge={() => {
-          setShowPointsModal(false);
-          window.dispatchEvent(new CustomEvent('openStore'));
-        }}
-      />
-    )}
     <div style={{
       background: '#FAFAF8', borderRadius: 16, border: '1px solid #E2DDD6',
       padding: '20px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 20,
@@ -430,7 +409,14 @@ export default function SettingsModal({ onClose }) {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
                           <span style={{ fontSize: 16 }}>{sit?.emoji}</span>
-                          <span style={{ fontSize: 15, fontWeight: 700, color: '#18160F' }}>{alarm.time}</span>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: '#18160F' }}>
+                            {(() => {
+                              const [h, m] = alarm.time.split(':').map(Number);
+                              const ampm = h < 12 ? '오전' : '오후';
+                              const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                              return `${ampm} ${h12}:${String(m).padStart(2, '0')}`;
+                            })()}
+                          </span>
                           <span style={{ fontSize: 11, color: '#8C877F', background: '#F0EDE8', padding: '2px 8px', borderRadius: 20 }}>{alarm.situation}</span>
                         </div>
                         <p style={{ margin: 0, fontSize: 11, color: '#B8AFA4' }}>{formatDays(alarm.days)}</p>

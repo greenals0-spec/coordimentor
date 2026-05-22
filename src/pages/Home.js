@@ -34,7 +34,7 @@ function getOutfitThumbs(outfitItems) {
 }
 
 export default function HomePage({ onNavigate }) {
-  const { user, userProfile, signOut, points } = useAuth();
+  const { user, userProfile, signOut, isPremium } = useAuth();
   const [items, setItems] = useState([]);
   const [savedOutfits, setSavedOutfits] = useState([]);
   const [ootdLogs, setOotdLogs] = useState([]);
@@ -427,21 +427,34 @@ export default function HomePage({ onNavigate }) {
             날씨 불러오는 중…
           </div>
         )}
-        {/* 포인트 배지 */}
-        <button
-          onClick={() => onNavigate('store')}
-          style={{
+        {/* 프리미엄 배지 */}
+        {isPremium ? (
+          <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             background: 'linear-gradient(135deg, #5E3D31, #C16654)',
             borderRadius: 20, padding: '6px 14px',
-            border: 'none', cursor: 'pointer',
             fontSize: 12, fontWeight: 700, color: '#fff',
             fontFamily: "'DM Sans', sans-serif",
-          }}
-        >
-          <span style={{ fontSize: 11 }}>P</span>
-          <span>{(points ?? 0).toLocaleString()}</span>
-        </button>
+          }}>
+            <span>✦</span>
+            <span>Premium</span>
+          </div>
+        ) : (
+          <button
+            onClick={() => onNavigate('premium')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: '#F0EDE8',
+              borderRadius: 20, padding: '6px 14px',
+              border: '1px solid #E2DDD6', cursor: 'pointer',
+              fontSize: 12, fontWeight: 700, color: '#5E3D31',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            <span>✦</span>
+            <span>광고 없애기</span>
+          </button>
+        )}
       </div>
 
       {/* 가상 피팅 모델 등록 유도 배너 */}

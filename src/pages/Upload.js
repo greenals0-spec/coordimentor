@@ -3,8 +3,6 @@ import { Loader, Check, AlertCircle, Camera as CameraIcon, ChevronLeft, Image as
 import { removeBackground, analyzeClothing } from '../utils/api';
 import { uploadImage, saveItem } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
-import { deductPoints, POINT_COSTS } from '../utils/points';
-import InsufficientPointsModal from '../components/InsufficientPointsModal';
 import { Capacitor } from '@capacitor/core';
 import ImageEditor from '../components/ImageEditor';
 
@@ -144,9 +142,8 @@ function GuideScreen({ steps, onBack, cameraActionDone, onCameraAction, onAlbumA
 
 // ── 메인 컴포넌트 ───────────────────────────────────────────────────────────────
 export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNavigate }) {
-  const { user, points, refreshPoints } = useAuth();
+  const { user } = useAuth();
   const [step, setStep] = useState('main');
-  const [showPointsModal, setShowPointsModal] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null);
   const [removedUrl, setRemovedUrl] = useState(null);
@@ -511,13 +508,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
   const handleSave = async () => {
     if (seasons.length === 0) { setSeasonError(true); return; }
     setSeasonError(false);
-    const cost = POINT_COSTS.ITEM_REGISTER;
-    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
     setStep('saving');
     try {
-      const ok = await deductPoints(user.uid, cost, '옷 등록');
-      if (!ok) { setShowPointsModal(true); setStep('review'); return; }
-      await refreshPoints(user.uid);
       let url = '', path = '';
       if (removedBlob) { const result = await uploadImage(user.uid, removedBlob); url = result.url; path = result.path; }
       await saveItem(user.uid, {
@@ -535,14 +527,9 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
   };
 
   const handleBulkSave = async () => {
-    const cost = POINT_COSTS.ITEM_REGISTER * bulkItems.length;
-    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
     setStep('saving');
     try {
       for (const item of bulkItems) {
-        const ok = await deductPoints(user.uid, POINT_COSTS.ITEM_REGISTER, '옷 등록');
-        if (!ok) { setShowPointsModal(true); setStep('bulk'); return; }
-        await refreshPoints(user.uid);
         const result = await uploadImage(user.uid, item.removedBlob);
         await saveItem(user.uid, {
           imageUrl: result.url, imagePath: result.path,
@@ -558,16 +545,6 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
   // ── 렌더 ───────────────────────────────────────────────────────────────────────
   return (
     <div className="page upload-page" style={{ display: 'flex', flexDirection: 'column' }}>
-
-      {/* 포인트 부족 모달 */}
-      {showPointsModal && (
-        <InsufficientPointsModal
-          required={POINT_COSTS.ITEM_REGISTER}
-          current={points ?? 0}
-          onClose={() => setShowPointsModal(false)}
-          onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
-        />
-      )}
 
       {/* 숨겨진 앨범 파일 입력 */}
       <input ref={albumInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />

@@ -3,9 +3,7 @@ import { X, Bell, Clock, Calendar, Tag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { deductPoints, POINT_COSTS } from '../utils/points';
-import InsufficientPointsModal from './InsufficientPointsModal';
-import { scheduleRoutineAlarms } from '../utils/notifications';
+import { scheduleRoutineAlarms, generateNotifIds } from '../utils/notifications';
 
 const DAYS = [
   { key: 'mon', label: '월' },
@@ -24,10 +22,9 @@ const SITUATIONS = [
 ];
 
 export default function RoutineAlarmModal({ onClose, onNavigate }) {
-  const { user, points, refreshPoints } = useAuth();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [showPointsModal, setShowPointsModal] = useState(false);
 
   const [enabled, setEnabled] = useState(true);
   const [selectedDays, setSelectedDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
@@ -45,12 +42,6 @@ export default function RoutineAlarmModal({ onClose, onNavigate }) {
       alert('요일을 하나 이상 선택해주세요.');
       return;
     }
-    // 포인트 확인
-    const cost = POINT_COSTS.ROUTINE_ALARM;
-    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
-    const ok = await deductPoints(user.uid, cost, '루틴 알람 설정');
-    if (!ok) { setShowPointsModal(true); return; }
-    await refreshPoints(user.uid);
     setSaving(true);
     try {
       // 기존 루틴 알람 목록 불러오기
@@ -59,12 +50,14 @@ export default function RoutineAlarmModal({ onClose, onNavigate }) {
       const existing = userSnap.data()?.routineAlarms || [];
 
       // 같은 상황+시간 중복 제거 후 추가
+      const newId = Date.now().toString();
       const newAlarm = {
-        id: Date.now().toString(),
+        id: newId,
         enabled,
         days: selectedDays,
         time: alarmTime,
         situation,
+        notifIds: generateNotifIds(newId, selectedDays),
         createdAt: new Date().toISOString(),
       };
       const updated = [...existing.filter(a => !(a.situation === situation && a.time === alarmTime)), newAlarm];
@@ -83,14 +76,6 @@ export default function RoutineAlarmModal({ onClose, onNavigate }) {
 
   return (
     <>
-    {showPointsModal && (
-      <InsufficientPointsModal
-        required={POINT_COSTS.ROUTINE_ALARM}
-        current={points ?? 0}
-        onClose={() => setShowPointsModal(false)}
-        onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
-      />
-    )}
     <div className="modal-overlay" style={{ zIndex: 900, padding: '20px', paddingBottom: '100px' }}>
       <div className="edit-modal" style={{ maxWidth: 380, maxHeight: '88vh', overflowY: 'auto' }}>
 
@@ -197,6 +182,34 @@ export default function RoutineAlarmModal({ onClose, onNavigate }) {
                 color: '#18160F', background: '#FAFAF8',
               }}
             />
+            {/* 오전/오후 표시 */}
+            {(() => {
+              const hour = parseInt(alarmTime.split(':')[0], 10);
+              const minute = alarmTime.split(':')[1] || '00';
+              const isAM = hour < 12;
+              const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+              return (
+                <div style={{
+                  marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}>
+                  <span style={{
+                    padding: '4px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                    background: isAM ? '#18160F' : '#E2DDD6',
+                    color: isAM ? '#fff' : '#8C877F',
+                  }}>오전</span>
+                  <span style={{
+                    fontSize: 15, fontWeight: 700, color: '#18160F',
+                  }}>
+                    {hour12}:{minute}
+                  </span>
+                  <span style={{
+                    padding: '4px 14px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                    background: !isAM ? '#18160F' : '#E2DDD6',
+                    color: !isAM ? '#fff' : '#8C877F',
+                  }}>오후</span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* 상황 선택 */}

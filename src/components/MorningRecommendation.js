@@ -3,8 +3,7 @@ import { runFlatlayTryOn } from '../utils/tryon';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useRef } from 'react';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { deductPoints, POINT_COSTS } from '../utils/points';
-import InsufficientPointsModal from './InsufficientPointsModal';
+import { showInterstitialAd } from '../utils/ads';
 
 
 // ── Modern Warm & Cozy palette ──────────────────────────
@@ -27,13 +26,12 @@ const SITUATION_EMOJI = {
 };
 
 export default function MorningRecommendation({ weather, recommendation, onClose, onNavigate }) {
-  const { userProfile, user, points, refreshPoints } = useAuth();
+  const { userProfile, isPremium } = useAuth();
   const [tryingOn, setTryingOn]       = useState(false);
   const [tryOnResult, setTryOnResult] = useState(null);
   const [tryOnProgress, setTryOnProgress] = useState({ step: 0, total: 0, label: '' });
   const [progressPct, setProgressPct] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [showPointsModal, setShowPointsModal] = useState(false);
   const progressTimerRef  = useRef(null);
   const progressTargetRef = useRef(0);
 
@@ -73,18 +71,13 @@ export default function MorningRecommendation({ weather, recommendation, onClose
 
   const doTryOn = async () => {
     setShowDisclaimer(false);
-    // 포인트 확인
-    const cost = POINT_COSTS.TRY_ON;
-    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
-    const ok = await deductPoints(user.uid, cost, '가상 입어보기');
-    if (!ok) { setShowPointsModal(true); return; }
-    await refreshPoints(user.uid);
     setTryingOn(true);
     setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
 
     try {
-      const result = await runFlatlayTryOn(
+      // 가상착의 + 광고를 동시에 실행 (로딩 중 광고 노출)
+      const tryOnPromise = runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,
         (step, total, label) => {
@@ -92,6 +85,8 @@ export default function MorningRecommendation({ weather, recommendation, onClose
           animateToTarget(step === 1 ? 50 : 100);
         }
       );
+      const adPromise = isPremium ? Promise.resolve() : showInterstitialAd();
+      const [result] = await Promise.all([tryOnPromise, adPromise]);
       animateToTarget(100);
       setTryOnResult(result);
     } catch (err) {
@@ -113,14 +108,6 @@ export default function MorningRecommendation({ weather, recommendation, onClose
 
   return (
     <>
-    {showPointsModal && (
-      <InsufficientPointsModal
-        required={POINT_COSTS.TRY_ON}
-        current={points ?? 0}
-        onClose={() => setShowPointsModal(false)}
-        onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
-      />
-    )}
     <div className="modal-overlay" style={{ zIndex: 3000, background: 'rgba(45, 28, 20, 0.88)', alignItems: 'center', padding: '16px 0 90px' }}>
       <div style={{
         width: '92%',

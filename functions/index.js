@@ -300,12 +300,13 @@ exports.sendMorningAlarms = onSchedule(
   }
 );
 
-// ── 매 분 실행: 루틴 코디 알람 발송 ──────────────────────────────────────────
+// ── 매 분 실행: 루틴 코디 알람 — pendingRecommendation 미리 생성만 담당 ────
+// 실제 알림은 디바이스 로컬 알림(@capacitor/local-notifications)이 처리하므로
+// Cloud Function은 FCM 발송 없이 추천 데이터 pre-generate만 수행
 exports.sendRoutineAlarms = onSchedule(
   { schedule: 'every 1 minutes', timeZone: 'Asia/Seoul', region: 'asia-northeast3' },
   async () => {
     const db = getFirestore();
-    const messaging = getMessaging();
 
     const now = new Date();
     const koreaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
@@ -313,8 +314,6 @@ exports.sendRoutineAlarms = onSchedule(
     const minutes    = String(koreaTime.getMinutes()).padStart(2, '0');
     const currentTime = `${hours}:${minutes}`;
     const currentDay  = DAY_KEYS[koreaTime.getDay()];
-    // toISOString()은 UTC 기준이라 한국 자정~09시 구간에서 전날 날짜가 됨 → 로컬 날짜 컴포넌트 직접 사용
-    const todayStr    = `${koreaTime.getFullYear()}-${String(koreaTime.getMonth() + 1).padStart(2, '0')}-${String(koreaTime.getDate()).padStart(2, '0')}`;
 
     // 5분 후 알람 시각 (= 지금 pre-generate 해야 할 알람)
     const prepTargetTime = addMinutesToTime(currentTime, PRE_GENERATE_MINUTES);
@@ -327,9 +326,6 @@ exports.sendRoutineAlarms = onSchedule(
 
     if (snapshot.empty) return;
 
-    const messages  = [];
-    const updateMap = {};
-
     for (const docSnap of snapshot.docs) {
       const user = docSnap.data();
       const uid  = docSnap.id;
@@ -338,72 +334,12 @@ exports.sendRoutineAlarms = onSchedule(
       for (const alarm of user.routineAlarms) {
         if (!alarm.enabled) continue;
         if (!alarm.days?.includes(currentDay)) continue;
-
-        const sentKey = `routineSent_${alarm.id}_${todayStr}`;
-        if (user[sentKey]) continue;
-
-        // ── Phase 1: 알람 5분 전 → 추천 미리 생성 (알림 발송 안 함) ──
+        // 알람 5분 전 → 추천 데이터 미리 생성 (알림 발송 없음)
         if (alarm.time === prepTargetTime) {
-          console.log(`[RoutineAlarm] PRE-GENERATING for uid=${uid}, alarm=${alarm.time}, situation=${alarm.situation}`);
+          console.log(`[RoutineAlarm] PRE-GENERATING uid=${uid} alarm=${alarm.time} situation=${alarm.situation}`);
           await generateAndSavePendingRecommendation(db, uid, alarm.situation);
-          continue; // 알림은 발송하지 않음
-        }
-
-        // ── Phase 2: 정확한 알람 시각 → 알림 발송 ──
-        if (alarm.time === currentTime) {
-          if (!user.fcmToken) continue;
-
-          // pendingRecommendation 없으면 지금 생성 (fallback)
-          const freshSnap = await db.collection('users').doc(uid).get();
-          if (!freshSnap.data()?.pendingRecommendation) {
-            console.log(`[RoutineAlarm] Fallback generating for uid=${uid}`);
-            await generateAndSavePendingRecommendation(db, uid, alarm.situation);
-          }
-
-          const msg = SITUATION_MESSAGES[alarm.situation] || SITUATION_MESSAGES['기타'];
-          messages.push({
-            token: user.fcmToken,
-            notification: { title: msg.title, body: msg.body },
-            data: { type: 'routine_alarm', situation: alarm.situation },
-            android: {
-              priority: 'high',
-              notification: {
-                channelId: 'morning_recommendation',
-                priority: 'max',
-                defaultSound: true,
-                defaultVibrateTimings: true,
-              },
-            },
-            apns: {
-              payload: { aps: { sound: 'default', badge: 1 } },
-            },
-          });
-
-          if (!updateMap[uid]) updateMap[uid] = [];
-          updateMap[uid].push(alarm.id);
         }
       }
     }
-
-    if (messages.length === 0) {
-      console.log('[RoutineAlarm] No alarms to send this minute');
-      return;
-    }
-
-    const response = await messaging.sendEach(messages);
-    console.log(`[RoutineAlarm] Sent ${response.successCount} / ${messages.length}`);
-
-    let msgIdx = 0;
-    const updatePromises = [];
-    for (const uid of Object.keys(updateMap)) {
-      const alarmIds = updateMap[uid];
-      const res = response.responses[msgIdx++];
-      if (res.success) {
-        const updates = {};
-        alarmIds.forEach(id => { updates[`routineSent_${id}_${todayStr}`] = true; });
-        updatePromises.push(db.collection('users').doc(uid).update(updates));
-      }
-    }
-    await Promise.all(updatePromises);
   }
 );

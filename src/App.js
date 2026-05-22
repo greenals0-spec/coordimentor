@@ -8,7 +8,6 @@ import ClosetPage from './pages/Closet';
 import OutfitPage from './pages/Outfit';
 import SavedOutfitsPage from './pages/SavedOutfits';
 import OnboardingPage from './pages/Onboarding';
-import StorePage from './pages/StorePage';
 import SplashScreen from './components/SplashScreen';
 import PermissionsScreen from './components/PermissionsScreen';
 import { Capacitor } from '@capacitor/core';
@@ -77,17 +76,18 @@ function Main() {
   const [hideNav, setHideNav] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [closetTryOnMode, setClosetTryOnMode] = useState(false);
-  const [showStore, setShowStore] = useState(false);
-
   // 탭 이동 시 입어보기 모드 자동 해제
   const handleTabChange = (newTab) => {
     if (newTab !== 'closet') setClosetTryOnMode(false);
     setTab(newTab);
   };
 
-  // 포인트 충전 페이지 등 특수 화면 이동
   const handleNavigate = (dest) => {
-    if (dest === 'store') { setShowStore(true); return; }
+    if (dest === 'premium') {
+      // TODO: 프리미엄 구독 화면 (추후 구현)
+      alert('프리미엄 구독 기능은 준비 중이에요!');
+      return;
+    }
     handleTabChange(dest);
   };
 
@@ -263,12 +263,6 @@ function Main() {
     return () => window.removeEventListener('openSettings', handleOpenSettings);
   }, []);
 
-  // 포인트 충전 화면 열기 이벤트 리스너 (SettingsModal 내 루틴 추가 폼용)
-  useEffect(() => {
-    const handleOpenStore = () => setShowStore(true);
-    window.addEventListener('openStore', handleOpenStore);
-    return () => window.removeEventListener('openStore', handleOpenStore);
-  }, []);
 
   if (showSplash) {
     return <SplashScreen fadingOut={splashFading} />;
@@ -373,12 +367,6 @@ function Main() {
         </button>
       </header>
 
-      {/* 포인트 충전 페이지 (오버레이) */}
-      {showStore && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: '#fff', overflowY: 'auto' }}>
-          <StorePage onBack={() => setShowStore(false)} />
-        </div>
-      )}
 
       <main className="app-content">
         <KeepAliveTab active={tab === 'home'}>

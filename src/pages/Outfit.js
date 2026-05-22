@@ -7,12 +7,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import FlatLay from '../components/FlatLay';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { deductPoints, POINT_COSTS } from '../utils/points';
-import InsufficientPointsModal from '../components/InsufficientPointsModal';
+import { showInterstitialAd } from '../utils/ads';
 
 
 export default function OutfitPage({ onNavigate }) {
-  const { user, userProfile, points, refreshPoints } = useAuth();
+  const { user, userProfile, isPremium } = useAuth();
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState('');
@@ -32,8 +31,6 @@ export default function OutfitPage({ onNavigate }) {
   const [tryOnModal, setTryOnModal] = useState(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [pendingTryOn, setPendingTryOn] = useState(null); // { index, res }
-  const [showPointsModal, setShowPointsModal] = useState(false);
-  const [pointsModalCost, setPointsModalCost] = useState(0);
   const [progressPct, setProgressPct] = useState(0);
   const progressTimerRef = useRef(null);
   const progressTargetRef = useRef(0);
@@ -142,18 +139,12 @@ export default function OutfitPage({ onNavigate }) {
       return;
     }
 
-    // 포인트 확인
-    const cost = POINT_COSTS.OUTFIT_REC;
-    if ((points ?? 0) < cost) { setPointsModalCost(cost); setShowPointsModal(true); return; }
-    const ok = await deductPoints(user.uid, cost, '코디 추천');
-    if (!ok) { setPointsModalCost(cost); setShowPointsModal(true); return; }
-    await refreshPoints(user.uid);
-
     setResults([]);
     setOutfitLoading(true);
     setChatInputs({});
     setAdjustingIndex(-1);
     setSavedMap({});
+
     try {
       const items = await getItemsOnce(user.uid);
       if (items.length === 0) {
@@ -168,10 +159,12 @@ export default function OutfitPage({ onNavigate }) {
         location: locationLabel !== '현재 위치' ? locationLabel : null,
       };
 
-      // 다양성 향상을 위해 저장된 코디 목록도 함께 전달
       const savedOutfits = await getSavedOutfitsOnce(user.uid);
 
-      const rec = await getOutfitRecommendation(weather, items, tpoInfo, savedOutfits);
+      // 코디추천 API + 광고를 동시에 실행 (로딩 중 광고 노출)
+      const recPromise = getOutfitRecommendation(weather, items, tpoInfo, savedOutfits);
+      const adPromise = isPremium ? Promise.resolve() : showInterstitialAd();
+      const [rec] = await Promise.all([recPromise, adPromise]);
 
       const keys = ['아우터', '상의', '하의', '신발', '액세서리_얼굴머리', '액세서리_손목팔', '액세서리_기타'];
       const newResults = rec.outfits.map(o => {
@@ -183,7 +176,6 @@ export default function OutfitPage({ onNavigate }) {
         return { items: resolved, reason: o.reason, raw: o.outfit };
       });
 
-      // 이번 추천 조합을 기록 (다음 요청 시 중복 방지)
       recordRecommendedOutfits(rec.outfits);
       setResults(newResults);
     } catch (e) {
@@ -281,13 +273,6 @@ export default function OutfitPage({ onNavigate }) {
   };
 
   const doTryOn = async (index, res) => {
-    // 포인트 확인
-    const cost = POINT_COSTS.TRY_ON;
-    if ((points ?? 0) < cost) { setPointsModalCost(cost); setShowPointsModal(true); return; }
-    const ok = await deductPoints(user.uid, cost, '가상 입어보기');
-    if (!ok) { setPointsModalCost(cost); setShowPointsModal(true); return; }
-    await refreshPoints(user.uid);
-
     const recommendation = {
       top:       res.items['상의']    || null,
       bottom:    res.items['하의']    || null,
@@ -305,11 +290,14 @@ export default function OutfitPage({ onNavigate }) {
     setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
     try {
-      const result = await runFlatlayTryOn(
+      // 가상착의 + 광고를 동시에 실행 (로딩 중 광고 노출)
+      const tryOnPromise = runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,
         (step, total, label) => setTryOnProgress({ step, total, label })
       );
+      const adPromise = isPremium ? Promise.resolve() : showInterstitialAd();
+      const [result] = await Promise.all([tryOnPromise, adPromise]);
       animatePct(100);
       await new Promise(r => setTimeout(r, 500));
       setTryOnResults(prev => ({ ...prev, [index]: result }));
@@ -327,14 +315,6 @@ export default function OutfitPage({ onNavigate }) {
   // ─── 렌더 ────────────────────────────────────────────────────────────────
   return (
     <div className="page outfit-page">
-      {showPointsModal && (
-        <InsufficientPointsModal
-          required={pointsModalCost}
-          current={points ?? 0}
-          onClose={() => setShowPointsModal(false)}
-          onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
-        />
-      )}
       <h2 className="page-title">코디 추천</h2>
 
       {/* TPO 입력 폼 */}
@@ -583,7 +563,8 @@ export default function OutfitPage({ onNavigate }) {
 
       {/* ── 쇼핑 바로가기 ── */}
       <div style={{
-        margin: '8px 0 24px',
+        marginTop: results.length > 0 ? 16 : 48,
+        marginBottom: 24,
         padding: '18px 16px',
         background: '#FAFAF8',
         borderRadius: 'var(--radius)',

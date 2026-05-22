@@ -114,29 +114,6 @@ async function callTryOnApi(requestBody) {
   throw new Error('모델이 이미지를 반환하지 않았습니다.');
 }
 
-/**
- * 전체 코디 순차 Virtual Try-On (상의 → 하의 → 아우터 → 신발 → 액세서리)
- */
-export async function runFullOutfitTryOn(modelPhoto, recommendation, onProgress) {
-  const steps = [
-    { item: recommendation.top,       category: '상의',    label: '상의' },
-    { item: recommendation.bottom,    category: '하의',    label: '하의' },
-    { item: recommendation.outer,     category: '아우터',   label: '아우터' },
-    { item: recommendation.shoes,     category: '신발',    label: '신발' },
-    { item: recommendation.accessory, category: '액세서리', label: '액세서리' },
-  ].filter(s => s.item?.imageUrl);
-
-  if (steps.length === 0) throw new Error('입혀볼 아이템이 없습니다.');
-
-  let currentPhoto = modelPhoto;
-  for (let i = 0; i < steps.length; i++) {
-    const { item, category, label } = steps[i];
-    onProgress?.(i + 1, steps.length, label);
-    currentPhoto = await runVirtualTryOn(currentPhoto, item.imageUrl, category);
-  }
-  return currentPhoto;
-}
-
 
 async function createFlatlayImage(steps) {
   return new Promise(async (resolve, reject) => {

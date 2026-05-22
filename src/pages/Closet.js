@@ -4,8 +4,7 @@ import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCache
 import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { deductPoints, POINT_COSTS } from '../utils/points';
-import InsufficientPointsModal from '../components/InsufficientPointsModal';
+import { showInterstitialAd } from '../utils/ads';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
@@ -18,7 +17,7 @@ const SEASON_OPTIONS = [
 ];
 
 export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
-  const { user, userProfile, points, refreshPoints } = useAuth();
+  const { user, userProfile, isPremium } = useAuth();
   const [active, setActive] = useState('아우터');
   const [items, setItems] = useState([]);
   const [confirmId, setConfirmId] = useState(null);
@@ -31,7 +30,6 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
   const [tryOnResult, setTryOnResult] = useState(null);
   const [progressPct, setProgressPct] = useState(0);   // 0~100 smooth progress bar
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [showPointsModal, setShowPointsModal] = useState(false);
   const progressTimerRef = useRef(null);
   const progressTargetRef = useRef(0);
 
@@ -135,12 +133,6 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
 
   const doFlatlayTryOn = async () => {
     setShowDisclaimer(false);
-    // 포인트 확인
-    const cost = POINT_COSTS.TRY_ON;
-    if ((points ?? 0) < cost) { setShowPointsModal(true); return; }
-    const ok = await deductPoints(user.uid, cost, '가상 입어보기');
-    if (!ok) { setShowPointsModal(true); return; }
-    await refreshPoints(user.uid);
     setTryOnLoading(true);
     setProgressPct(0);
     setTryOnProgress({ step: 0, total: 0, label: '' });
@@ -153,12 +145,14 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
         shoes:     selected['신발']    || null,
         accessory: selected['액세서리'] || null,
       };
-      const result = await runFlatlayTryOn(
+      // 가상착의 + 광고를 동시에 실행 (로딩 중 광고 노출)
+      const tryOnPromise = runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,
         (step, total, label) => setTryOnProgress({ step, total, label })
       );
-      // 완료: 100%까지 채운 뒤 결과 표시
+      const adPromise = isPremium ? Promise.resolve() : showInterstitialAd();
+      const [result] = await Promise.all([tryOnPromise, adPromise]);
       animateToTarget(100);
       await new Promise(r => setTimeout(r, 500));
       setTryOnResult(result);
@@ -178,15 +172,6 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
   return (
     <div className="page closet-page">
 
-      {/* 포인트 부족 모달 */}
-      {showPointsModal && (
-        <InsufficientPointsModal
-          required={POINT_COSTS.TRY_ON}
-          current={points ?? 0}
-          onClose={() => setShowPointsModal(false)}
-          onCharge={() => { setShowPointsModal(false); onNavigate?.('store'); }}
-        />
-      )}
 
       {/* ── 헤더 ── */}
       <div className="closet-header">
