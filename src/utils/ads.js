@@ -1,61 +1,86 @@
 import { Capacitor } from '@capacitor/core';
+import { AdMob, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
 // ── 광고 유닛 ID ──────────────────────────────────────────────────────────────
-// TODO: AdMob 콘솔에서 실제 앱 ID / 광고 유닛 ID 발급 후 교체
-const IS_PROD = process.env.NODE_ENV === 'production';
+// TODO: 실제 AdMob ID 발급 후 아래를 true로 변경
+const IS_PROD = false;
 
-const AD_UNITS = {
-  INTERSTITIAL: IS_PROD
-    ? 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX'   // ← 실제 ID로 교체
-    : 'ca-app-pub-3940256099942544/1033173712',  // Google 테스트 ID
-};
-
-const AD_TIMEOUT_MS = 8000; // 8초 안에 안 되면 그냥 넘어감
+const AD_UNIT_ID = IS_PROD
+  ? 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX'  // ← 실제 ID로 교체
+  : 'ca-app-pub-3940256099942544/1033173712'; // Google 테스트 ID
 
 let _initialized = false;
 
-// 타임아웃 래퍼
-function withTimeout(promise, ms) {
-  return Promise.race([
-    promise,
-    new Promise(resolve => setTimeout(resolve, ms)), // 타임아웃 시 그냥 resolve
-  ]);
-}
-
-async function getAdMob() {
-  if (!Capacitor.isNativePlatform()) return null;
+async function initAdMob() {
+  if (!Capacitor.isNativePlatform()) return false;
+  if (_initialized) return true;
   try {
-    const { AdMob } = await import('@capacitor-community/admob');
-    if (!_initialized) {
-      await withTimeout(
-        AdMob.initialize({ initializeForTesting: !IS_PROD, testingDevices: [] }),
-        3000
-      );
-      _initialized = true;
-    }
-    return AdMob;
+    await AdMob.initialize({ initializeForTesting: !IS_PROD });
+    _initialized = true;
+    console.log('[AdMob] 초기화 성공');
+    return true;
   } catch (e) {
     console.warn('[AdMob] 초기화 실패:', e.message);
-    return null;
+    return false;
   }
 }
 
 /**
  * 인터스티셜 광고 표시
- * - 가상착의 로딩 중에 Promise.all로 병렬 실행
- * - 광고 실패 / 타임아웃 시 자동 스킵 (기능은 항상 계속 진행)
+ * - 광고 닫힘 또는 실패/타임아웃 시 resolve (기능은 항상 계속)
  */
 export async function showInterstitialAd() {
-  const AdMob = await getAdMob();
-  if (!AdMob) return; // 웹 환경 or 초기화 실패 → 스킵
+  const ok = await initAdMob();
+  if (!ok) return;
 
-  try {
-    await withTimeout(
-      AdMob.prepareInterstitial({ adId: AD_UNITS.INTERSTITIAL }),
-      5000
-    );
-    await withTimeout(AdMob.showInterstitial(), AD_TIMEOUT_MS);
-  } catch (e) {
-    console.warn('[AdMob] 인터스티셜 실패 (스킵):', e.message);
-  }
+  return new Promise(async (resolve) => {
+    const timer = setTimeout(() => {
+      console.warn('[AdMob] 30초 타임아웃 → 스킵');
+      cleanup();
+      resolve();
+    }, 30000);
+
+    const listeners = [];
+
+    function cleanup() {
+      clearTimeout(timer);
+      listeners.forEach(l => { try { l.remove(); } catch (_) {} });
+    }
+
+    function done() { cleanup(); resolve(); }
+
+    try {
+      listeners.push(
+        await AdMob.addListener(InterstitialAdPluginEvents.Loaded, async () => {
+          console.log('[AdMob] 광고 로드 완료 → 표시');
+          try { await AdMob.showInterstitial(); } catch (e) { console.warn('[AdMob] show 실패:', e.message); done(); }
+        })
+      );
+      listeners.push(
+        await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+          console.log('[AdMob] 광고 닫힘');
+          done();
+        })
+      );
+      listeners.push(
+        await AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, (err) => {
+          console.warn('[AdMob] 로드 실패:', JSON.stringify(err));
+          done();
+        })
+      );
+      listeners.push(
+        await AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, (err) => {
+          console.warn('[AdMob] 표시 실패:', JSON.stringify(err));
+          done();
+        })
+      );
+
+      console.log('[AdMob] prepareInterstitial 요청:', AD_UNIT_ID);
+      await AdMob.prepareInterstitial({ adId: AD_UNIT_ID });
+
+    } catch (e) {
+      console.warn('[AdMob] 오류 → 스킵:', e.message);
+      done();
+    }
+  });
 }

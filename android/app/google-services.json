@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "591487860438-7mdrv30komk671msn6r0k22746e4ofp9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coordimentor.app",
+            "certificate_hash": "f88c0ffa7ffc8836eae174cbc8ad24b9be9be386"
+          }
+        },
+        {
+          "client_id": "591487860438-a3shntif3v4libqddk9efhsho73bf0b7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coordimentor.app",
+            "certificate_hash": "06a5d93317669ab6147f542978da123f29ed1fc3"
+          }
+        },
+        {
           "client_id": "591487860438-sgf7goqlbvd48bmt8vv9u1al1st5g33k.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +45,13 @@
             {
               "client_id": "591487860438-sgf7goqlbvd48bmt8vv9u1al1st5g33k.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "591487860438-ahstqd8g52khemuu8s32rs7f68at7von.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.coordimentor.app"
+              }
             }
           ]
         }
