@@ -22,7 +22,7 @@ const SITUATIONS = [
 ];
 
 export default function RoutineAlarmModal({ onClose, onNavigate }) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -73,6 +73,60 @@ export default function RoutineAlarmModal({ onClose, onNavigate }) {
       setSaving(false);
     }
   };
+
+  // 비프리미엄 유저 → 잠금 화면
+  if (!isPremium) {
+    return (
+      <div className="modal-overlay" style={{ zIndex: 900, padding: '20px', paddingBottom: '100px' }}>
+        <div className="edit-modal" style={{ maxWidth: 380 }}>
+          <div className="edit-modal-header">
+            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontSize: 22 }}>
+              루틴 코디 알람
+            </h3>
+            <button className="close-btn" onClick={onClose}><X size={24} /></button>
+          </div>
+          <div style={{ padding: '32px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: 30 }}>🔒</span>
+            </div>
+            <div>
+              <p style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 700, color: '#18160F' }}>
+                프리미엄 전용 기능이에요
+              </p>
+              <p style={{ margin: 0, fontSize: 13, color: '#8C877F', lineHeight: 1.6 }}>
+                루틴 코디 알람은 프리미엄 구독자만 사용할 수 있어요.{'\n'}
+                광고 없이 모든 기능을 자유롭게 이용해보세요!
+              </p>
+            </div>
+            <button
+              onClick={() => { onClose(); onNavigate && onNavigate('store'); }}
+              style={{
+                width: '100%', padding: '15px', borderRadius: 14, border: 'none',
+                background: 'linear-gradient(135deg, #18160F, #4B4744)',
+                color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                marginTop: 8,
+              }}
+            >
+              ✨ 프리미엄 구독하기
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%', padding: '13px', borderRadius: 14,
+                border: '1px solid #E2DDD6', background: '#FAFAF8',
+                color: '#8C877F', fontSize: 14, cursor: 'pointer',
+              }}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
