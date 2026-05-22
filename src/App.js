@@ -19,6 +19,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './App.css';
 import SettingsModal from './components/SettingsModal';
+import PremiumPage from './pages/PremiumPage';
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -75,6 +76,7 @@ function Main() {
   });
   const [hideNav, setHideNav] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
   const [closetTryOnMode, setClosetTryOnMode] = useState(false);
   // 탭 이동 시 입어보기 모드 자동 해제
   const handleTabChange = (newTab) => {
@@ -84,8 +86,7 @@ function Main() {
 
   const handleNavigate = (dest) => {
     if (dest === 'premium') {
-      // TODO: 프리미엄 구독 화면 (추후 구현)
-      alert('프리미엄 구독 기능은 준비 중이에요!');
+      setShowPremium(true);
       return;
     }
     handleTabChange(dest);
@@ -410,6 +411,7 @@ function Main() {
 
       {/* ── 통합 설정 모달 ── */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showPremium && <PremiumPage onClose={() => setShowPremium(false)} />}
     </div>
   );
 }

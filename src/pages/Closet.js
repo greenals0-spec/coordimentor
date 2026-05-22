@@ -4,7 +4,7 @@ import { subscribeToItems, deleteItem, updateItem, isImageCached, markImageCache
 import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { showInterstitialAd } from '../utils/ads';
+import { showInterstitialAd, preloadInterstitialAd } from '../utils/ads';
 
 const CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리', '전체'];
 const EDIT_CATEGORIES = ['아우터', '상의', '하의', '신발', '액세서리'];
@@ -50,6 +50,11 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
   };
 
   // tryOnProgress가 바뀌면 목표 % 계산
+  // 페이지 진입 시 광고 미리 로드
+  useEffect(() => {
+    if (!isPremium) preloadInterstitialAd();
+  }, [isPremium]);
+
   useEffect(() => {
     if (!tryOnLoading) {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
@@ -145,7 +150,7 @@ export default function ClosetPage({ tryOnMode, setTryOnMode, onNavigate }) {
         shoes:     selected['신발']    || null,
         accessory: selected['액세서리'] || null,
       };
-      // 가상착의 + 광고를 동시에 실행 (로딩 중 광고 노출)
+      // 광고(미리 로드됨) + 가상착의 동시 실행
       const tryOnPromise = runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,

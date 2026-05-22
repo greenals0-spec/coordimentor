@@ -241,7 +241,7 @@ function AddRoutineForm({ onSave, onCancel, userId }) {
 
 // ── 메인 설정 모달 ──
 export default function SettingsModal({ onClose }) {
-  const { user, userProfile, updateUserProfile, signOut } = useAuth();
+  const { user, userProfile, isPremium, updateUserProfile, signOut } = useAuth();
 
   const [modelPhoto, setModelPhoto] = useState(userProfile?.modelPhoto ?? null);
   const [saving, setSaving] = useState(false);
@@ -374,14 +374,20 @@ export default function SettingsModal({ onClose }) {
               </div>
               {!showAddRoutine && (
                 <button
-                  onClick={() => setShowAddRoutine(true)}
+                  onClick={() => {
+                    if (!isPremium) {
+                      alert('🔒 루틴 코디 알람은 프리미엄 전용 기능이에요.\n설정 > 프리미엄 구독하기를 눌러주세요!');
+                      return;
+                    }
+                    setShowAddRoutine(true);
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 4,
                     background: '#18160F', border: 'none', borderRadius: 20,
                     padding: '6px 12px', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 600,
                   }}
                 >
-                  <Plus size={13} /> 추가
+                  <Plus size={13} /> {isPremium ? '추가' : '🔒 추가'}
                 </button>
               )}
             </div>

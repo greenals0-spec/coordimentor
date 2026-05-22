@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { runFlatlayTryOn } from '../utils/tryon';
 import FlatLay from '../components/FlatLay';
 import { saveImageAsJpg } from '../utils/saveImage';
-import { showInterstitialAd } from '../utils/ads';
+import { showInterstitialAd, preloadInterstitialAd } from '../utils/ads';
 
 
 export default function OutfitPage({ onNavigate }) {
@@ -46,6 +46,11 @@ export default function OutfitPage({ onNavigate }) {
       });
     }, 30);
   };
+
+  // 페이지 진입 시 광고 미리 로드
+  useEffect(() => {
+    if (!isPremium) preloadInterstitialAd();
+  }, [isPremium]);
 
   useEffect(() => {
     if (tryOnIndex === -1) { if (progressTimerRef.current) clearInterval(progressTimerRef.current); return; }
@@ -161,7 +166,7 @@ export default function OutfitPage({ onNavigate }) {
 
       const savedOutfits = await getSavedOutfitsOnce(user.uid);
 
-      // 코디추천 API + 광고를 동시에 실행 (로딩 중 광고 노출)
+      // 광고(미리 로드됨) + 코디 추천 동시 실행
       const recPromise = getOutfitRecommendation(weather, items, tpoInfo, savedOutfits);
       const adPromise = isPremium ? Promise.resolve() : showInterstitialAd();
       const [rec] = await Promise.all([recPromise, adPromise]);
@@ -291,6 +296,7 @@ export default function OutfitPage({ onNavigate }) {
     setTryOnProgress({ step: 0, total: 0, label: '' });
     try {
       // 가상착의 + 광고를 동시에 실행 (로딩 중 광고 노출)
+      // 광고(미리 로드됨) + 가상착의 동시 실행
       const tryOnPromise = runFlatlayTryOn(
         userProfile.modelPhoto,
         recommendation,
