@@ -40,3 +40,5 @@ functions/node_modules/
 .env.production
 distribution.csr
 distribution.key
+coordimentor-9599dcec2ec7.json
+*.json.key

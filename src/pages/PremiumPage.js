@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, Zap, Bell, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Capacitor } from '@capacitor/core';
+import { Purchases } from '@revenuecat/purchases-capacitor';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
-// TODO: RevenueCat 설치 후 아래 주석 해제
-// import { Purchases, PRODUCT_CATEGORY } from '@revenuecat/purchases-capacitor';
+// RevenueCat API 키 (테스트용 → 출시 전 프로덕션 키로 교체)
+const REVENUECAT_API_KEY = 'test_rKWPYcLRUpEBlqqspZQoKRlFhUI';
 
-// ── 상품 ID (Google Play Console에서 등록한 ID로 교체) ──
-const PRODUCT_ID = 'coordimentor_premium_monthly'; // TODO: 실제 상품 ID로 교체
+// Google Play Console에 등록한 상품 ID
+const PRODUCT_ID = 'coordimentor_premium_monthly';
+
+// RevenueCat 엔타이틀먼트 ID (RevenueCat 대시보드에서 설정)
+const ENTITLEMENT_ID = 'premium';
 
 const BENEFITS = [
   {
@@ -27,26 +33,51 @@ const BENEFITS = [
   },
 ];
 
+/** RevenueCat SDK 초기화 (중복 호출 방지) */
+let rcConfigured = false;
+const configureRevenueCat = async (userId) => {
+  if (rcConfigured) return;
+  await Purchases.configure({
+    apiKey: REVENUECAT_API_KEY,
+    appUserID: userId ?? null,
+  });
+  rcConfigured = true;
+};
+
+/** 구매 후 Firestore isPremium 업데이트 */
+const setFirestorePremium = async (uid, value) => {
+  try {
+    const docRef = doc(db, 'users', uid, 'profile', 'info');
+    await setDoc(docRef, { isPremium: value }, { merge: true });
+  } catch (e) {
+    console.warn('[Firestore] isPremium 업데이트 실패:', e.message);
+  }
+};
+
 export default function PremiumPage({ onClose }) {
   const { user, isPremium } = useAuth();
   const [loading, setLoading] = useState(false);
   const [price, setPrice] = useState('₩4,900 / 월');
 
   useEffect(() => {
-    // TODO: RevenueCat 설치 후 아래 주석 해제하여 실제 가격 표시
-    // loadProductPrice();
+    if (Capacitor.isNativePlatform()) {
+      loadProductPrice();
+    }
   }, []);
 
-  // const loadProductPrice = async () => {
-  //   if (!Capacitor.isNativePlatform()) return;
-  //   try {
-  //     await Purchases.configure({ apiKey: 'YOUR_REVENUECAT_API_KEY' });
-  //     const { products } = await Purchases.getProducts({ productIdentifiers: [PRODUCT_ID] });
-  //     if (products.length > 0) setPrice(products[0].priceString + ' / 월');
-  //   } catch (e) {
-  //     console.warn('[RevenueCat] 가격 로드 실패:', e.message);
-  //   }
-  // };
+  const loadProductPrice = async () => {
+    try {
+      await configureRevenueCat(user?.uid);
+      const { products } = await Purchases.getProducts({
+        productIdentifiers: [PRODUCT_ID],
+      });
+      if (products.length > 0) {
+        setPrice(products[0].priceString + ' / 월');
+      }
+    } catch (e) {
+      console.warn('[RevenueCat] 가격 로드 실패:', e.message);
+    }
+  };
 
   const handlePurchase = async () => {
     if (!Capacitor.isNativePlatform()) {
@@ -55,21 +86,35 @@ export default function PremiumPage({ onClose }) {
     }
     setLoading(true);
     try {
-      // TODO: RevenueCat 설치 후 아래 주석 해제
-      // await Purchases.configure({ apiKey: 'YOUR_REVENUECAT_API_KEY' });
-      // const { customerInfo } = await Purchases.purchaseStoreProduct({ product: { productIdentifier: PRODUCT_ID } });
-      // if (customerInfo.entitlements.active['premium']) {
-      //   // Firestore isPremium 업데이트는 RevenueCat Webhook 또는 여기서 직접
-      //   alert('✨ 프리미엄 구독이 완료됐어요!');
-      //   onClose();
-      // }
-      alert('RevenueCat 설정 후 결제가 가능해요.\nGoogle Play Console에서 상품을 먼저 등록해 주세요!');
+      await configureRevenueCat(user?.uid);
+
+      // 상품 조회
+      const { products } = await Purchases.getProducts({
+        productIdentifiers: [PRODUCT_ID],
+      });
+      if (!products || products.length === 0) {
+        alert('상품 정보를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+
+      // 구매 진행
+      const { customerInfo } = await Purchases.purchaseStoreProduct({
+        product: products[0],
+      });
+
+      // 엔타이틀먼트 확인
+      if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
+        // Firestore isPremium 업데이트
+        if (user?.uid) await setFirestorePremium(user.uid, true);
+        alert('✨ 프리미엄 구독이 완료됐어요!');
+        onClose();
+      }
     } catch (e) {
-      if (e.message?.includes('userCancelled')) {
+      if (e.message?.includes('userCancelled') || e.code === '1') {
         // 사용자가 취소한 경우 - 아무것도 안 함
       } else {
         alert('결제 중 오류가 발생했어요. 다시 시도해 주세요.');
-        console.error('[Purchase] 오류:', e.message);
+        console.error('[Purchase] 오류:', e);
       }
     } finally {
       setLoading(false);
@@ -80,17 +125,18 @@ export default function PremiumPage({ onClose }) {
     if (!Capacitor.isNativePlatform()) return;
     setLoading(true);
     try {
-      // TODO: RevenueCat 설치 후 아래 주석 해제
-      // const { customerInfo } = await Purchases.restorePurchases();
-      // if (customerInfo.entitlements.active['premium']) {
-      //   alert('✨ 구독이 복원됐어요!');
-      //   onClose();
-      // } else {
-      //   alert('복원할 구독이 없어요.');
-      // }
-      alert('RevenueCat 설정 후 복원이 가능해요.');
+      await configureRevenueCat(user?.uid);
+      const { customerInfo } = await Purchases.restorePurchases();
+      if (customerInfo.entitlements.active[ENTITLEMENT_ID]) {
+        if (user?.uid) await setFirestorePremium(user.uid, true);
+        alert('✨ 구독이 복원됐어요!');
+        onClose();
+      } else {
+        alert('복원할 구독이 없어요.');
+      }
     } catch (e) {
       alert('복원 중 오류가 발생했어요.');
+      console.error('[Restore] 오류:', e);
     } finally {
       setLoading(false);
     }
