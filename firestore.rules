@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 유저 루트 문서 (routineAlarms, lastKnownLat/Lon 등)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // 프로필 서브컬렉션 (gender, height, weight, isPremium, modelPhoto 등)
+      match /profile/{document} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 옷장 아이템
+      match /items/{itemId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 저장된 코디
+      match /savedOutfits/{outfitId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // OOTD 로그
+      match /ootdLogs/{logId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
