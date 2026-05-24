@@ -249,6 +249,13 @@ export default function SettingsModal({ onClose }) {
   const [showAddRoutine, setShowAddRoutine] = useState(false);
   const [routineAlarms, setRoutineAlarms] = useState([]);
 
+  // ── 개인정보 수정 상태 ──
+  const [gender, setGender] = useState(userProfile?.gender ?? '');
+  const [ageGroup, setAgeGroup] = useState(userProfile?.ageGroup ?? '');
+  const [height, setHeight] = useState(userProfile?.height ? String(userProfile.height) : '');
+  const [weight, setWeight] = useState(userProfile?.weight ? String(userProfile.weight) : '');
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+
   // 루틴 알람은 users/{uid} root 문서에 저장됨 — 마운트 시 직접 fetch
   useEffect(() => {
     if (!user?.uid) return;
@@ -279,7 +286,15 @@ export default function SettingsModal({ onClose }) {
     setSaving(true);
     try {
       // profile 서브컬렉션에만 저장 (base64 이미지는 root 문서 1MB 제한 초과 방지)
-      await updateUserProfile(user.uid, { modelPhoto });
+      await updateUserProfile(user.uid, {
+        modelPhoto,
+        ...(showProfileEdit && {
+          gender,
+          ageGroup: ageGroup || null,
+          height: height ? parseInt(height, 10) : null,
+          weight: weight ? parseInt(weight, 10) : null,
+        }),
+      });
       onClose();
     } catch (e) {
       console.error('Failed to save settings:', e);
@@ -361,6 +376,105 @@ export default function SettingsModal({ onClose }) {
                 {modelPhoto ? '사진 변경' : '사진 업로드'}
               </label>
             </div>
+          </div>
+
+          {/* ── 개인 정보 수정 ── */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#F0EDE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>👤</div>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 500, color: '#18160F' }}>개인 정보 수정</p>
+              </div>
+              <button
+                onClick={() => setShowProfileEdit(v => !v)}
+                style={{
+                  background: showProfileEdit ? '#F0EDE8' : '#18160F',
+                  border: 'none', borderRadius: 20, padding: '6px 14px',
+                  cursor: 'pointer', color: showProfileEdit ? '#18160F' : '#fff',
+                  fontSize: 12, fontWeight: 600,
+                }}
+              >
+                {showProfileEdit ? '닫기' : '수정하기'}
+              </button>
+            </div>
+
+            {showProfileEdit && (
+              <div style={{ background: '#FAFAF8', borderRadius: 16, border: '1px solid #E2DDD6', padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* 성별 */}
+                <div>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#18160F' }}>성별</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['남성', '여성', '기타'].map(g => (
+                      <button
+                        key={g}
+                        onClick={() => setGender(g)}
+                        style={{
+                          flex: 1, padding: '9px 0', borderRadius: 10,
+                          border: gender === g ? '2px solid #18160F' : '1.5px solid #E2DDD6',
+                          background: gender === g ? '#18160F' : '#fff',
+                          color: gender === g ? '#fff' : '#4B4744',
+                          fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                      >{g}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 연령대 */}
+                <div>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#18160F' }}>연령대 <span style={{ fontWeight: 400, color: '#B8AFA4' }}>(선택)</span></p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['10~20대', '30~40대', '50대 이상'].map(a => (
+                      <button
+                        key={a}
+                        onClick={() => setAgeGroup(prev => prev === a ? '' : a)}
+                        style={{
+                          flex: 1, padding: '9px 0', borderRadius: 10,
+                          border: ageGroup === a ? '2px solid #18160F' : '1.5px solid #E2DDD6',
+                          background: ageGroup === a ? '#18160F' : '#fff',
+                          color: ageGroup === a ? '#fff' : '#4B4744',
+                          fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                      >{a}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 키 / 몸무게 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#18160F' }}>키 (cm) <span style={{ fontWeight: 400, color: '#B8AFA4' }}>(선택)</span></p>
+                    <input
+                      type="number"
+                      placeholder="예: 170"
+                      value={height}
+                      onChange={e => setHeight(e.target.value)}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                        borderRadius: 10, border: '1px solid #E2DDD6',
+                        fontSize: 14, color: '#18160F', background: '#fff',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#18160F' }}>몸무게 (kg) <span style={{ fontWeight: 400, color: '#B8AFA4' }}>(선택)</span></p>
+                    <input
+                      type="number"
+                      placeholder="예: 65"
+                      value={weight}
+                      onChange={e => setWeight(e.target.value)}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                        borderRadius: 10, border: '1px solid #E2DDD6',
+                        fontSize: 14, color: '#18160F', background: '#fff',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <p style={{ margin: 0, fontSize: 11, color: '#B8AFA4' }}>💡 키·몸무게를 입력하면 옷의 비율이 체형에 맞게 표시됩니다. 저장 버튼을 눌러 변경 사항을 적용하세요.</p>
+              </div>
+            )}
           </div>
 
           {/* ── 루틴 코디 알람 ── */}

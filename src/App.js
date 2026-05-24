@@ -295,7 +295,9 @@ function Main() {
     );
   }
 
-  if (!userProfile?.gender) {
+  // 신규 회원(userProfile이 null = Firestore에 프로필 문서 없음)인 경우에만 온보딩 표시
+  // 기존 회원이 로그인한 경우(userProfile이 객체이지만 gender 미설정)에는 홈으로 이동
+  if (userProfile === null) {
     return (
       <div className="app-shell">
         <OnboardingPage />
