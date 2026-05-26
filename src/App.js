@@ -14,7 +14,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { initPushNotifications } from './utils/pushNotifications';
-import { scheduleRoutineAlarms } from './utils/notifications';
+import { scheduleRoutineAlarms, emergencyCancelAllLegacyAlarms } from './utils/notifications';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './App.css';
@@ -200,6 +200,12 @@ function Main() {
     if (!user) return;
     initPushNotifications(user.uid);
   }, [user]);
+
+  // 앱 최초 실행 시 레거시 알람 일괄 소거 (업데이트 이전 테스트 알람 제거)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    emergencyCancelAllLegacyAlarms();
+  }, []);
 
   // 로그인 완료 후 Firestore 루틴 알람으로 로컬 알림 동기화
   useEffect(() => {

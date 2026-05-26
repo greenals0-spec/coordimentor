@@ -9,6 +9,11 @@ const config: CapacitorConfig = {
       skipNativeAuth: false,
       providers: ['google.com'],
     },
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '591487860438-sgf7goqlbvd48bmt8vv9u1al1st5g33k.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+    },
   },
   server: {
     allowNavigation: ['unpkg.com', 'cdn.jsdelivr.net']

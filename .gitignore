@@ -42,3 +42,10 @@ distribution.csr
 distribution.key
 coordimentor-9599dcec2ec7.json
 *.json.key
+
+# IDE
+.idea/
+
+# API Keys 스프레드시트
+*.xlsx
+Coordimentor_API_Keys_*.xlsx

@@ -6,6 +6,27 @@ const DAY_TO_WEEKDAY = {
 };
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
+// ── 예약된 알람 ID를 localStorage에 누적 저장 ──────────────────
+const NOTIF_IDS_KEY = 'coordimentor_scheduled_notif_ids';
+
+function saveScheduledIds(ids) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(NOTIF_IDS_KEY) || '[]');
+    const merged = [...new Set([...existing, ...ids])];
+    localStorage.setItem(NOTIF_IDS_KEY, JSON.stringify(merged));
+  } catch {}
+}
+
+function getScheduledIds() {
+  try {
+    return JSON.parse(localStorage.getItem(NOTIF_IDS_KEY) || '[]');
+  } catch { return []; }
+}
+
+function clearScheduledIds() {
+  try { localStorage.removeItem(NOTIF_IDS_KEY); } catch {}
+}
+
 const SITUATION_EMOJI = {
   '출근': '💼', '운동': '🏃', '등교': '📚',
 };
@@ -70,17 +91,27 @@ export const cancelAllNotifications = async (routineAlarms = []) => {
       }).catch(() => {});
     }
 
-    // 2. pending 목록도 전부 취소 (혹시 남은 것 처리)
+    // 2. localStorage에 기록된 과거 예약 ID 전부 취소
+    //    (Android getPending()이 반복 알람을 누락하는 경우 대비)
+    const savedIds = getScheduledIds();
+    if (savedIds.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: savedIds.map(id => ({ id })),
+      }).catch(() => {});
+      clearScheduledIds();
+    }
+
+    // 3. pending 목록도 전부 취소 (혹시 남은 것 처리)
     const pending = await LocalNotifications.getPending();
     if (pending.notifications.length > 0) {
       await LocalNotifications.cancel(pending);
     }
 
-    // 3. 레거시 ID 범위 강제 취소 (이전 버전 알람 완전 제거)
-    //    이전 makeNotifId 범위: 0~99996, 테스트용 99
-    const legacyIds = [];
-    for (let i = 0; i <= 100; i++) legacyIds.push(i);       // 0~100
-    for (let i = 0; i < 500; i++) legacyIds.push(i * 10);  // 0~4990 (10단위)
+    // 4. 레거시 ID 범위 강제 취소 (이전 버전 알람 완전 제거)
+    //    이전 makeNotifId 범위: 0~99996, 테스트용 99, testNotification: 9999999
+    const legacyIds = [9999999];                              // 테스트 알람 고정 ID
+    for (let i = 0; i <= 100; i++) legacyIds.push(i);        // 0~100
+    for (let i = 0; i < 500; i++) legacyIds.push(i * 10);   // 0~4990 (10단위)
     await LocalNotifications.cancel({
       notifications: legacyIds.map(id => ({ id })),
     }).catch(() => {});
@@ -160,11 +191,56 @@ export const scheduleRoutineAlarms = async (routineAlarms = []) => {
 
     if (notifications.length > 0) {
       await LocalNotifications.schedule({ notifications });
+      // 예약된 ID를 localStorage에 누적 저장 → 앱 재시작 후에도 정확히 취소 가능
+      saveScheduledIds(notifications.map(n => n.id));
       console.log(`[Alarm] Scheduled ${notifications.length} notification(s).`,
         notifications.map(n => `id:${n.id} ${n.title} weekday:${n.schedule.on.weekday} ${n.schedule.on.hour}:${String(n.schedule.on.minute).padStart(2,'0')}`));
     }
   } catch (error) {
     console.error('[Alarm] scheduleRoutineAlarms error:', error);
+  }
+};
+
+/**
+ * 앱 업데이트 직후 한 번만 실행: makeNotifId 전체 범위(1000000~1099996)를
+ * 일괄 취소하여 Firestore에서 삭제된 레거시 테스트 알람을 제거한다.
+ * localStorage 플래그로 중복 실행 방지.
+ */
+const EMERGENCY_CANCEL_KEY = 'coordimentor_emergency_cancel_v1';
+
+export const emergencyCancelAllLegacyAlarms = async () => {
+  try {
+    if (localStorage.getItem(EMERGENCY_CANCEL_KEY)) return;  // 이미 실행됨
+
+    console.log('[Alarm] 레거시 알람 긴급 소거 시작...');
+
+    // makeNotifId 전체 범위: 1000000 + (0~9999)*10 + (0~6) = 1000000~1099996
+    // + testNotification 고정 ID: 9999999
+    // 배치 단위로 나눠서 취소 (한 번에 너무 많으면 성능 문제)
+    const BATCH = 500;
+    const allIds = [9999999];
+    for (let id = 1000000; id <= 1099996; id++) allIds.push(id);
+
+    for (let i = 0; i < allIds.length; i += BATCH) {
+      const batch = allIds.slice(i, i + BATCH);
+      await LocalNotifications.cancel({
+        notifications: batch.map(id => ({ id })),
+      }).catch(() => {});
+    }
+
+    // localStorage에 기록된 과거 예약 ID도 함께 소거
+    const savedIds = getScheduledIds();
+    if (savedIds.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: savedIds.map(id => ({ id })),
+      }).catch(() => {});
+      clearScheduledIds();
+    }
+
+    localStorage.setItem(EMERGENCY_CANCEL_KEY, '1');
+    console.log('[Alarm] 레거시 알람 긴급 소거 완료.');
+  } catch (e) {
+    console.error('[Alarm] emergencyCancelAllLegacyAlarms error:', e);
   }
 };
 

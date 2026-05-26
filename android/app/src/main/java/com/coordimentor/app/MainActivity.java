@@ -18,6 +18,28 @@ import java.util.Map;
 
 public class MainActivity extends BridgeActivity {
   private String lastSharedImagePath = null;
+  private boolean adWasShowing = false; // 광고 표시 중 여부 추적
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    // 광고(인터스티셜 등) 닫힌 후 WebView 터치 동결 복구
+    // AdMob 광고가 닫히면 Activity가 onResume을 받음 → WebView 포커스 강제 복구
+    WebView webView = getBridge().getWebView();
+    if (webView != null) {
+      webView.post(() -> {
+        webView.requestFocus();
+        webView.setEnabled(true);
+        // JS 레벨에서도 pointer-events 복구
+        webView.evaluateJavascript(
+          "document.body.style.pointerEvents='auto';" +
+          "document.documentElement.style.pointerEvents='auto';",
+          null
+        );
+        android.util.Log.d("Coordimentor", "[AdMob] onResume: WebView focus restored");
+      });
+    }
+  }
 
   @Override
   public void onCreate(Bundle savedInstanceState) {

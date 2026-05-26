@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { AdMob, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
 // ── 광고 유닛 ID ──────────────────────────────────────────────────────────────
@@ -12,6 +13,9 @@ const AD_UNIT_ID = IS_PROD
 let _initialized = false;
 let _adReady = false;      // 광고 로드 완료 여부
 let _adLoading = false;    // 현재 로드 중 여부
+
+// 누적 리스너 추적 (preload용)
+let _preloadListeners = [];
 
 async function initAdMob() {
   if (!Capacitor.isNativePlatform()) return false;
@@ -27,9 +31,14 @@ async function initAdMob() {
   }
 }
 
+// preload 리스너 정리 헬퍼
+function removePreloadListeners() {
+  _preloadListeners.forEach(l => { try { l.remove(); } catch (_) {} });
+  _preloadListeners = [];
+}
+
 /**
  * 광고 미리 로드 (페이지 진입 시 호출)
- * 버튼 누를 때 바로 광고가 뜰 수 있도록 사전 준비
  */
 export async function preloadInterstitialAd() {
   if (!Capacitor.isNativePlatform()) return;
@@ -39,30 +48,35 @@ export async function preloadInterstitialAd() {
   if (!ok) return;
 
   _adLoading = true;
+  removePreloadListeners();
+
   try {
-    // Loaded 리스너 등록 후 prepareInterstitial
-    await AdMob.addListener(InterstitialAdPluginEvents.Loaded, () => {
+    const loadedListener = await AdMob.addListener(InterstitialAdPluginEvents.Loaded, () => {
       console.log('[AdMob] 광고 프리로드 완료 ✓');
       _adReady = true;
       _adLoading = false;
+      removePreloadListeners();
     });
-    await AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, () => {
+    const failListener = await AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, () => {
       console.warn('[AdMob] 프리로드 실패');
       _adReady = false;
       _adLoading = false;
+      removePreloadListeners();
     });
+    _preloadListeners = [loadedListener, failListener];
+
     await AdMob.prepareInterstitial({ adId: AD_UNIT_ID });
   } catch (e) {
     console.warn('[AdMob] 프리로드 오류:', e.message);
     _adLoading = false;
+    removePreloadListeners();
   }
 }
 
 /**
  * 인터스티셜 광고 표시
- * - preloadInterstitialAd()로 미리 로드된 경우 즉시 표시
- * - 미리 로드 안 됐으면 그냥 스킵
- * - 광고 닫히면 다음 광고 자동 프리로드
+ * - 광고가 떠 있는 동안 WebView JS는 일시정지됨 (타임아웃 무효)
+ * - App resume 이벤트로 광고 닫힘을 감지해 터치 복구
  */
 export async function showInterstitialAd() {
   if (!Capacitor.isNativePlatform()) return;
@@ -71,25 +85,51 @@ export async function showInterstitialAd() {
     return;
   }
 
+  removePreloadListeners();
+
   return new Promise(async (resolve) => {
-    const timer = setTimeout(() => {
-      console.warn('[AdMob] 30초 타임아웃 → 스킵');
-      cleanup();
+    let resolved = false;
+
+    function restoreTouch() {
+      try { document.body.style.pointerEvents = 'auto'; } catch (_) {}
+      try { document.documentElement.style.pointerEvents = 'auto'; } catch (_) {}
+      try { document.body.focus(); } catch (_) {}
+    }
+
+    function safeResolve() {
+      if (resolved) return;
+      resolved = true;
+      restoreTouch();
       resolve();
-      preloadInterstitialAd(); // 다음 광고 준비
-    }, 30000);
+    }
 
     const listeners = [];
+    let resumeListener = null;
+
     function cleanup() {
-      clearTimeout(timer);
       listeners.forEach(l => { try { l.remove(); } catch (_) {} });
+      if (resumeListener) { try { resumeListener.remove(); } catch (_) {} }
+      resumeListener = null;
     }
-    function done() { cleanup(); resolve(); preloadInterstitialAd(); } // 닫히면 다음 광고 준비
+
+    function done() {
+      cleanup();
+      safeResolve();
+      preloadInterstitialAd();
+    }
 
     try {
+      // ✅ 핵심: App resume 이벤트 감지 — 광고 종료 후 앱이 포그라운드로 돌아올 때 발생
+      // (WebView JS가 일시정지 중이어도, 재개 시 이 이벤트가 실행됨)
+      resumeListener = await App.addListener('resume', () => {
+        console.log('[AdMob] App resume → 광고 닫힘으로 처리');
+        _adReady = false;
+        done();
+      });
+
       listeners.push(
         await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
-          console.log('[AdMob] 광고 닫힘');
+          console.log('[AdMob] 광고 닫힘 (Dismissed)');
           _adReady = false;
           done();
         })
@@ -99,6 +139,11 @@ export async function showInterstitialAd() {
           console.warn('[AdMob] 표시 실패:', JSON.stringify(err));
           _adReady = false;
           done();
+        })
+      );
+      listeners.push(
+        await AdMob.addListener(InterstitialAdPluginEvents.Showed, () => {
+          console.log('[AdMob] 광고 노출 시작');
         })
       );
 

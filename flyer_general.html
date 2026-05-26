@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>개발앱 베타테스터 모집</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #f5f0e8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fffdf8;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 상단 헤더 영역 */
+  .header {
+    background: #3d2c1e;
+    padding: 48px 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 30%;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .header-badge {
+    display: inline-block;
+    background: #c8965a;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+
+  .header h1 {
+    font-size: 38px;
+    font-weight: 900;
+    color: #fffdf8;
+    line-height: 1.25;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header h1 span {
+    color: #e8b87a;
+  }
+
+  .header-sub {
+    font-size: 14px;
+    color: rgba(255,253,248,0.65);
+    font-weight: 300;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 메인 콘텐츠 */
+  .content {
+    padding: 44px 48px;
+    flex: 1;
+  }
+
+  .intro-box {
+    background: #f7f1e6;
+    border-left: 4px solid #c8965a;
+    border-radius: 0 12px 12px 0;
+    padding: 22px 24px;
+    margin-bottom: 36px;
+  }
+
+  .intro-box p {
+    font-size: 15px;
+    font-weight: 400;
+    color: #4a3728;
+    line-height: 1.8;
+  }
+
+  .intro-box p strong {
+    color: #3d2c1e;
+    font-weight: 700;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    color: #c8965a;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+
+  .role-card {
+    border-radius: 16px;
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .role-card.developer {
+    background: #3d2c1e;
+    color: #fffdf8;
+  }
+
+  .role-card.tester {
+    background: #c8965a;
+    color: #fffdf8;
+  }
+
+  .role-card .role-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .role-card .role-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+
+  .role-card .role-title {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .role-card .role-desc {
+    font-size: 13px;
+    opacity: 0.85;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .divider {
+    height: 1px;
+    background: #ede4d3;
+    margin: 4px 0 32px;
+  }
+
+  .how-list {
+    list-style: none;
+    margin-bottom: 36px;
+  }
+
+  .how-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0e8d8;
+  }
+
+  .how-list li:last-child { border-bottom: none; }
+
+  .how-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #3d2c1e;
+    color: #fffdf8;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .how-text {
+    font-size: 14px;
+    color: #4a3728;
+    line-height: 1.7;
+  }
+
+  .how-text strong {
+    font-weight: 700;
+    color: #3d2c1e;
+  }
+
+  /* 하단 CTA */
+  .cta {
+    margin: 0 48px 48px;
+    background: #3d2c1e;
+    border-radius: 20px;
+    padding: 32px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .cta-text h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fffdf8;
+    margin-bottom: 6px;
+  }
+
+  .cta-text p {
+    font-size: 13px;
+    color: rgba(255,253,248,0.65);
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  .cta-kakao {
+    background: #FEE500;
+    color: #3c1e1e;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 14px 24px;
+    border-radius: 12px;
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .cta-kakao span {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  /* 하단 바 */
+  .footer-bar {
+    background: #f7f1e6;
+    padding: 16px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-bar p {
+    font-size: 11px;
+    color: #9a8070;
+    font-weight: 300;
+  }
+
+  .footer-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #c8965a;
+  }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .page { width: 210mm; min-height: 297mm; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-badge">BETA TESTER RECRUIT</div>
+    <h1>개발앱<br><span>베타테스터</span><br>모집합니다</h1>
+    <p class="header-sub">AI 시대, 누구나 앱을 만들 수 있는 세상이 왔습니다<br>개발자와 테스터를 연결하는 커뮤니티에 함께해 주세요</p>
+  </div>
+
+  <div class="content">
+
+    <div class="intro-box">
+      <p>
+        <strong>AI 시대를 맞아 누구나 앱을 만들 수 있는 시대!</strong><br>
+        테스터가 필요하시면 카톡 채널로 문의주세요.<br>
+        게시판에 공지해 드리겠습니다.
+      </p>
+    </div>
+
+    <p class="section-title">참여 대상</p>
+    <div class="two-col">
+      <div class="role-card developer">
+        <span class="role-icon">💻</span>
+        <div class="role-label">FOR DEVELOPER</div>
+        <div class="role-title">앱을 만든<br>개발자</div>
+        <div class="role-desc">출시 전 앱의 테스터를 찾고 계신가요? 카톡 채널로 모집 공고를 올려드립니다.</div>
+      </div>
+      <div class="role-card tester">
+        <span class="role-icon">📱</span>
+        <div class="role-label">FOR TESTER</div>
+        <div class="role-title">앱을 써볼<br>테스터</div>
+        <div class="role-desc">누구보다 빨리, 공짜로 출시 전 앱을 가장 먼저 사용해 보실 수 있습니다.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="section-title">참여 방법</p>
+    <ul class="how-list">
+      <li>
+        <div class="how-num">1</div>
+        <div class="how-text"><strong>카카오톡 채널 검색</strong><br>아래 QR코드를 스캔하거나 카카오톡 채널을 검색해 주세요</div>
+      </li>
+      <li>
+        <div class="how-num">2</div>
+        <div class="how-text"><strong>개발자 — 모집 공고 등록 요청</strong><br>채널로 앱 정보를 보내주시면 게시판에 모집 공고를 올려드립니다</div>
+      </li>
+      <li>
+        <div class="how-num">3</div>
+        <div class="how-text"><strong>테스터 — 원하는 앱 테스트 신청</strong><br>게시판에서 관심 있는 앱을 골라 테스터로 신청하세요</div>
+      </li>
+    </ul>
+
+  </div>
+
+  <div class="cta">
+    <div class="cta-text">
+      <h3>지금 바로 참여하세요</h3>
+      <p>개발자 공고 등록 · 테스터 신청<br>모두 카카오톡 채널에서 가능합니다</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">
+      <img src="qr_kakao.png" style="width:90px;height:90px;border-radius:10px;background:#fff;padding:4px;" />
+      <div class="cta-kakao">
+        <span>💬</span>
+        멘토즈 운정산내점
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <p>본 게시물은 스터디카페 게시판에 공지됩니다</p>
+    <div class="footer-dot"></div>
+    <p>문의 · 카카오톡 채널</p>
+  </div>
+
+</div>
+</body>
+</html>
