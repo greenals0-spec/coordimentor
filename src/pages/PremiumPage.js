@@ -6,8 +6,8 @@ import { Purchases } from '@revenuecat/purchases-capacitor';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// RevenueCat API 키 (테스트용 → 출시 전 프로덕션 키로 교체)
-const REVENUECAT_API_KEY = 'test_rKWPYcLRUpEBlqqspZQoKRlFhUI';
+// RevenueCat API 키 (프로덕션 — Coordimentor Play Store)
+const REVENUECAT_API_KEY = 'goog_usgemRvMHEHMVjcoUCMXVDjnHmH';
 
 // Google Play Console에 등록한 상품 ID
 const PRODUCT_ID = 'coordimentor_premium_monthly';

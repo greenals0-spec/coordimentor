@@ -272,7 +272,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
         const { Camera: CapCamera, CameraResultType, CameraSource } = await import('@capacitor/camera');
 
         if (IS_IOS) {
-          // iOS: 사진을 DataUrl로 직접 받아 자동 누끼 처리
+          // iOS: 사진 촬영 후 누끼 없이 바로 분석 (배경 단순화 가이드로 품질 확보)
           const photo = await CapCamera.getPhoto({
             quality: 90,
             allowEditing: false,
@@ -284,7 +284,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
             const res = await fetch(photo.dataUrl);
             const blob = await res.blob();
             const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
-            await processFile(file);
+            await processFile(file, true); // skipBg: true — 누끼 생략
           }
         } else {
           // Android: 기존 URI 방식 (갤러리 → 공유 흐름)
@@ -327,7 +327,8 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
   };
 
   // ── 파일 처리 ─────────────────────────────────────────────────────────────────
-  const processFile = async (file) => {
+  // skipBg: true → 누끼 생략 (iOS 카메라 촬영 경로 — 가이드로 배경 단순화 유도)
+  const processFile = async (file, skipBg = false) => {
     if (!file) return;
     setError('');
     const dataUrl = await blobToDataUrl(file);
@@ -335,30 +336,9 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
     setRemovedBlob(file);
 
     if (IS_IOS) {
-      // iOS: 바로 자동 누끼 실행
-      setStep('removing');
-      setBgProgress(0);
-      try {
-        const bgRemovedUrl = await removeBackground(file, (pct) => setBgProgress(pct));
-        setRemovedUrl(bgRemovedUrl);
-        let blob;
-        if (bgRemovedUrl.startsWith('data:')) {
-          const arr = bgRemovedUrl.split(',');
-          const mime = arr[0].match(/:(.*?);/)[1];
-          const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
-          while (n--) u8[n] = bstr.charCodeAt(n);
-          blob = new Blob([u8], { type: mime });
-        } else {
-          const r = await fetch(bgRemovedUrl);
-          blob = await r.blob();
-        }
-        setRemovedBlob(blob);
-        setStep('editing');
-      } catch (e) {
-        console.warn('자동 누끼 실패, 원본으로 진행:', e.message);
-        setRemovedUrl(dataUrl);
-        setStep('editing');
-      }
+      // iOS: 누끼 없이 원본 그대로 분석 (카메라/앨범 모두)
+      setRemovedUrl(dataUrl);
+      setStep('editing');
     } else {
       // Android/Web: 기존 캡처 프리뷰 → 갤러리 공유 흐름
       setStep('capture_preview');
@@ -372,19 +352,10 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
       setCurrentIdx(i);
       const file = files[i];
       try {
-        setBgProgress(0);
-        const bgRemovedUrl = await removeBackground(file, (pct) => setBgProgress(pct));
-        let blob;
-        if (bgRemovedUrl.startsWith('data:')) {
-          const arr = bgRemovedUrl.split(',');
-          const mime = arr[0].match(/:(.*?);/)[1];
-          const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
-          while (n--) u8[n] = bstr.charCodeAt(n);
-          blob = new Blob([u8], { type: mime });
-        } else { const r = await fetch(bgRemovedUrl); blob = await r.blob(); }
-        const dataUrl = await blobToDataUrl(blob);
+        // iOS: 누끼 없이 원본 분석
+        const dataUrl = await blobToDataUrl(file);
         const analysisResult = await analyzeClothing(dataUrl);
-        items.push({ id: Date.now() + i, removedBlob: blob, removedUrl: bgRemovedUrl, analysis: analysisResult });
+        items.push({ id: Date.now() + i, removedBlob: file, removedUrl: dataUrl, analysis: analysisResult });
       } catch (e) { console.error(`이미지 ${i + 1} 처리 실패:`, e); }
     }
     setBulkItems(items);
@@ -560,7 +531,7 @@ export default function UploadPage({ onSaved, onCameraOpen, onCameraClose, onNav
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* 촬영 후 가져오기 */}
             <button
-              onClick={IS_IOS ? handleOpenCamera : () => setStep('guide_camera')}
+              onClick={() => setStep('guide_camera')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 18,
                 background: 'var(--surface)', border: '1.5px solid var(--border)',

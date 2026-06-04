@@ -1,8 +1,9 @@
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 // 이미지 생성(출력)을 지원하는 모델 목록 (순서대로 시도, 2026년 5월 기준)
 const TRYON_MODELS = [
-  'gemini-3.1-flash-image-preview', // Nano Banana 2 — 최신, 기존 대비 속도↑ 가격↓
-  'gemini-2.5-flash-image',         // Nano Banana 1 — 폴백
+  'gemini-3.1-flash-image-preview', // 최신·빠름 (유료 전환 후 503 거의 없음)
+  'gemini-2.5-flash-image',         // 폴백 1
+  'gemini-2.0-flash-exp',           // 폴백 2 — 안정적이지만 느림
 ];
 const makeEndpoint = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -78,25 +79,44 @@ CRITICAL OUTPUT RULES:
 async function callTryOnApi(requestBody) {
   let res = null;
   let usedModel = null;
+  let lastErrText = 'No response'; // body를 두 번 읽지 않도록 마지막 에러 저장
   for (const model of TRYON_MODELS) {
     console.log(`[TryOn] Trying model: ${model}`);
-    res = await fetch(makeEndpoint(model), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
-    });
-    if (res.status !== 404 && res.status !== 400) {
+    // 60초 타임아웃 설정 (무한 로딩 방지)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    try {
+      res = await fetch(makeEndpoint(model), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        console.warn(`[TryOn] ${model} 60초 타임아웃`);
+        lastErrText = `${model} 타임아웃`;
+        res = null;
+        continue; // 다음 모델 시도
+      }
+      throw e;
+    }
+    clearTimeout(timeoutId);
+    // 200번대 성공이면 사용, 그 외 에러코드면 다음 모델 시도
+    if (res.ok) {
       usedModel = model;
       break;
     }
-    const errText = await res.text();
-    console.warn(`[TryOn] ${model} failed (${res.status}): ${errText.slice(0, 200)}`);
+    // body는 한 번만 읽고 저장 (iOS WebKit: "Body is disturbed or locked" 방지)
+    lastErrText = await res.text();
+    console.warn(`[TryOn] ${model} failed (${res.status}): ${lastErrText.slice(0, 200)}`);
+    res = null; // 소비된 response 초기화
   }
 
   if (!res || !res.ok) {
-    const errText = await res?.text() ?? 'No response';
-    console.error('Gemini API error:', res?.status, errText);
-    throw new Error(`Gemini API ${res?.status}: ${errText.slice(0, 300)}`);
+    console.error('Gemini API error:', lastErrText);
+    throw new Error(`Gemini API 오류: ${lastErrText.slice(0, 300)}`);
   }
   console.log(`[TryOn] Success with model: ${usedModel}`);
 
@@ -242,21 +262,39 @@ CRITICAL OUTPUT RULES:
   return await callTryOnApi(requestBody);
 }
 
-/* ── 유틸: URL/base64 → Gemini inlineData part ── */
+/* ── 유틸: 이미지 리사이즈 (Canvas 사용, 최대 800px) ── */
+async function resizeImageToBase64(url, maxSize = 800) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      // JPEG 품질 0.85로 압축
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      resolve(dataUrl);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+/* ── 유틸: URL/base64 → Gemini inlineData part (리사이즈 포함) ── */
 async function toInlinePart(url) {
-  if (url.startsWith('data:')) {
-    const [header, data] = url.split(',');
-    return { inlineData: { data, mimeType: header.split(':')[1].split(';')[0] } };
-  }
-  // 원격 URL → fetch → base64 (ArrayBuffer 방식으로 재압축 없이 원본 바이트 유지)
-  const res  = await fetch(url);
-  const mimeType = res.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
-  const buffer = await res.arrayBuffer();
-  const bytes  = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const data = btoa(binary);
-  return { inlineData: { data, mimeType } };
+  // 리사이즈 후 base64로 변환
+  const resized = await resizeImageToBase64(url, 800);
+  const [header, data] = resized.split(',');
+  return { inlineData: { data, mimeType: 'image/jpeg' } };
 }
